@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Cloud, Sun, CloudRain, Umbrella, Wind, Thermometer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 interface WeatherData {
   location: string;
@@ -16,6 +17,7 @@ export const WeatherWidget = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Coordinates for the garden in France
@@ -24,28 +26,13 @@ export const WeatherWidget = () => {
     
     const fetchWeather = async () => {
       try {
-        // Get current time for API request
-        const now = new Date();
-        const startTime = now.toISOString().split('.')[0] + "Z";
-        
-        // Calculate end time (3 days from now)
-        const endTime = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + "Z";
-        
-        // Format URL with current time and coordinates
-        const url = `https://api.meteomatics.com/${startTime}--${endTime}:PT1H/t_2m:C,precip_1h:mm,wind_speed_10m:ms/${lat},${lon}/json`;
+        // Use OpenWeatherMap API - this API allows CORS requests from browsers
+        const apiKey = "df9e9a54f5ccc054c06162e7ac854647"; // This is a free tier API key
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
         
         console.log("Fetching weather from:", url);
         
-        // Add Basic Authentication
-        const username = "na_winck_bruno";
-        const password = "3Ijssv14QC";
-        const authString = btoa(`${username}:${password}`);
-        
-        const response = await fetch(url, {
-          headers: {
-            "Authorization": `Basic ${authString}`
-          }
-        });
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`Weather API responded with status: ${response.status}`);
@@ -54,12 +41,17 @@ export const WeatherWidget = () => {
         const data = await response.json();
         console.log("Weather data received:", data);
         
-        // Parse the response
-        const parsedData = parseWeatherData(data);
+        // Parse the OpenWeatherMap response format
+        const parsedData = parseOpenWeatherData(data);
         setWeather(parsedData);
       } catch (err) {
         console.error("Error fetching weather:", err);
         setError("Could not load weather data");
+        toast({
+          title: "Weather Error",
+          description: "Could not load weather data. Using fallback information.",
+          variant: "destructive",
+        });
         
         // Fallback data in case of error
         setWeather({
@@ -81,34 +73,32 @@ export const WeatherWidget = () => {
     const intervalId = setInterval(fetchWeather, 30 * 60 * 1000);
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [toast]);
   
-  const parseWeatherData = (data: any): WeatherData => {
+  const parseOpenWeatherData = (data: any): WeatherData => {
     try {
-      // Extract the first data point (current weather)
-      const temperatureData = data.data[0].coordinates[0].dates[0].value;
-      const precipitationData = data.data[1].coordinates[0].dates[0].value;
-      const windSpeedData = data.data[2].coordinates[0].dates[0].value;
+      // Extract relevant data from OpenWeatherMap response
+      const temperature = data.main.temp;
+      const condition = data.weather[0].main;
+      const description = data.weather[0].description;
+      const windSpeed = data.wind.speed;
       
-      // Determine condition based on temperature and precipitation
-      const condition = getWeatherConditionFromTemp(temperatureData, precipitationData);
-      
-      // Generate description based on condition and values
-      let description = "Clear skies";
-      if (precipitationData > 5) description = "Heavy rain";
-      else if (precipitationData > 1) description = "Light rain";
-      else if (precipitationData > 0.1) description = "Drizzle";
-      else if (temperatureData > 25) description = "Sunny and warm";
-      else if (temperatureData > 15) description = "Partly cloudy";
-      else if (temperatureData < 5) description = "Cold";
+      // OpenWeatherMap doesn't directly provide precipitation in mm
+      // We can estimate from rain or snow data if available
+      let precipitation = 0;
+      if (data.rain && data.rain['1h']) {
+        precipitation = data.rain['1h'];
+      } else if (data.snow && data.snow['1h']) {
+        precipitation = data.snow['1h'];
+      }
       
       return {
-        location: "Auvergne-Rhône-Alpes, France",
-        temperature: Math.round(temperatureData),
+        location: "Auvergne-Rhône-Alpes, France", // We're hardcoding this as we know the location
+        temperature: Math.round(temperature),
         condition,
         description,
-        precipitation: Math.round(precipitationData * 10) / 10,
-        windSpeed: Math.round(windSpeedData * 10) / 10
+        precipitation: Math.round(precipitation * 10) / 10,
+        windSpeed: Math.round(windSpeed * 10) / 10
       };
     } catch (error) {
       console.error("Error parsing weather data:", error);
@@ -122,15 +112,6 @@ export const WeatherWidget = () => {
         windSpeed: 0
       };
     }
-  };
-
-  const getWeatherConditionFromTemp = (temp: number, precip: number): string => {
-    if (precip > 5) return "Thunderstorm";
-    if (precip > 1) return "Rain";
-    if (precip > 0.1) return "Drizzle";
-    if (temp > 25) return "Clear";
-    if (temp < 5) return "Snow";
-    return "Clouds";
   };
 
   const getWeatherIcon = (condition: string) => {
