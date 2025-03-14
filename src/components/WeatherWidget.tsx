@@ -36,25 +36,32 @@ export const WeatherWidget = () => {
         
         console.log("Fetching weather from:", url);
         
-        // For demonstration, we'll use fallback data as the API requires authentication
-        // In a real scenario, you would make the actual fetch request with proper auth
+        // Add Basic Authentication
+        const username = "na_winck_bruno";
+        const password = "3Ijssv14QC";
+        const authString = btoa(`${username}:${password}`);
         
-        // Mock data based on the expected response format
-        const mockWeatherData = {
-          location: "Auvergne-Rhône-Alpes, France",
-          temperature: 18,
-          condition: weather?.condition || getWeatherConditionFromTemp(18, 1.2),
-          description: "Partly cloudy with light showers",
-          precipitation: 1.2,
-          windSpeed: 3.5
-        };
+        const response = await fetch(url, {
+          headers: {
+            "Authorization": `Basic ${authString}`
+          }
+        });
         
-        setWeather(mockWeatherData);
+        if (!response.ok) {
+          throw new Error(`Weather API responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Weather data received:", data);
+        
+        // Parse the response
+        const parsedData = parseWeatherData(data);
+        setWeather(parsedData);
       } catch (err) {
         console.error("Error fetching weather:", err);
         setError("Could not load weather data");
         
-        // Fallback data
+        // Fallback data in case of error
         setWeather({
           location: "Auvergne-Rhône-Alpes, France",
           temperature: 17,
@@ -75,6 +82,47 @@ export const WeatherWidget = () => {
     
     return () => clearInterval(intervalId);
   }, []);
+  
+  const parseWeatherData = (data: any): WeatherData => {
+    try {
+      // Extract the first data point (current weather)
+      const temperatureData = data.data[0].coordinates[0].dates[0].value;
+      const precipitationData = data.data[1].coordinates[0].dates[0].value;
+      const windSpeedData = data.data[2].coordinates[0].dates[0].value;
+      
+      // Determine condition based on temperature and precipitation
+      const condition = getWeatherConditionFromTemp(temperatureData, precipitationData);
+      
+      // Generate description based on condition and values
+      let description = "Clear skies";
+      if (precipitationData > 5) description = "Heavy rain";
+      else if (precipitationData > 1) description = "Light rain";
+      else if (precipitationData > 0.1) description = "Drizzle";
+      else if (temperatureData > 25) description = "Sunny and warm";
+      else if (temperatureData > 15) description = "Partly cloudy";
+      else if (temperatureData < 5) description = "Cold";
+      
+      return {
+        location: "Auvergne-Rhône-Alpes, France",
+        temperature: Math.round(temperatureData),
+        condition,
+        description,
+        precipitation: Math.round(precipitationData * 10) / 10,
+        windSpeed: Math.round(windSpeedData * 10) / 10
+      };
+    } catch (error) {
+      console.error("Error parsing weather data:", error);
+      // Return fallback data
+      return {
+        location: "Auvergne-Rhône-Alpes, France",
+        temperature: 17,
+        condition: "Clouds",
+        description: "Weather data unavailable",
+        precipitation: 0,
+        windSpeed: 0
+      };
+    }
+  };
 
   const getWeatherConditionFromTemp = (temp: number, precip: number): string => {
     if (precip > 5) return "Thunderstorm";
