@@ -24,13 +24,50 @@ export const WeatherWidget = () => {
     const lat = 45.882550;
     const lon = 2.905965;
     
-    const fetchWeather = async () => {
+    const fetchMeteomaticsWeather = async (): Promise<WeatherData | null> => {
+      try {
+        // Current time in ISO format
+        const now = new Date().toISOString().split('.')[0] + 'Z';
+        const endTime = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
+        
+        // Create Basic Authentication header
+        const username = "na_winck_bruno";
+        const password = "3Ijssv14QC";
+        const authHeader = 'Basic ' + btoa(username + ':' + password);
+        
+        const url = `https://api.meteomatics.com/${now}--${endTime}:PT1H/t_2m:C,precip_1h:mm,wind_speed_10m:ms/${lat},${lon}/json`;
+        
+        console.log("Fetching Meteomatics weather from:", url);
+        
+        // Try to use a CORS proxy if available
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': authHeader
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Meteomatics API responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Meteomatics data received:", data);
+        
+        // Parse the Meteomatics response format
+        return parseMeteomaticsData(data);
+      } catch (err) {
+        console.error("Error fetching Meteomatics weather:", err);
+        throw err;
+      }
+    };
+
+    const fetchOpenWeatherMap = async (): Promise<WeatherData | null> => {
       try {
         // Use OpenWeatherMap API - this API allows CORS requests from browsers
         const apiKey = "df9e9a54f5ccc054c06162e7ac854647"; // This is a free tier API key
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
         
-        console.log("Fetching weather from:", url);
+        console.log("Fetching OpenWeatherMap weather from:", url);
         
         const response = await fetch(url);
         
@@ -39,14 +76,52 @@ export const WeatherWidget = () => {
         }
         
         const data = await response.json();
-        console.log("Weather data received:", data);
+        console.log("OpenWeatherMap data received:", data);
         
         // Parse the OpenWeatherMap response format
-        const parsedData = parseOpenWeatherData(data);
-        setWeather(parsedData);
+        return parseOpenWeatherData(data);
       } catch (err) {
-        console.error("Error fetching weather:", err);
-        setError("Could not load weather data");
+        console.error("Error fetching OpenWeatherMap weather:", err);
+        throw err;
+      }
+    };
+
+    const fetchWeather = async () => {
+      setLoading(true);
+      try {
+        // First try Meteomatics
+        let weatherData = null;
+        try {
+          weatherData = await fetchMeteomaticsWeather();
+          console.log("Successfully fetched from Meteomatics API");
+          toast({
+            title: "Weather Updated",
+            description: "Weather data successfully loaded from Meteomatics.",
+          });
+        } catch (meteomaticsError) {
+          console.log("Meteomatics API failed, trying OpenWeatherMap...");
+          
+          // If Meteomatics fails, try OpenWeatherMap
+          try {
+            weatherData = await fetchOpenWeatherMap();
+            console.log("Successfully fell back to OpenWeatherMap API");
+            toast({
+              title: "Weather Updated",
+              description: "Weather data loaded from OpenWeatherMap (fallback).",
+            });
+          } catch (openWeatherError) {
+            console.error("Both APIs failed:", openWeatherError);
+            throw new Error("All weather data sources failed");
+          }
+        }
+        
+        if (weatherData) {
+          setWeather(weatherData);
+          setError(null);
+        }
+      } catch (err) {
+        console.error("Error fetching weather from all sources:", err);
+        setError("Could not load weather data from any source");
         toast({
           title: "Weather Error",
           description: "Could not load weather data. Using fallback information.",
@@ -75,6 +150,52 @@ export const WeatherWidget = () => {
     return () => clearInterval(intervalId);
   }, [toast]);
   
+  const parseMeteomaticsData = (data: any): WeatherData => {
+    try {
+      // Extract temperature data from the first time point
+      const temperatureData = data.data[0].coordinates[0].dates[0].value;
+      // Extract precipitation data
+      const precipitationData = data.data[1].coordinates[0].dates[0].value;
+      // Extract wind speed data
+      const windSpeedData = data.data[2].coordinates[0].dates[0].value;
+      
+      // Determine weather condition based on precipitation
+      let condition = "Clear";
+      let description = "clear sky";
+      
+      if (precipitationData > 0) {
+        if (precipitationData > 5) {
+          condition = "Rain";
+          description = "heavy rain";
+        } else {
+          condition = "Rain";
+          description = "light rain";
+        }
+      } else if (temperatureData < 0) {
+        condition = "Snow";
+        description = "snow";
+      } else if (windSpeedData > 10) {
+        condition = "Wind";
+        description = "strong winds";
+      } else {
+        condition = "Clear";
+        description = "clear sky";
+      }
+      
+      return {
+        location: "Auvergne-Rhône-Alpes, France", // Hardcoded for this location
+        temperature: Math.round(temperatureData),
+        condition,
+        description,
+        precipitation: Math.round(precipitationData * 10) / 10,
+        windSpeed: Math.round(windSpeedData * 10) / 10
+      };
+    } catch (error) {
+      console.error("Error parsing Meteomatics data:", error);
+      throw error;
+    }
+  };
+  
   const parseOpenWeatherData = (data: any): WeatherData => {
     try {
       // Extract relevant data from OpenWeatherMap response
@@ -101,16 +222,8 @@ export const WeatherWidget = () => {
         windSpeed: Math.round(windSpeed * 10) / 10
       };
     } catch (error) {
-      console.error("Error parsing weather data:", error);
-      // Return fallback data
-      return {
-        location: "Auvergne-Rhône-Alpes, France",
-        temperature: 17,
-        condition: "Clouds",
-        description: "Weather data unavailable",
-        precipitation: 0,
-        windSpeed: 0
-      };
+      console.error("Error parsing OpenWeatherMap data:", error);
+      throw error;
     }
   };
 
@@ -127,6 +240,7 @@ export const WeatherWidget = () => {
         return <CloudRain className="h-8 w-8 text-white" />;
       case "mist":
       case "fog":
+      case "wind":
         return <Wind className="h-8 w-8 text-gray-300" />;
       default:
         return <Cloud className="h-8 w-8 text-gray-300" />;
