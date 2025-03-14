@@ -9,9 +9,26 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger
+  SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton
 } from "@/components/ui/sidebar";
-import { Leaf, Calendar, Settings, TreeDeciduous, Flower, Cloud, Map, Shovel } from "lucide-react";
+import { 
+  Leaf, 
+  Calendar, 
+  Settings, 
+  TreeDeciduous, 
+  Flower, 
+  Cloud, 
+  Map, 
+  Shovel, 
+  FlowerIcon, 
+  LeafyGreen, 
+  TreePalm,
+  TreePine,
+  Sprout
+} from "lucide-react";
 
 export const GardenSidebar = () => {
   return (
@@ -37,6 +54,53 @@ export const GardenSidebar = () => {
               <Leaf className="h-5 w-5" />
               <span>Plants</span>
             </SidebarMenuButton>
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton>
+                  <LeafyGreen className="h-4 w-4" />
+                  <span>Vegetables</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton>
+                  <Flower className="h-4 w-4" />
+                  <span>Flowers</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton>
+                  <TreePine className="h-4 w-4" />
+                  <span>Trees</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton>
+                  <Sprout className="h-4 w-4" />
+                  <span>Herbs</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            </SidebarMenuSub>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Greenhouses">
+              <TreeDeciduous className="h-5 w-5" />
+              <span>Greenhouses</span>
+            </SidebarMenuButton>
+            <SidebarMenuSub>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton>
+                  <Sprout className="h-4 w-4" />
+                  <span>Seedling Mini Greenhouses</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                <SidebarMenuSubButton>
+                  <TreePalm className="h-4 w-4" />
+                  <span>Walk-in Greenhouses</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            </SidebarMenuSub>
           </SidebarMenuItem>
           
           <SidebarMenuItem>

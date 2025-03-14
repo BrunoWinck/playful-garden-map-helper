@@ -13,6 +13,7 @@ type PlantItem = {
   id: string;
   name: string;
   icon: string;
+  category: string;
   position?: { x: number; y: number; patchId?: string };
 };
 
@@ -84,14 +85,54 @@ const DraggablePlant = ({ plant }: { plant: PlantItem }) => {
 };
 
 const initialPlants: PlantItem[] = [
-  { id: "tomato", name: "Tomato", icon: "🍅" },
-  { id: "carrot", name: "Carrot", icon: "🥕" },
-  { id: "lettuce", name: "Lettuce", icon: "🥬" },
-  { id: "potato", name: "Potato", icon: "🥔" },
-  { id: "cucumber", name: "Cucumber", icon: "🥒" },
-  { id: "pepper", name: "Pepper", icon: "🫑" },
-  { id: "corn", name: "Corn", icon: "🌽" },
-  { id: "eggplant", name: "Eggplant", icon: "🍆" },
+  // Vegetables
+  { id: "tomato", name: "Tomato", icon: "🍅", category: "vegetable" },
+  { id: "carrot", name: "Carrot", icon: "🥕", category: "vegetable" },
+  { id: "lettuce", name: "Lettuce", icon: "🥬", category: "vegetable" },
+  { id: "potato", name: "Potato", icon: "🥔", category: "vegetable" },
+  { id: "cucumber", name: "Cucumber", icon: "🥒", category: "vegetable" },
+  { id: "pepper", name: "Pepper", icon: "🫑", category: "vegetable" },
+  { id: "corn", name: "Corn", icon: "🌽", category: "vegetable" },
+  { id: "eggplant", name: "Eggplant", icon: "🍆", category: "vegetable" },
+  { id: "broccoli", name: "Broccoli", icon: "🥦", category: "vegetable" },
+  { id: "onion", name: "Onion", icon: "🧅", category: "vegetable" },
+  { id: "garlic", name: "Garlic", icon: "🧄", category: "vegetable" },
+  { id: "pumpkin", name: "Pumpkin", icon: "🎃", category: "vegetable" },
+  { id: "avocado", name: "Avocado", icon: "🥑", category: "vegetable" },
+  
+  // Fruits
+  { id: "apple", name: "Apple", icon: "🍎", category: "fruit" },
+  { id: "pear", name: "Pear", icon: "🍐", category: "fruit" },
+  { id: "orange", name: "Orange", icon: "🍊", category: "fruit" },
+  { id: "lemon", name: "Lemon", icon: "🍋", category: "fruit" },
+  { id: "banana", name: "Banana", icon: "🍌", category: "fruit" },
+  { id: "watermelon", name: "Watermelon", icon: "🍉", category: "fruit" },
+  { id: "grapes", name: "Grapes", icon: "🍇", category: "fruit" },
+  { id: "strawberry", name: "Strawberry", icon: "🍓", category: "fruit" },
+  { id: "blueberry", name: "Blueberry", icon: "🫐", category: "fruit" },
+  { id: "peach", name: "Peach", icon: "🍑", category: "fruit" },
+  
+  // Herbs
+  { id: "basil", name: "Basil", icon: "🌿", category: "herb" },
+  { id: "mint", name: "Mint", icon: "🌱", category: "herb" },
+  { id: "rosemary", name: "Rosemary", icon: "🌿", category: "herb" },
+  { id: "thyme", name: "Thyme", icon: "🌱", category: "herb" },
+  { id: "cilantro", name: "Cilantro", icon: "🌿", category: "herb" },
+  { id: "sage", name: "Sage", icon: "🌱", category: "herb" },
+  
+  // Flowers
+  { id: "rose", name: "Rose", icon: "🌹", category: "flower" },
+  { id: "tulip", name: "Tulip", icon: "🌷", category: "flower" },
+  { id: "sunflower", name: "Sunflower", icon: "🌻", category: "flower" },
+  { id: "daisy", name: "Daisy", icon: "🌼", category: "flower" },
+  { id: "hibiscus", name: "Hibiscus", icon: "🌺", category: "flower" },
+  { id: "lotus", name: "Lotus", icon: "🪷", category: "flower" },
+  
+  // Greenhouses
+  { id: "mini-greenhouse", name: "Mini Greenhouse", icon: "🏕️", category: "greenhouse" },
+  { id: "seedling-tray", name: "Seedling Tray", icon: "🌱", category: "greenhouse" },
+  { id: "propagator", name: "Propagator", icon: "🪴", category: "greenhouse" },
+  { id: "indoor-garden", name: "Indoor Garden", icon: "🏡", category: "greenhouse" },
 ];
 
 // Colors for different patches
@@ -146,6 +187,17 @@ export const GardenMap = () => {
   useEffect(() => {
     localStorage.setItem('garden-planted-items', JSON.stringify(plantedItems));
   }, [plantedItems]);
+
+  // Filter state for plants
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Filtered plants based on category and search term
+  const filteredPlants = initialPlants.filter(plant => {
+    const matchesCategory = categoryFilter ? plant.category === categoryFilter : true;
+    const matchesSearch = plant.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   // Handle plant drop on a grid cell
   const handleDrop = (item: PlantItem, x: number, y: number, patchId: string) => {
@@ -246,10 +298,61 @@ export const GardenMap = () => {
         
         <div className="border-2 border-brown-300 bg-brown-100 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-green-800 mb-3">Available Plants</h3>
-          <div className="flex flex-wrap gap-4 justify-center bg-brown-200 p-3 rounded-lg">
-            {initialPlants.map((plant) => (
-              <DraggablePlant key={plant.id} plant={plant} />
-            ))}
+          
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button 
+              onClick={() => setCategoryFilter(null)} 
+              className={`px-3 py-1 rounded-full text-sm ${!categoryFilter ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+            >
+              All
+            </button>
+            <button 
+              onClick={() => setCategoryFilter('vegetable')} 
+              className={`px-3 py-1 rounded-full text-sm ${categoryFilter === 'vegetable' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+            >
+              Vegetables
+            </button>
+            <button 
+              onClick={() => setCategoryFilter('fruit')} 
+              className={`px-3 py-1 rounded-full text-sm ${categoryFilter === 'fruit' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+            >
+              Fruits
+            </button>
+            <button 
+              onClick={() => setCategoryFilter('herb')} 
+              className={`px-3 py-1 rounded-full text-sm ${categoryFilter === 'herb' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+            >
+              Herbs
+            </button>
+            <button 
+              onClick={() => setCategoryFilter('flower')} 
+              className={`px-3 py-1 rounded-full text-sm ${categoryFilter === 'flower' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+            >
+              Flowers
+            </button>
+            <button 
+              onClick={() => setCategoryFilter('greenhouse')} 
+              className={`px-3 py-1 rounded-full text-sm ${categoryFilter === 'greenhouse' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+            >
+              Greenhouses
+            </button>
+          </div>
+          
+          <input
+            type="text"
+            placeholder="Search plants..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 mb-4 border border-gray-300 rounded-md"
+          />
+          
+          <div className="flex flex-wrap gap-4 justify-center bg-brown-200 p-3 rounded-lg max-h-80 overflow-y-auto">
+            {filteredPlants.length > 0 ? 
+              filteredPlants.map((plant) => (
+                <DraggablePlant key={plant.id} plant={plant} />
+              )) : 
+              <p className="text-center w-full py-8 text-gray-500">No plants match your search.</p>
+            }
           </div>
         </div>
       </div>
