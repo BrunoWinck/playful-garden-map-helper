@@ -1,55 +1,84 @@
 
 import React from "react";
 import { WeatherWidget } from "./WeatherWidget";
-import { Button } from "@/components/ui/button";
-import { Leaf, Calendar, Settings, TreeDeciduous, Flower, Cloud } from "lucide-react";
+import { 
+  Sidebar, 
+  SidebarHeader, 
+  SidebarContent,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarTrigger
+} from "@/components/ui/sidebar";
+import { Leaf, Calendar, Settings, TreeDeciduous, Flower, Cloud, Map, Shovel } from "lucide-react";
 
 export const GardenSidebar = () => {
   return (
-    <div className="w-64 bg-green-800 text-white h-screen flex flex-col">
-      <div className="p-4 border-b border-green-700 flex items-center gap-2">
-        <TreeDeciduous className="h-6 w-6" />
-        <h2 className="text-2xl font-bold">Garden Planner</h2>
-      </div>
+    <Sidebar>
+      <SidebarHeader className="flex items-center gap-2 px-4 py-3">
+        <TreeDeciduous className="h-6 w-6 text-green-100" />
+        <h2 className="text-2xl font-bold text-white">Garden Planner</h2>
+        <div className="flex-1" />
+        <SidebarTrigger />
+      </SidebarHeader>
       
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          <li>
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-green-700">
-              <Leaf className="mr-2 h-5 w-5" />
-              Plants
-            </Button>
-          </li>
-          <li>
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-green-700">
-              <Flower className="mr-2 h-5 w-5" />
-              Seeds
-            </Button>
-          </li>
-          <li>
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-green-700">
-              <Calendar className="mr-2 h-5 w-5" />
-              Schedule
-            </Button>
-          </li>
-          <li>
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-green-700">
-              <Cloud className="mr-2 h-5 w-5" />
-              Climate
-            </Button>
-          </li>
-          <li>
-            <Button variant="ghost" className="w-full justify-start text-white hover:bg-green-700">
-              <Settings className="mr-2 h-5 w-5" />
-              Settings
-            </Button>
-          </li>
-        </ul>
-      </nav>
+      <SidebarContent>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Garden Map">
+              <Map className="h-5 w-5" />
+              <span>Garden Map</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Plants">
+              <Leaf className="h-5 w-5" />
+              <span>Plants</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Seeds">
+              <Flower className="h-5 w-5" />
+              <span>Seeds</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Tools">
+              <Shovel className="h-5 w-5" />
+              <span>Tools</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Schedule">
+              <Calendar className="h-5 w-5" />
+              <span>Schedule</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Climate">
+              <Cloud className="h-5 w-5" />
+              <span>Climate</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Settings">
+              <Settings className="h-5 w-5" />
+              <span>Settings</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarContent>
       
-      <div className="p-4 border-t border-green-700">
+      <SidebarFooter className="p-4 border-t border-green-700">
         <WeatherWidget />
-      </div>
-    </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 };
