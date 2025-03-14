@@ -6,6 +6,7 @@ import { CareSchedule } from "./CareSchedule";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { PatchManager } from "./PatchManager";
+import { WeatherWidget } from "./WeatherWidget";
 import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 
 export const GardenDashboard = () => {
@@ -43,6 +44,18 @@ export const GardenDashboard = () => {
               <p className="text-green-800">
                 <strong>New!</strong> Check out our Seedling Mini Greenhouses in the Greenhouses section. Perfect for starting your seeds indoors!
               </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="md:col-span-3">
+                <WeatherWidget />
+              </div>
+              <div className="md:col-span-1">
+                <div className="bg-green-700 rounded-lg p-3 text-white h-full">
+                  <h3 className="text-lg font-semibold mb-2">Garden Tips</h3>
+                  <p className="text-sm">Based on the current weather, today is ideal for watering your tomato plants and harvesting mature lettuce.</p>
+                </div>
+              </div>
             </div>
             
             <ResizablePanelGroup direction="horizontal" className="min-h-[500px] rounded-lg border">
