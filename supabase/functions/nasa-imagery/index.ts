@@ -38,13 +38,34 @@ serve(async (req) => {
     
     console.log(`Calling NASA API: ${url.replace(NASA_API_KEY, '[REDACTED]')}`);
     
+    // Add detailed request information to the response for debugging
+    const requestDetails = {
+      url: url.replace(NASA_API_KEY, '[REDACTED]'),
+      parameters: {
+        lat,
+        lon,
+        date: formattedDate,
+        dim: dimension
+      },
+      timestamp: new Date().toISOString()
+    };
+    
     const response = await fetch(url);
     console.log(`NASA API response status: ${response.status}`);
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`NASA API error: ${errorText}`);
-      throw new Error(`NASA API responded with status: ${response.status}. ${errorText}`);
+      
+      return new Response(JSON.stringify({
+        status: "ERROR",
+        error: `NASA API responded with status: ${response.status}. ${errorText}`,
+        request: requestDetails,
+        timestamp: new Date().toISOString(),
+      }), {
+        status: response.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     // We're either getting JSON or an image
@@ -52,25 +73,38 @@ serve(async (req) => {
     
     if (contentType?.includes('application/json')) {
       const data = await response.json();
-      console.log("NASA API JSON response received");
-      return new Response(JSON.stringify(data), {
+      console.log("NASA API JSON response received:", data);
+      
+      return new Response(JSON.stringify({
+        status: "SUCCESS",
+        data,
+        request: requestDetails,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } else if (contentType?.includes('image')) {
-      // For images, pass them through
-      const imageBlob = await response.blob();
-      console.log(`NASA API image received (${imageBlob.size} bytes)`);
+      // For images, pass the URL through instead of the binary data
+      console.log(`NASA API image received with content type: ${contentType}`);
       
-      return new Response(imageBlob, {
-        headers: { ...corsHeaders, 'Content-Type': contentType },
+      // Return the URL for the client to fetch directly
+      return new Response(JSON.stringify({
+        status: "SUCCESS",
+        url: url,
+        contentType,
+        request: requestDetails,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } else {
       console.log(`Unexpected content type: ${contentType}`);
       const responseText = await response.text();
+      
       return new Response(JSON.stringify({
+        status: "UNEXPECTED_RESPONSE",
         url: url.replace(NASA_API_KEY, '[REDACTED]'),
         contentType,
-        data: responseText
+        responseText: responseText.slice(0, 500) + (responseText.length > 500 ? '...' : ''),
+        request: requestDetails,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -81,6 +115,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       status: "ERROR",
       error: error.message,
+      stack: error.stack,
       timestamp: new Date().toISOString(),
     }), {
       status: 500,
