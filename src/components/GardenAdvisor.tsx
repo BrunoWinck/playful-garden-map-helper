@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +10,6 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { GlossaryTerm } from "./GlossaryPanel";
 import { remarkGlossarySyntax, remarkTaskSyntax } from "@/utils/remarkPlugins";
-import { visit } from "unist-util-visit";
 
 interface GardenState {
   patches: any[];
