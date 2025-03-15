@@ -9,11 +9,26 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS request (CORS preflight)");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { lat, lon } = await req.json();
+    console.log("Request headers:", JSON.stringify(Object.fromEntries([...req.headers])));
+    
+    const bodyText = await req.text();
+    console.log("Raw request body:", bodyText);
+    
+    let lat, lon;
+    try {
+      const body = JSON.parse(bodyText);
+      lat = body.lat;
+      lon = body.lon;
+      console.log(`Parsed coordinates: lat=${lat}, lon=${lon}`);
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      throw new Error(`Failed to parse request body: ${parseError.message}`);
+    }
     
     if (!lat || !lon) {
       throw new Error('Latitude and longitude are required');
@@ -57,6 +72,8 @@ serve(async (req) => {
       }
     });
     
+    console.log("Meteomatics API response status:", response.status);
+    
     if (!response.ok) {
       const statusCode = response.status;
       console.error(`Meteomatics API responded with status: ${statusCode}`);
@@ -88,7 +105,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: false,
       error: error.message || "An unknown error occurred",
-      status: "ERROR"
+      status: "ERROR",
+      timestamp: new Date().toISOString(),
+      details: {
+        errorObject: String(error),
+        stack: error.stack
+      }
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

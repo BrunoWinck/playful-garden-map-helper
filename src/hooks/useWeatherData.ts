@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { computeSunriseSunset, utcToLocalTime } from "@/lib/solarCalculations";
+import { supabase } from "@/integrations/supabase/client";
 
 // Types
 export interface ForecastDay {
@@ -48,6 +49,8 @@ export const useWeatherData = () => {
       setError(null);
       
       try {
+        console.log("Starting to fetch weather data...");
+        
         // Get location from settings instead of using geolocation API
         const settingsData = localStorage.getItem("gardenSettings");
         let latitude = 45.882550; // Default coordinates if settings not found
@@ -55,50 +58,64 @@ export const useWeatherData = () => {
         
         if (settingsData) {
           try {
+            console.log("Garden settings found:", settingsData);
             const settings = JSON.parse(settingsData);
             if (settings.location) {
+              console.log("Location from settings:", settings.location);
               const [lat, lon] = settings.location.split(',').map(coord => parseFloat(coord.trim()));
               if (!isNaN(lat) && !isNaN(lon)) {
                 latitude = lat;
                 longitude = lon;
+                console.log("Using coordinates from settings:", latitude, longitude);
               }
             }
           } catch (parseError) {
             console.error('Error parsing settings:', parseError);
           }
+        } else {
+          console.log("No garden settings found, using default coordinates");
+        }
+
+        console.log("Final coordinates being used:", latitude, longitude);
+        
+        // Call the Supabase Edge Function for weather data using the SDK
+        console.log("Calling weather-proxy edge function with coordinates:", { lat: latitude, lon: longitude });
+        
+        // Use supabase client for proper authorization
+        const { data: functionData, error: functionError } = await supabase.functions.invoke('weather-proxy', {
+          body: { lat: latitude, lon: longitude }
+        });
+        
+        if (functionError) {
+          console.error("Edge function error:", functionError);
+          throw new Error(`Weather API error: ${functionError.message}`);
         }
         
-        // Call the Supabase Edge Function for weather data
-        const response = await fetch(
-          'https://uumgewfrulrhiqnfeoas.supabase.co/functions/v1/weather-proxy',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ lat: latitude, lon: longitude }),
-          }
-        );
+        console.log("Edge function response received:", functionData ? "Data received" : "No data");
         
-        if (!response.ok) {
-          throw new Error(`Weather API responded with status: ${response.status}`);
+        if (!functionData) {
+          throw new Error("Weather API returned empty response");
         }
         
-        const data = await response.json();
-        
-        if (data.status === 'ERROR') {
-          throw new Error(data.error || 'Unknown error fetching weather data');
+        if (functionData.status === 'ERROR') {
+          console.error("Weather API returned error:", functionData.error);
+          throw new Error(functionData.error || 'Unknown error fetching weather data');
         }
         
         // Process the Meteomatics data
-        const processedData = processWeatherData(data, latitude, longitude);
+        console.log("Processing weather data...");
+        const processedData = processWeatherData(functionData, latitude, longitude);
+        console.log("Weather data processed successfully");
+        
         setWeather(processedData);
+        console.log("Weather state updated with processed data");
         
       } catch (apiError) {
         console.error('Error fetching weather data:', apiError);
-        setError('Failed to fetch weather data. Please try again later.');
+        setError(`Failed to fetch weather data: ${apiError.message}`);
       } finally {
         setLoading(false);
+        console.log("Weather data loading completed");
       }
     };
     
@@ -111,44 +128,61 @@ export const useWeatherData = () => {
 // Helper function to process raw weather data
 const processWeatherData = (apiData: any, latitude: number, longitude: number): WeatherData => {
   try {
+    console.log("Processing weather data with raw data:", 
+      apiData ? "Data available" : "No data",
+      "latitude:", latitude,
+      "longitude:", longitude
+    );
+    
     // Extract coordinates if available
     const coords = apiData.coordinates || { latitude, longitude };
+    console.log("Using coordinates:", coords);
     
     // Extract temperature data (first value from time series)
     // Fix: Use bracket notation for properties with special characters
     const tempData = apiData.data["t_2m:C"]?.coordinates[0]?.dates[0] || {};
     const temp = Math.round(tempData.value || 20);
+    console.log("Temperature data:", tempData, "Processed temp:", temp);
     
     // Extract precipitation data
     const precipData = apiData.data["precip_1h:mm"]?.coordinates[0]?.dates[0] || {};
     const precip = Math.round(precipData.value * 10) / 10 || 0;
+    console.log("Precipitation data:", precipData, "Processed precip:", precip);
     
     // Extract wind speed data
     const windData = apiData.data["wind_speed_10m:ms"]?.coordinates[0]?.dates[0] || {};
     const windSpeed = Math.round(windData.value || 0);
+    console.log("Wind data:", windData, "Processed wind speed:", windSpeed);
     
     // Extract weather symbol
     const symbolData = apiData.data["weather_symbol_1h:idx"]?.coordinates[0]?.dates[0] || {};
     const symbolValue = symbolData.value || 1;
+    console.log("Symbol data:", symbolData, "Symbol value:", symbolValue);
     
     // Map symbol code to condition and description
     const { condition, description } = getWeatherCondition(symbolValue);
+    console.log("Mapped condition:", condition, "description:", description);
     
     // Extract UV index
     const uvData = apiData.data["uv:idx"]?.coordinates[0]?.dates[0] || {};
     const uvIndex = Math.round(uvData.value || 0);
+    console.log("UV data:", uvData, "Processed UV index:", uvIndex);
     
     // Extract humidity data
     const humidityData = apiData.data["relative_humidity_2m:p"]?.coordinates[0]?.dates[0] || {};
     const humidity = Math.round(humidityData.value || 50);
+    console.log("Humidity data:", humidityData, "Processed humidity:", humidity);
     
     // Calculate sunrise and sunset using our utility
     const now = new Date();
+    console.log("Calculating sunrise/sunset for date:", now);
     const { sunrise, sunset } = computeSunriseSunset(now, latitude, longitude);
+    console.log("Computed sunrise (UTC):", sunrise, "sunset (UTC):", sunset);
     
     // Convert UTC times to local timezone
     const localSunrise = utcToLocalTime(sunrise);
     const localSunset = utcToLocalTime(sunset);
+    console.log("Local sunrise:", localSunrise, "Local sunset:", localSunset);
     
     // Calculate day duration
     const riseHour = parseInt(localSunrise.split(':')[0]);
@@ -165,8 +199,9 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
     }
     
     const dayDuration = `${dayHours}h ${dayMins}m`;
+    console.log("Calculated day duration:", dayDuration);
     
-    return {
+    const result = {
       location: "Your Location", // We could do reverse geocoding for the actual name
       temperature: temp,
       condition,
@@ -179,6 +214,9 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
       dayDuration,
       humidity
     };
+    
+    console.log("Final processed weather data:", result);
+    return result;
   } catch (error) {
     console.error('Error processing weather data:', error);
     return {
