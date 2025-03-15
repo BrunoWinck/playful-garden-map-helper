@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Cloud, Sun, CloudRain, Umbrella, Wind, Thermometer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WeatherData {
   location: string;
@@ -24,39 +24,25 @@ export const WeatherWidget = () => {
     const lat = 45.882550;
     const lon = 2.905965;
     
-    const fetchMeteomaticsWeather = async (): Promise<WeatherData | null> => {
+    const fetchMeteomaticsWeatherViaEdgeFunction = async (): Promise<WeatherData | null> => {
       try {
-        // Current time in ISO format
-        const now = new Date().toISOString().split('.')[0] + 'Z';
-        const endTime = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
+        console.log("Fetching Meteomatics weather via edge function");
         
-        // Create Basic Authentication header
-        const username = "na_winck_bruno";
-        const password = "3Ijssv14QC";
-        const authHeader = 'Basic ' + btoa(username + ':' + password);
-        
-        const url = `https://api.meteomatics.com/${now}--${endTime}:PT1H/t_2m:C,precip_1h:mm,wind_speed_10m:ms/${lat},${lon}/json`;
-        
-        console.log("Fetching Meteomatics weather from:", url);
-        
-        // Try to use a CORS proxy if available
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': authHeader
-          }
+        const { data, error } = await supabase.functions.invoke('weather-proxy', {
+          body: { lat, lon }
         });
         
-        if (!response.ok) {
-          throw new Error(`Meteomatics API responded with status: ${response.status}`);
+        if (error) {
+          console.error("Edge function error:", error);
+          throw new Error(error.message);
         }
         
-        const data = await response.json();
-        console.log("Meteomatics data received:", data);
+        console.log("Edge function returned data:", data);
         
         // Parse the Meteomatics response format
         return parseMeteomaticsData(data);
       } catch (err) {
-        console.error("Error fetching Meteomatics weather:", err);
+        console.error("Error fetching Meteomatics weather via edge function:", err);
         throw err;
       }
     };
@@ -64,7 +50,7 @@ export const WeatherWidget = () => {
     const fetchOpenWeatherMap = async (): Promise<WeatherData | null> => {
       try {
         // Use OpenWeatherMap API - this API allows CORS requests from browsers
-        const apiKey = "df9e9a54f5ccc054c06162e7ac854647"; // This is a free tier API key
+        const apiKey = "df9e9a54f5ccc054c06162e7ac854647"; 
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
         
         console.log("Fetching OpenWeatherMap weather from:", url);
@@ -89,11 +75,11 @@ export const WeatherWidget = () => {
     const fetchWeather = async () => {
       setLoading(true);
       try {
-        // First try Meteomatics
+        // First try Meteomatics via the edge function
         let weatherData = null;
         try {
-          weatherData = await fetchMeteomaticsWeather();
-          console.log("Successfully fetched from Meteomatics API");
+          weatherData = await fetchMeteomaticsWeatherViaEdgeFunction();
+          console.log("Successfully fetched from Meteomatics API via edge function");
           toast({
             title: "Weather Updated",
             description: "Weather data successfully loaded from Meteomatics.",
