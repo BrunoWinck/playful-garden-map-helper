@@ -21,7 +21,7 @@ serve(async (req) => {
   try {
     const { message, gardenState } = await req.json();
     console.log("Received message:", message);
-    console.log("Garden state:", gardenState);
+    console.log("Garden state:", JSON.stringify(gardenState).substring(0, 200) + "...");
     
     // Prepare system prompt with garden context
     const systemPrompt = `You are a knowledgeable garden advisor specialized in gardening, plants, and sustainable practices.
@@ -35,6 +35,8 @@ Consider:
 - Plant types in the garden and their growth stages
 - Seasonal factors
 - Sustainable practices
+
+Keep your responses concise and to the point. Focus on providing actionable advice that considers the current weather and location data provided.
 
 Keep your responses focused on gardening topics. If the user asks about non-gardening topics, politely redirect them to gardening-related questions.`;
 
@@ -52,7 +54,7 @@ Keep your responses focused on gardening topics. If the user asks about non-gard
           { role: "user", content: message }
         ],
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 800, // Reduced for more concise responses
       })
     });
 
@@ -63,7 +65,7 @@ Keep your responses focused on gardening topics. If the user asks about non-gard
     }
 
     const data = await response.json();
-    console.log("Mistral API response:", data);
+    console.log("Mistral API response received");
     
     return new Response(JSON.stringify({
       response: data.choices[0].message.content,

@@ -14,6 +14,7 @@ interface GardenState {
   patches: any[];
   plantedItems: Record<string, any[]>;
   weather?: any;
+  location?: string;
 }
 
 interface Message {
@@ -24,15 +25,7 @@ interface Message {
 }
 
 export const GardenAdvisor = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "Hello! I'm your garden advisor. I can help with plant care, pest management, garden planning, and more. How can I assist you today?",
-      timestamp: new Date()
-    }
-  ]);
-  
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [gardenState, setGardenState] = useState<GardenState>({
@@ -40,6 +33,7 @@ export const GardenAdvisor = () => {
     plantedItems: {}
   });
   const [dailyTipShown, setDailyTipShown] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -50,13 +44,24 @@ export const GardenAdvisor = () => {
       const storedPlantedItems = localStorage.getItem('garden-planted-items');
       const weather = JSON.parse(localStorage.getItem('weather-data') || '{}');
       
+      // Get location from settings
+      let location = "Unknown location";
+      const savedSettings = localStorage.getItem("gardenSettings");
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        if (settings.location) {
+          location = settings.location;
+        }
+      }
+      
       const patches = storedPatches ? JSON.parse(storedPatches) : [];
       const plantedItems = storedPlantedItems ? JSON.parse(storedPlantedItems) : {};
       
       setGardenState({
         patches,
         plantedItems,
-        weather
+        weather,
+        location
       });
       
       // Check if we should show a daily tip
@@ -64,13 +69,19 @@ export const GardenAdvisor = () => {
       const shouldShowTip = !lastTipTimestamp || 
         (Date.now() - parseInt(lastTipTimestamp, 10)) > 24 * 60 * 60 * 1000;
       
-      if (shouldShowTip && !dailyTipShown) {
-        getDailyTip();
+      if (!initialized) {
+        // Initialize the advisor with contextual information
+        initializeAdvisor(patches, plantedItems, weather, location);
+        setInitialized(true);
+        
+        if (shouldShowTip && !dailyTipShown) {
+          getDailyTip();
+        }
       }
     } catch (error) {
       console.error("Error loading garden state:", error);
     }
-  }, []);
+  }, [initialized, dailyTipShown]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -79,6 +90,85 @@ export const GardenAdvisor = () => {
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const initializeAdvisor = async (patches: any[], plantedItems: Record<string, any[]>, weather: any, location: string) => {
+    // Add initial welcome message
+    const welcomeMessage: Message = {
+      id: "welcome",
+      role: "assistant",
+      content: "Hello! I'm your garden advisor. I can help with plant care, pest management, garden planning, and more. How can I assist you today?",
+      timestamp: new Date()
+    };
+    
+    setMessages([welcomeMessage]);
+    
+    // If we have weather data and location, send a context message to the AI
+    if (weather && weather.data && location) {
+      try {
+        const weatherSummary = summarizeWeather(weather);
+        const contextMessage = `I'm analyzing your garden at ${location} with current weather: ${weatherSummary}`;
+        
+        const { data, error } = await supabase.functions.invoke('garden-advisor', {
+          body: { 
+            message: "Please acknowledge this context information silently without responding directly to me. Just use it to inform your future advice.",
+            gardenState: {
+              patches,
+              plantedItems,
+              weather,
+              location
+            }
+          }
+        });
+        
+        if (error) {
+          console.error("Error initializing context:", error);
+        } else {
+          console.log("Successfully initialized garden advisor with context");
+        }
+      } catch (error) {
+        console.error("Error sending context to advisor:", error);
+      }
+    }
+  };
+  
+  const summarizeWeather = (weather: any): string => {
+    if (!weather || !weather.data || !weather.data.length) {
+      return "unknown weather conditions";
+    }
+    
+    try {
+      // Get current temperature and precipitation from the first data point
+      const tempData = weather.data.find((item: any) => item.parameter === "t_2m:C");
+      const precipData = weather.data.find((item: any) => item.parameter === "precip_1h:mm");
+      const windData = weather.data.find((item: any) => item.parameter === "wind_speed_10m:ms");
+      
+      let summary = "";
+      
+      if (tempData && tempData.coordinates[0].dates[0]) {
+        const temp = tempData.coordinates[0].dates[0].value;
+        summary += `${temp.toFixed(1)}°C`;
+      }
+      
+      if (precipData && precipData.coordinates[0].dates[0]) {
+        const precip = precipData.coordinates[0].dates[0].value;
+        if (precip > 0) {
+          summary += `, ${precip.toFixed(1)}mm precipitation`;
+        } else {
+          summary += ", no precipitation";
+        }
+      }
+      
+      if (windData && windData.coordinates[0].dates[0]) {
+        const wind = windData.coordinates[0].dates[0].value;
+        summary += `, wind ${wind.toFixed(1)}m/s`;
+      }
+      
+      return summary;
+    } catch (error) {
+      console.error("Error summarizing weather:", error);
+      return "unknown weather conditions";
+    }
   };
   
   const getDailyTip = async () => {
