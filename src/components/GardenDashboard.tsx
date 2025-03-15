@@ -20,7 +20,7 @@ export const GardenDashboard = () => {
         <GardenSidebar />
         <main className="flex-1 overflow-y-auto bg-green-50">
           <div className="max-w-7xl mx-auto p-4">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
               <h1 className="text-3xl font-bold text-green-800">Your Playful Garden</h1>
               
               <div className="flex items-center gap-4">
@@ -52,16 +52,13 @@ export const GardenDashboard = () => {
               </div>
             </div>
             
-            {/* Empty banner kept for future urgent notifications */}
-            <div className="bg-green-100 p-4 rounded-lg mb-6 border border-green-200 hidden">
-              {/* Content removed as requested - will be used for urgent notifications only */}
+            {/* Enhanced Weather Widget with full width */}
+            <div className="mb-4">
+              <WeatherWidget />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="md:col-span-2">
-                <WeatherWidget />
-              </div>
-              <div className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="md:col-span-3">
                 <GardenAdvisor />
               </div>
             </div>

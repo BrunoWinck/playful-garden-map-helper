@@ -23,14 +23,16 @@ serve(async (req) => {
 
     // Current time in ISO format
     const now = new Date().toISOString().split('.')[0] + 'Z';
-    const endTime = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
+    // For forecast data - get 7 days
+    const endTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
     
     // Create Basic Authentication header
     const username = "na_winck_bruno";
     const password = "3Ijssv14QC";
     const authHeader = 'Basic ' + btoa(username + ':' + password);
     
-    const url = `https://api.meteomatics.com/${now}--${endTime}:PT1H/t_2m:C,precip_1h:mm,wind_speed_10m:ms/${lat},${lon}/json`;
+    // Expanded parameters to get more forecast data
+    const url = `https://api.meteomatics.com/${now}--${endTime}:PT3H/t_2m:C,precip_1h:mm,wind_speed_10m:ms,weather_symbol_1h:idx/${lat},${lon}/json`;
     
     console.log("Proxying request to Meteomatics:", url);
     
