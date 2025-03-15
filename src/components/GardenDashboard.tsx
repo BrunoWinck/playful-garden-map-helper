@@ -9,6 +9,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { PatchManager } from "./PatchManager";
 import { WeatherWidget } from "./WeatherWidget";
 import { GardenAdvisor } from "./GardenAdvisor";
+import { NasaSatelliteView } from "./NasaSatelliteView";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -52,9 +53,14 @@ export const GardenDashboard = () => {
               </div>
             </div>
             
-            {/* Enhanced Weather Widget with full width */}
-            <div className="mb-4">
-              <WeatherWidget />
+            {/* Weather and Satellite View */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <WeatherWidget />
+              </div>
+              <div>
+                <NasaSatelliteView />
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
