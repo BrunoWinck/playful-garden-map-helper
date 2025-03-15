@@ -23,17 +23,12 @@ export function remarkGlossarySyntax() {
             newChildren.push({ type: "text", value: node.value.slice(lastIndex, matchIndex) });
           }
 
-          // Insert custom glossary term node
+          // Insert custom glossary term node using the element type structure
           const glossaryNode = {
-            type: "glossaryTerm",
-            value: termText.trim(), // Trim whitespace from the term
-            data: {
-              hName: 'span',
-              hProperties: {
-                className: 'glossary-term',
-                dataValue: termText.trim(),
-              },
-            },
+            type: "element",
+            tagName: "glossaryTerm",
+            properties: {},
+            children: [{ type: "text", value: termText.trim() }]
           };
           
           console.log("Pushing glossaryTerm node:", glossaryNode);
@@ -77,17 +72,12 @@ export function remarkTaskSyntax() {
             newChildren.push({ type: "text", value: node.value.slice(lastIndex, matchIndex) });
           }
 
-          // Insert custom task node
+          // Insert custom task node using the element type structure
           const taskNode = {
-            type: "taskItem",
-            value: taskText.trim(), // Trim whitespace from the task
-            data: {
-              hName: 'span',
-              hProperties: {
-                className: 'task-item',
-                dataValue: taskText.trim(),
-              },
-            },
+            type: "element",
+            tagName: "taskItem",
+            properties: {},
+            children: [{ type: "text", value: taskText.trim() }]
           };
           
           console.log("Pushing taskItem node:", taskNode);
