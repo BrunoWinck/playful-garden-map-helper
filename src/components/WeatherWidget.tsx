@@ -52,55 +52,56 @@ export const WeatherWidget: React.FC = () => {
       setError(null);
       
       try {
-        // Get user's current location
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            try {
-              const { latitude, longitude } = position.coords;
-              
-              // Call the Supabase Edge Function for weather data
-              const response = await fetch(
-                'https://jlcnjcbjxtnzmwnbmgzr.supabase.co/functions/v1/weather-proxy',
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ lat: latitude, lon: longitude }),
-                }
-              );
-              
-              if (!response.ok) {
-                throw new Error(`Weather API responded with status: ${response.status}`);
+        // Get location from settings instead of using geolocation API
+        const settingsData = localStorage.getItem("gardenSettings");
+        let latitude = 45.882550; // Default coordinates if settings not found
+        let longitude = 2.905965;
+        
+        if (settingsData) {
+          try {
+            const settings = JSON.parse(settingsData);
+            if (settings.location) {
+              const [lat, lon] = settings.location.split(',').map(coord => parseFloat(coord.trim()));
+              if (!isNaN(lat) && !isNaN(lon)) {
+                latitude = lat;
+                longitude = lon;
               }
-              
-              const data = await response.json();
-              
-              if (data.status === 'ERROR') {
-                throw new Error(data.error || 'Unknown error fetching weather data');
-              }
-              
-              // Process the Meteomatics data
-              const processedData = processWeatherData(data, latitude, longitude);
-              setWeather(processedData);
-              
-            } catch (apiError) {
-              console.error('Error fetching weather data:', apiError);
-              setError('Failed to fetch weather data. Please try again later.');
-            } finally {
-              setLoading(false);
             }
-          },
-          (geoError) => {
-            console.error('Geolocation error:', geoError);
-            setError('Unable to get your location. Please enable location services and try again.');
-            setLoading(false);
-          },
-          { timeout: 10000 }
+          } catch (parseError) {
+            console.error('Error parsing settings:', parseError);
+          }
+        }
+        
+        // Call the Supabase Edge Function for weather data
+        const response = await fetch(
+          'https://jlcnjcbjxtnzmwnbmgzr.supabase.co/functions/v1/weather-proxy',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ lat: latitude, lon: longitude }),
+          }
         );
-      } catch (e) {
-        console.error('Unexpected error:', e);
-        setError('An unexpected error occurred.');
+        
+        if (!response.ok) {
+          throw new Error(`Weather API responded with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'ERROR') {
+          throw new Error(data.error || 'Unknown error fetching weather data');
+        }
+        
+        // Process the Meteomatics data
+        const processedData = processWeatherData(data, latitude, longitude);
+        setWeather(processedData);
+        
+      } catch (apiError) {
+        console.error('Error fetching weather data:', apiError);
+        setError('Failed to fetch weather data. Please try again later.');
+      } finally {
         setLoading(false);
       }
     };
