@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,7 +60,7 @@ export const GardenAdvisor = () => {
           console.log("Loaded chat history:", formattedMessages.length, "messages");
         } else {
           const welcomeMessage: Message = {
-            id: "welcome",
+            id: crypto.randomUUID(),
             role: "assistant",
             content: "Hello! I'm your garden advisor. I can help with plant care, pest management, garden planning, and more. How can I assist you today?",
             timestamp: new Date()
@@ -73,8 +74,12 @@ export const GardenAdvisor = () => {
         }
       } catch (error) {
         console.error("Error fetching chat history:", error);
+        toast.error("Couldn't load your chat history. Please try again later.", {
+          duration: 30000,
+          important: true,
+        });
         setMessages([{
-          id: "welcome",
+          id: crypto.randomUUID(),
           role: "assistant",
           content: "Hello! I'm your garden advisor. I can help with plant care, pest management, garden planning, and more. How can I assist you today?",
           timestamp: new Date()
@@ -89,6 +94,10 @@ export const GardenAdvisor = () => {
   
   const storeMessage = async (message: Message) => {
     try {
+      console.log("Storing message:", message);
+      console.log("Message ID:", message.id);
+      console.log("Message ID type:", typeof message.id);
+      
       const { error } = await supabase.from('advisor_chats').insert({
         id: message.id,
         role: message.role,
@@ -100,7 +109,7 @@ export const GardenAdvisor = () => {
       if (error) {
         console.error(`Error storing ${message.role} message:`, error);
         toast.error(`Failed to save the message due to: ${error.message}`, {
-          duration: 8000,
+          duration: 30000,
           important: true,
         });
         
@@ -115,7 +124,7 @@ export const GardenAdvisor = () => {
     } catch (err) {
       console.error("Exception when storing message:", err);
       toast.error("An error occurred while saving your message", {
-        duration: 8000,
+        duration: 30000,
         important: true,
       });
       return false;
@@ -290,7 +299,7 @@ export const GardenAdvisor = () => {
       
       if (data && data.success) {
         const tipMessage: Message = {
-          id: `tip-${Date.now()}`,
+          id: crypto.randomUUID(),
           role: "assistant",
           content: data.response,
           timestamp: new Date()
@@ -305,7 +314,9 @@ export const GardenAdvisor = () => {
       }
     } catch (error) {
       console.error("Error getting daily tip:", error);
-      toast.error("Couldn't get your daily gardening tip. Please try again later.");
+      toast.error("Couldn't get your daily gardening tip. Please try again later.", {
+        duration: 30000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -317,7 +328,7 @@ export const GardenAdvisor = () => {
     if (!input.trim() || isLoading) return;
     
     const userMessage: Message = {
-      id: `user-${Date.now()}`,
+      id: crypto.randomUUID(),
       role: "user",
       content: input,
       timestamp: new Date()
@@ -332,7 +343,7 @@ export const GardenAdvisor = () => {
       
       if (!userMessageStored) {
         toast("Continuing without saving your message", {
-          duration: 5000,
+          duration: 30000,
         });
       }
       
@@ -349,7 +360,7 @@ export const GardenAdvisor = () => {
       
       if (data && data.success) {
         const assistantMessage: Message = {
-          id: `assistant-${Date.now()}`,
+          id: crypto.randomUUID(),
           role: "assistant",
           content: data.response,
           timestamp: new Date()
@@ -361,7 +372,7 @@ export const GardenAdvisor = () => {
         
         if (!assistantMessageStored) {
           toast("The AI response won't be saved to your history", {
-            duration: 5000,
+            duration: 30000,
           });
         }
       } else {
@@ -370,12 +381,12 @@ export const GardenAdvisor = () => {
     } catch (error) {
       console.error("Error querying garden advisor:", error);
       toast.error("Couldn't connect to the garden advisor. Please try again later.", {
-        duration: 8000,
+        duration: 30000,
         important: true,
       });
       
       const errorMessage: Message = {
-        id: `error-${Date.now()}`,
+        id: crypto.randomUUID(),
         role: "system",
         content: "Sorry, I couldn't process your request. Please try again later.",
         timestamp: new Date()
