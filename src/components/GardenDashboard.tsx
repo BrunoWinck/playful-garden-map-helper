@@ -9,6 +9,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { PatchManager } from "./PatchManager";
 import { WeatherWidget } from "./WeatherWidget";
 import { GardenAdvisor } from "./GardenAdvisor";
+import { GlossaryPanel } from "./GlossaryPanel";
 import { NasaSatelliteView } from "./NasaSatelliteView";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
@@ -63,9 +64,13 @@ export const GardenDashboard = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Garden Advisor and Glossary */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div className="md:col-span-3">
                 <GardenAdvisor />
+              </div>
+              <div className="md:col-span-1">
+                <GlossaryPanel />
               </div>
             </div>
             
