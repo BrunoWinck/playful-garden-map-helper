@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
@@ -106,9 +105,7 @@ export const TasksContent: React.FC = () => {
       // Revert changes in case of error
       setTasks(prev => 
         prev.map(task => 
-          task.id === taskId 
-            ? { ...task, completed: taskToUpdate.completed } 
-            : task
+          task.id === taskId ? { ...task, completed: tasks.find(t => t.id === taskId)?.completed || false } : task
         )
       );
     }
