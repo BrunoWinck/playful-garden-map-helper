@@ -40,9 +40,11 @@ export const GardenAdvisor = () => {
   useEffect(() => {
     const fetchChatHistory = async () => {
       try {
+        setIsLoadingHistory(true);
         const { data, error } = await supabase
           .from('advisor_chats')
           .select('*')
+          .eq('user_id', ANONYMOUS_USER_ID)
           .order('timestamp', { ascending: true });
           
         if (error) throw error;
@@ -57,6 +59,7 @@ export const GardenAdvisor = () => {
           }));
           
           setMessages(formattedMessages);
+          console.log("Loaded chat history:", formattedMessages.length, "messages");
         } else {
           // If no history, add a welcome message
           const welcomeMessage: Message = {
@@ -73,8 +76,10 @@ export const GardenAdvisor = () => {
             role: welcomeMessage.role,
             content: welcomeMessage.content,
             timestamp: welcomeMessage.timestamp.toISOString(),
-            user_id: ANONYMOUS_USER_ID // Add the user ID
+            user_id: ANONYMOUS_USER_ID
           });
+          
+          console.log("No chat history found, created welcome message");
         }
       } catch (error) {
         console.error("Error fetching chat history:", error);
@@ -324,12 +329,17 @@ export const GardenAdvisor = () => {
     
     try {
       // Store user message in database
-      await supabase.from('advisor_chats').insert({
+      const { error: insertError } = await supabase.from('advisor_chats').insert({
         role: userMessage.role,
         content: userMessage.content,
         timestamp: userMessage.timestamp.toISOString(),
-        user_id: ANONYMOUS_USER_ID // Add the user ID
+        user_id: ANONYMOUS_USER_ID
       });
+      
+      if (insertError) {
+        console.error("Error storing user message:", insertError);
+        toast.error("Failed to save your message, but will try to get a response.");
+      }
       
       // Get response from garden advisor
       const { data, error } = await supabase.functions.invoke('garden-advisor', {
@@ -355,12 +365,17 @@ export const GardenAdvisor = () => {
         setMessages(prev => [...prev, assistantMessage]);
         
         // Store assistant message in database
-        await supabase.from('advisor_chats').insert({
+        const { error: responseError } = await supabase.from('advisor_chats').insert({
           role: assistantMessage.role,
           content: assistantMessage.content,
           timestamp: assistantMessage.timestamp.toISOString(),
-          user_id: ANONYMOUS_USER_ID // Add the user ID
+          user_id: ANONYMOUS_USER_ID
         });
+        
+        if (responseError) {
+          console.error("Error storing assistant message:", responseError);
+          toast.error("Failed to save the AI response to your history.");
+        }
       } else {
         throw new Error("Received invalid response from garden advisor");
       }
@@ -383,7 +398,7 @@ export const GardenAdvisor = () => {
         role: errorMessage.role,
         content: errorMessage.content,
         timestamp: errorMessage.timestamp.toISOString(),
-        user_id: ANONYMOUS_USER_ID // Add the user ID
+        user_id: ANONYMOUS_USER_ID
       });
     } finally {
       setIsLoading(false);
