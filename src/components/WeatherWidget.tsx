@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { computeSunriseSunset, utcToLocalTime } from "@/lib/solarCalculations";
-import { Cloud, CloudRain, Sun, Wind, Droplets, ArrowUp, ArrowDown } from "lucide-react";
+import { Cloud, CloudRain, Sun, Wind, Droplets, ArrowUp } from "lucide-react";
 
 // Define the missing interfaces
 interface ForecastDay {
@@ -109,13 +108,14 @@ export const WeatherWidget: React.FC = () => {
     fetchWeatherData();
   }, []);
   
-  const processWeatherData = (apiData: any, latitude: number, longitude: number) => {
+  const processWeatherData = (apiData: any, latitude: number, longitude: number): WeatherData => {
     try {
       // Extract coordinates if available
       const coords = apiData.coordinates || { latitude, longitude };
       
       // Extract temperature data (first value from time series)
-      const tempData = apiData.data.t_2m:C?.coordinates[0]?.dates[0] || {};
+      // Fix: Use bracket notation for properties with special characters
+      const tempData = apiData.data["t_2m:C"]?.coordinates[0]?.dates[0] || {};
       const temp = Math.round(tempData.value || 20);
       
       // Extract precipitation data
