@@ -1,5 +1,5 @@
-
 import React from "react";
+import { Link } from "react-router-dom";
 import { GardenSidebar } from "./GardenSidebar";
 import { GardenMap } from "./GardenMap";
 import { CareSchedule } from "./CareSchedule";
@@ -8,6 +8,8 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { PatchManager } from "./PatchManager";
 import { WeatherWidget } from "./WeatherWidget";
 import { GardenAdvisor } from "./GardenAdvisor";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 
 export const GardenDashboard = () => {
@@ -20,25 +22,33 @@ export const GardenDashboard = () => {
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-bold text-green-800">Your Playful Garden</h1>
               
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
-                      Garden Map
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
-                      Greenhouses
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
-                      Schedule
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
+              <div className="flex items-center gap-4">
+                <NavigationMenu>
+                  <NavigationMenuList>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
+                        Garden Map
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
+                        Greenhouses
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
+                        Schedule
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
+                
+                <Link to="/settings">
+                  <Button variant="outline" size="icon" className="rounded-full bg-white" title="Settings">
+                    <Settings className="h-5 w-5 text-green-700" />
+                  </Button>
+                </Link>
+              </div>
             </div>
             
             <div className="bg-green-100 p-4 rounded-lg mb-6 border border-green-200">
