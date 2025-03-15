@@ -1,5 +1,95 @@
 import { visit } from "unist-util-visit";
 
+const addToGlossary = (term: string) => {
+  try {
+    const storedTerms = localStorage.getItem('glossary-terms');
+    const terms: GlossaryTerm[] = storedTerms ? JSON.parse(storedTerms) : [];
+    
+    if (terms.some(t => t.term.toLowerCase() === term.toLowerCase())) {
+      return;
+    }
+    
+    const newTerm: GlossaryTerm = {
+      id: crypto.randomUUID(),
+      term: term,
+      definition: `Add your definition for "${term}" here.`,
+      created_at: new Date().toISOString()
+    };
+    
+    terms.push(newTerm);
+    localStorage.setItem('glossary-terms', JSON.stringify(terms));
+    
+    supabase
+      .from('glossary_terms')
+      .insert({
+        term: term,
+        definition: `Add your definition for "${term}" here.`,
+        user_id: ANONYMOUS_USER_ID
+      })
+      .then(({ error }) => {
+        if (error) {
+          console.error("Failed to save glossary term to database:", error);
+        }
+      });
+    
+    toast.success(`Added "${term}" to your gardening glossary`, {
+      action: {
+        label: "View Glossary",
+        onClick: () => {
+          document.getElementById("glossary-panel-trigger")?.click();
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error adding term to glossary:", error);
+  }
+};
+
+const addToTasks = (task: string) => {
+  try {
+    const storedTasks = localStorage.getItem('garden-tasks');
+    const tasks: {id: string, text: string, completed: boolean, createdAt: string}[] = 
+      storedTasks ? JSON.parse(storedTasks) : [];
+    
+    if (tasks.some(t => t.text.toLowerCase() === task.toLowerCase())) {
+      return;
+    }
+    
+    const newTask = {
+      id: crypto.randomUUID(),
+      text: task,
+      completed: false,
+      createdAt: new Date().toISOString()
+    };
+    
+    tasks.push(newTask);
+    localStorage.setItem('garden-tasks', JSON.stringify(tasks));
+    
+    supabase
+      .from('patch_tasks')
+      .insert({
+        task: task,
+        user_id: ANONYMOUS_USER_ID,
+        patch_id: "general"
+      })
+      .then(({ error }) => {
+        if (error) {
+          console.error("Failed to save task to database:", error);
+        }
+      });
+    
+    toast.success(`Added "${task}" to your garden tasks`, {
+      action: {
+        label: "View Tasks",
+        onClick: () => {
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error adding task:", error);
+  }
+};
+
 // Plugin to transform [[text]] into glossary term nodes
 export function remarkGlossarySyntax() {
   return (tree: any) => {

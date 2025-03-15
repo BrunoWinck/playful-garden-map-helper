@@ -3,6 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "author": "Bruno Winck",
+  "license": "MIT",
+  "description": "An app for managing your garden and improve your gardening skills",
+  "bugs": {
+    "url": "https://github.com/BrunoWinck/playful-garden-map-helper/issues"
+  },
+  "homepage": "https://github.com/BrunoWinck/playful-garden-map-helper#readme",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
