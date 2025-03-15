@@ -24,7 +24,7 @@ export function remarkGlossarySyntax() {
           }
 
           // Insert custom glossary term node
-          newChildren.push({
+          const glossaryNode = {
             type: "glossaryTerm",
             value: termText.trim(), // Trim whitespace from the term
             data: {
@@ -34,7 +34,10 @@ export function remarkGlossarySyntax() {
                 dataValue: termText.trim(),
               },
             },
-          });
+          };
+          
+          console.log("Pushing glossaryTerm node:", glossaryNode);
+          newChildren.push(glossaryNode);
 
           lastIndex = matchIndex + fullMatch.length;
         });
@@ -75,7 +78,7 @@ export function remarkTaskSyntax() {
           }
 
           // Insert custom task node
-          newChildren.push({
+          const taskNode = {
             type: "taskItem",
             value: taskText.trim(), // Trim whitespace from the task
             data: {
@@ -85,7 +88,10 @@ export function remarkTaskSyntax() {
                 dataValue: taskText.trim(),
               },
             },
-          });
+          };
+          
+          console.log("Pushing taskItem node:", taskNode);
+          newChildren.push(taskNode);
 
           lastIndex = matchIndex + fullMatch.length;
         });
