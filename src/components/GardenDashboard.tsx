@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { GardenSidebar } from "./GardenSidebar";
@@ -51,10 +52,9 @@ export const GardenDashboard = () => {
               </div>
             </div>
             
-            <div className="bg-green-100 p-4 rounded-lg mb-6 border border-green-200">
-              <p className="text-green-800">
-                <strong>New!</strong> Check out our Seedling Mini Greenhouses in the Greenhouses section. Perfect for starting your seeds indoors!
-              </p>
+            {/* Empty banner kept for future urgent notifications */}
+            <div className="bg-green-100 p-4 rounded-lg mb-6 border border-green-200 hidden">
+              {/* Content removed as requested - will be used for urgent notifications only */}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
