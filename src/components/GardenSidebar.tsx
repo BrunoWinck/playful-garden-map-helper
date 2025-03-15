@@ -12,7 +12,8 @@ import {
   SidebarTrigger,
   SidebarMenuSub,
   SidebarMenuSubItem,
-  SidebarMenuSubButton
+  SidebarMenuSubButton,
+  useSidebar
 } from "@/components/ui/sidebar";
 import { 
   Leaf, 
@@ -27,17 +28,29 @@ import {
   LeafyGreen, 
   TreePalm,
   TreePine,
-  Sprout
+  Sprout,
+  PanelRight
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const GardenSidebar = () => {
+  const { state, toggleSidebar } = useSidebar();
+  
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center gap-2 px-4 py-3">
         <TreeDeciduous className="h-6 w-6 text-green-100" />
         <h2 className="text-2xl font-bold text-white">Garden Planner</h2>
         <div className="flex-1" />
-        <SidebarTrigger />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleSidebar} 
+          className="text-white hover:bg-green-700 hover:text-white"
+          title={state === "expanded" ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          <PanelRight className="h-5 w-5" />
+        </Button>
       </SidebarHeader>
       
       <SidebarContent>
@@ -141,7 +154,17 @@ export const GardenSidebar = () => {
       </SidebarContent>
       
       <SidebarFooter className="p-4 border-t border-green-700">
-        <WeatherWidget />
+        {state === "expanded" && <WeatherWidget />}
+        {state === "collapsed" && (
+          <Button 
+            variant="ghost" 
+            onClick={toggleSidebar} 
+            className="w-full text-white hover:bg-green-700 hover:text-white flex items-center justify-center"
+            title="Expand sidebar"
+          >
+            <PanelRight className="h-5 w-5 rotate-180" />
+          </Button>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

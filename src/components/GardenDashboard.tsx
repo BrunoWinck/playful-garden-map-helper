@@ -15,7 +15,7 @@ import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuL
 
 export const GardenDashboard = () => {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen overflow-hidden w-full">
         <GardenSidebar />
         <main className="flex-1 overflow-y-auto bg-green-50">
