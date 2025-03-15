@@ -530,10 +530,10 @@ export const GardenAdvisor = () => {
     // Process glossary terms [[term]] and tasks ((task)) before rendering
     const processContent = (text: string) => {
       // Replace glossary terms [[term]] with a special marker
-      let processed = text.replace(/\[\[(.*?)\]\]/g, '___GLOSSARY_TERM___$1___GLOSSARY_TERM_END___');
+      let processed = text.replace(/\[\[(.*?)\]\]/g, 'GLOSSARY_TERM$1GLOSSARY_TERM_END');
       
       // Replace tasks ((task)) with a special marker
-      processed = processed.replace(/\(\((.*?)\)\)/g, '___TASK___$1___TASK_END___');
+      processed = processed.replace(/\(\((.*?)\)\)/g, 'TASK$1TASK_END');
       
       return processed;
     };
@@ -562,8 +562,8 @@ export const GardenAdvisor = () => {
             text: ({children}) => {
               if (typeof children === 'string') {
                 // Check for our special markers for glossary terms
-                if (children.includes('___GLOSSARY_TERM___')) {
-                  const parts = children.split(/___GLOSSARY_TERM___(.+?)___GLOSSARY_TERM_END___/g);
+                if (children.includes('GLOSSARY_TERM')) {
+                  const parts = children.split(/GLOSSARY_TERM(.+?)GLOSSARY_TERM_END/g);
                   return (
                     <>
                       {parts.map((part, index) => {
@@ -592,8 +592,8 @@ export const GardenAdvisor = () => {
                 }
                 
                 // Check for our special markers for tasks
-                if (children.includes('___TASK___')) {
-                  const parts = children.split(/___TASK___(.+?)___TASK_END___/g);
+                if (children.includes('TASK')) {
+                  const parts = children.split(/TASK(.+?)TASK_END/g);
                   return (
                     <>
                       {parts.map((part, index) => {
