@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,16 +17,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, MapPin, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   lengthUnit: z.enum(["metric", "imperial"]),
   temperatureUnit: z.enum(["celsius", "fahrenheit"]),
   language: z.enum(["english", "french", "spanish", "german"]),
-  location: z.string().min(2, {
-    message: "Location must be at least 2 characters.",
-  }),
+  location: z.string().refine(
+    (val) => {
+      const pattern = /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/;
+      return pattern.test(val);
+    },
+    {
+      message: "Location must be in GPS format: latitude,longitude (e.g., 45.882550, 2.905965)",
+    }
+  ),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -35,13 +40,24 @@ type FormValues = z.infer<typeof formSchema>;
 const Settings = () => {
   const navigate = useNavigate();
   
-  // In a real app, we would fetch these from localStorage or an API
   const defaultValues: FormValues = {
     lengthUnit: "metric",
     temperatureUnit: "celsius",
     language: "english",
-    location: "New York, USA",
+    location: "45.882550, 2.905965",
   };
+
+  React.useEffect(() => {
+    const savedSettings = localStorage.getItem("gardenSettings");
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        form.reset(parsedSettings);
+      } catch (error) {
+        console.error("Error parsing saved settings:", error);
+      }
+    }
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -49,10 +65,46 @@ const Settings = () => {
   });
 
   const onSubmit = (data: FormValues) => {
-    // Save settings to localStorage
     localStorage.setItem("gardenSettings", JSON.stringify(data));
     toast.success("Settings saved successfully!");
     console.log("Settings saved:", data);
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    toast.info("Detecting your location...");
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const locationString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        form.setValue("location", locationString, { shouldValidate: true });
+        toast.success("Location detected successfully!");
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        let errorMessage = "Could not detect your location";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location permission denied";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out";
+            break;
+        }
+        
+        toast.error(errorMessage);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
   };
 
   return (
@@ -188,12 +240,27 @@ const Settings = () => {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. New York, USA" {...field} />
-                    </FormControl>
+                    <FormLabel>Location (GPS Coordinates)</FormLabel>
+                    <div className="flex space-x-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. 45.882550, 2.905965" 
+                          {...field} 
+                          className="flex-1"
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon"
+                        onClick={handleGetLocation}
+                        title="Detect my location"
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <FormDescription>
-                      Your location helps with weather forecasts and growing recommendations.
+                      Enter coordinates as latitude,longitude (e.g., 45.882550, 2.905965) for weather forecasts and growing recommendations.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
