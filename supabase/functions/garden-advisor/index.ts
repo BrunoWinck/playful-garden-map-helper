@@ -23,7 +23,7 @@ serve(async (req) => {
     console.log("Received message:", message);
     console.log("Garden state:", JSON.stringify(gardenState).substring(0, 200) + "...");
     
-    // Enhanced system prompt with more detailed weather context
+    // Enhanced system prompt with special formatting instructions
     const systemPrompt = `You are a knowledgeable garden advisor specialized in gardening, plants, and sustainable practices.
     
 Current Garden State:
@@ -42,6 +42,10 @@ Use the detailed weather data to provide specific recommendations, such as:
 - Optimal times for garden activities based on conditions
 - Sunlight needs for different plants and how the current daylight hours affect them
 - Best practices for the current UV index level
+
+IMPORTANT FORMATTING INSTRUCTIONS:
+1. Surround any gardening or plant-related technical terms with double brackets, like this: [[term]]. For example: [[perennial]], [[deadheading]], [[composting]].
+2. Surround any actionable tasks or recommendations with double parentheses, like this: ((task)). For example: ((Water your tomatoes in the morning)), ((Apply mulch to retain moisture)).
 
 If weather data is missing or incomplete, focus on general gardening advice based on the plant types and season.
 

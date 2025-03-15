@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Lightbulb, SendHorizonal, Sparkles, Clock } from "lucide-react";
+import { Lightbulb, SendHorizonal, Sparkles, Clock, BookOpen, CheckSquare } from "lucide-react";
 import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { GlossaryTerm } from "./GlossaryPanel";
 
 interface GardenState {
   patches: any[];
@@ -322,6 +323,101 @@ export const GardenAdvisor = () => {
     }
   };
   
+  const addToGlossary = (term: string) => {
+    try {
+      const storedTerms = localStorage.getItem('glossary-terms');
+      const terms: GlossaryTerm[] = storedTerms ? JSON.parse(storedTerms) : [];
+      
+      if (terms.some(t => t.term.toLowerCase() === term.toLowerCase())) {
+        return;
+      }
+      
+      const newTerm: GlossaryTerm = {
+        id: crypto.randomUUID(),
+        term: term,
+        definition: `Add your definition for "${term}" here.`,
+        created_at: new Date().toISOString()
+      };
+      
+      terms.push(newTerm);
+      localStorage.setItem('glossary-terms', JSON.stringify(terms));
+      
+      supabase
+        .from('glossary_terms')
+        .insert({
+          term: term,
+          definition: `Add your definition for "${term}" here.`,
+          user_id: ANONYMOUS_USER_ID
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error("Failed to save glossary term to database:", error);
+          }
+        });
+      
+      toast.success(`Added "${term}" to your gardening glossary`, {
+        action: {
+          label: "View Glossary",
+          onClick: () => {
+            document.getElementById("glossary-panel-trigger")?.click();
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error adding term to glossary:", error);
+    }
+  };
+  
+  const addToTasks = (task: string) => {
+    try {
+      const storedTasks = localStorage.getItem('garden-tasks');
+      const tasks: {id: string, text: string, completed: boolean, createdAt: string}[] = 
+        storedTasks ? JSON.parse(storedTasks) : [];
+      
+      if (tasks.some(t => t.text.toLowerCase() === task.toLowerCase())) {
+        return;
+      }
+      
+      const newTask = {
+        id: crypto.randomUUID(),
+        text: task,
+        completed: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      tasks.push(newTask);
+      localStorage.setItem('garden-tasks', JSON.stringify(tasks));
+      
+      supabase
+        .from('patch_tasks')
+        .insert({
+          task: {
+            id: newTask.id,
+            name: task,
+            completed: false,
+            created_at: newTask.createdAt
+          },
+          user_id: ANONYMOUS_USER_ID,
+          patch_id: "general"
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error("Failed to save task to database:", error);
+          }
+        });
+      
+      toast.success(`Added "${task}" to your garden tasks`, {
+        action: {
+          label: "View Tasks",
+          onClick: () => {
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -425,6 +521,23 @@ export const GardenAdvisor = () => {
   }
   
   const MarkdownRenderer = ({ content, isUser }: { content: string, isUser: boolean }) => {
+    const processSpecialMarkers = (text: string) => {
+      if (isUser) return text;
+      
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = text;
+      
+      return text
+        .replace(/\[\[(.*?)\]\]/g, (match, term) => {
+          setTimeout(() => addToGlossary(term), 0);
+          return `<span class="glossary-term" title="Click to view in glossary">${term}</span>`;
+        })
+        .replace(/\(\((.*?)\)\)/g, (match, task) => {
+          setTimeout(() => addToTasks(task), 0);
+          return `<span class="task-item" title="Added to tasks">${task}</span>`;
+        });
+    };
+    
     return (
       <div className={isUser ? "text-white" : "text-green-800"}>
         <ReactMarkdown
@@ -446,6 +559,63 @@ export const GardenAdvisor = () => {
             },
             blockquote: ({children}) => <blockquote className={`border-l-4 pl-4 italic my-2 ${isUser ? 'border-green-400' : 'border-green-300'}`}>{children}</blockquote>,
             hr: () => <hr className={`my-2 ${isUser ? 'border-green-400' : 'border-green-200'}`} />,
+            text: ({children}) => {
+              if (typeof children === 'string' && !isUser) {
+                if (children.includes('[[') && children.includes(']]')) {
+                  const parts = children.split(/(\[\[.*?\]\])/g);
+                  return (
+                    <>
+                      {parts.map((part, index) => {
+                        if (part.startsWith('[[') && part.endsWith(']]')) {
+                          const term = part.slice(2, -2);
+                          setTimeout(() => addToGlossary(term), 0);
+                          return (
+                            <span 
+                              key={index}
+                              className="glossary-term bg-green-100 px-1 rounded cursor-pointer"
+                              title="Added to glossary"
+                              onClick={() => {
+                                document.getElementById("glossary-panel-trigger")?.click();
+                              }}
+                            >
+                              <BookOpen className="inline-block h-3 w-3 mr-1" />
+                              {term}
+                            </span>
+                          );
+                        }
+                        return part;
+                      })}
+                    </>
+                  );
+                }
+                
+                if (children.includes('((') && children.includes('))')) {
+                  const parts = children.split(/(\(\(.*?\)\))/g);
+                  return (
+                    <>
+                      {parts.map((part, index) => {
+                        if (part.startsWith('((') && part.endsWith('))')) {
+                          const task = part.slice(2, -2);
+                          setTimeout(() => addToTasks(task), 0);
+                          return (
+                            <span 
+                              key={index}
+                              className="task-item bg-yellow-100 px-1 rounded cursor-pointer"
+                              title="Added to tasks"
+                            >
+                              <CheckSquare className="inline-block h-3 w-3 mr-1" />
+                              {task}
+                            </span>
+                          );
+                        }
+                        return part;
+                      })}
+                    </>
+                  );
+                }
+              }
+              return children;
+            }
           }}
         >
           {content}
