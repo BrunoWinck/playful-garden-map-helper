@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { computeSunriseSunset, utcToLocalTime } from "@/lib/solarCalculations";
 import { supabase } from "@/integrations/supabase/client";
+import { ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { useClimateData } from "./useClimateData";
 
 // Types
 export interface ForecastDay {
@@ -36,12 +38,14 @@ export interface WeatherData {
   sunset?: string;
   dayDuration?: string;
   humidity?: number;
+  isClimateFallback?: boolean;
 }
 
 export const useWeatherData = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { currentMonthData, loading: climateLoading } = useClimateData();
 
   useEffect(() => {
     const fetchWeatherData = async () => {
@@ -83,7 +87,11 @@ export const useWeatherData = () => {
         
         // Use supabase client for proper authorization
         const { data: functionData, error: functionError } = await supabase.functions.invoke('weather-proxy', {
-          body: { lat: latitude, lon: longitude }
+          body: { 
+            lat: latitude, 
+            lon: longitude,
+            userId: ANONYMOUS_USER_ID  // Pass the user ID for climate data fallback
+          }
         });
         
         if (functionError) {
@@ -137,6 +145,10 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
     // Extract coordinates if available
     const coords = apiData.coordinates || { latitude, longitude };
     console.log("Using coordinates:", coords);
+    
+    // Check if we're using climate fallback data
+    const isClimateFallback = apiData.isClimateFallback || false;
+    console.log("Using climate fallback data:", isClimateFallback);
     
     // Extract temperature data (first value from time series)
     // Fix: Use bracket notation for properties with special characters
@@ -205,14 +217,15 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
       location: "Your Location", // We could do reverse geocoding for the actual name
       temperature: temp,
       condition,
-      description,
+      description: isClimateFallback ? description + " (Using climate averages)" : description,
       precipitation: precip,
       windSpeed,
       uvIndex,
       sunrise: localSunrise,
       sunset: localSunset,
       dayDuration,
-      humidity
+      humidity,
+      isClimateFallback
     };
     
     console.log("Final processed weather data:", result);

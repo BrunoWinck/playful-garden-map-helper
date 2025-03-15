@@ -41,6 +41,39 @@ export type Database = {
           },
         ]
       }
+      climate_averages: {
+        Row: {
+          avg_precipitation: number | null
+          avg_temperature: number | null
+          avg_uv_index: number | null
+          id: string
+          last_updated: string | null
+          location: string
+          month: number
+          user_id: string
+        }
+        Insert: {
+          avg_precipitation?: number | null
+          avg_temperature?: number | null
+          avg_uv_index?: number | null
+          id?: string
+          last_updated?: string | null
+          location: string
+          month: number
+          user_id: string
+        }
+        Update: {
+          avg_precipitation?: number | null
+          avg_temperature?: number | null
+          avg_uv_index?: number | null
+          id?: string
+          last_updated?: string | null
+          location?: string
+          month?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       garden_images: {
         Row: {
           created_at: string
