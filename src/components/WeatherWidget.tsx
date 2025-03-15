@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Cloud, Sun, CloudRain, Umbrella, Wind, Thermometer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,7 +35,11 @@ export const WeatherWidget = () => {
         
         if (error) {
           console.error("Edge function error:", error);
-          throw new Error(error.message);
+          throw new Error(error.message || "Failed to send a request to the Edge Function");
+        }
+        
+        if (!data) {
+          throw new Error("No data returned from Meteomatics API");
         }
         
         console.log("Edge function returned data:", data);
@@ -85,7 +90,7 @@ export const WeatherWidget = () => {
             description: "Weather data successfully loaded from Meteomatics.",
           });
         } catch (meteomaticsError) {
-          console.log("Meteomatics API failed, trying OpenWeatherMap...");
+          console.log("Meteomatics API failed, trying OpenWeatherMap...", meteomaticsError);
           
           // If Meteomatics fails, try OpenWeatherMap
           try {
