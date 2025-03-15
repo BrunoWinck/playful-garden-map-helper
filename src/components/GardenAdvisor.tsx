@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +38,7 @@ export const GardenAdvisor = () => {
   const [dailyTipShown, setDailyTipShown] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -499,19 +501,22 @@ export const GardenAdvisor = () => {
       label: "Check my tasks",
       icon: <ListTodo className="h-3.5 w-3.5 mr-1" />,
       color: "bg-green-100 text-green-800 border-green-300 hover:bg-green-200",
-      query: "Check if my plan for the next months is complete considering my location, climate, and garden state. Please review what's already done and planned, and suggest additional tasks with their timing."
+      query: "Check if my plan for the next months is complete considering my location, climate, and garden state. Please review what's already done and planned, and suggest additional tasks with their timing.",
+      instantSubmit: true
     },
     {
       label: "Urgent care needed?",
       icon: <AlertTriangle className="h-3.5 w-3.5 mr-1" />,
       color: "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200",
-      query: "Based on today's weather and the current state of my garden, are there any urgent actions I should take immediately? Please use the task format for recommendations."
+      query: "Based on today's weather and the current state of my garden, are there any urgent actions I should take immediately? Please use the task format for recommendations.",
+      instantSubmit: true
     },
     {
       label: "What's the procedure for...",
       icon: <HelpCircle className="h-3.5 w-3.5 mr-1" />,
       color: "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200", 
-      query: "What's the procedure for "
+      query: "What's the procedure for ",
+      instantSubmit: false
     }
   ];
   
@@ -658,34 +663,52 @@ export const GardenAdvisor = () => {
         ))}
         <div ref={messagesEndRef} />
       </CardContent>
-      <CardFooter className="border-t p-3 bg-green-100">
+      <CardFooter className="border-t p-3 bg-green-100 relative">
         <form onSubmit={handleSubmit} className="flex flex-col w-full gap-2">
-          {input === "" && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {quickQueryOptions.map((option, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className={`text-xs py-1 px-3 h-auto ${option.color}`}
-                  onClick={() => setInput(option.query)}
-                >
-                  {option.icon}
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          )}
-          
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
+          <div className="flex items-end gap-2 relative">
+            <div className="flex-1 relative">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setTimeout(() => setIsInputFocused(false), 100)}
                 placeholder="Ask about your garden..."
                 className="min-h-[80px] resize-none bg-white"
                 disabled={isLoading}
               />
+              
+              {/* Quick query buttons as overlay */}
+              {input === "" && !isInputFocused && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity rounded-md">
+                  <div className="flex flex-wrap gap-2 justify-center p-2">
+                    {quickQueryOptions.map((option, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className={`text-xs py-1 px-3 h-auto ${option.color}`}
+                        onClick={() => {
+                          setInput(option.query);
+                          if (option.instantSubmit) {
+                            setTimeout(() => {
+                              handleSubmit(new Event('submit') as any);
+                            }, 100);
+                          } else {
+                            setIsInputFocused(true);
+                            setTimeout(() => {
+                              document.querySelector('textarea')?.focus();
+                            }, 100);
+                          }
+                        }}
+                      >
+                        {option.icon}
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            
             <div className="flex flex-col gap-2">
               <Button 
                 type="submit" 
@@ -725,6 +748,7 @@ export const GardenAdvisor = () => {
                           className="justify-start h-auto py-2 px-3 text-sm"
                           onClick={() => {
                             setInput(suggestion);
+                            setIsInputFocused(true);
                           }}
                         >
                           {suggestion}
