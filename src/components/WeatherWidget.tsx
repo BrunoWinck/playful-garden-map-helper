@@ -14,6 +14,13 @@ interface WeatherData {
   windSpeed: number;
 }
 
+interface GardenSettings {
+  location: string;
+  lengthUnit: string;
+  temperatureUnit: string;
+  language: string;
+}
+
 export const WeatherWidget = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,9 +28,26 @@ export const WeatherWidget = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Coordinates for the garden in France
-    const lat = 45.882550;
-    const lon = 2.905965;
+    // Try to get coordinates from settings in localStorage
+    let lat = 45.882550; // Default coordinates as fallback
+    let lon = 2.905965;
+    
+    try {
+      const savedSettings = localStorage.getItem("gardenSettings");
+      if (savedSettings) {
+        const settings: GardenSettings = JSON.parse(savedSettings);
+        if (settings.location) {
+          const [latitude, longitude] = settings.location.split(',').map(coord => parseFloat(coord.trim()));
+          if (!isNaN(latitude) && !isNaN(longitude)) {
+            lat = latitude;
+            lon = longitude;
+            console.log("Using coordinates from settings:", lat, lon);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing settings from localStorage:", error);
+    }
     
     const fetchMeteomaticsWeatherViaEdgeFunction = async (): Promise<WeatherData | null> => {
       try {

@@ -19,6 +19,8 @@ serve(async (req) => {
       throw new Error('Latitude and longitude are required');
     }
 
+    console.log(`Using coordinates: lat=${lat}, lon=${lon}`);
+
     // Current time in ISO format
     const now = new Date().toISOString().split('.')[0] + 'Z';
     const endTime = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
