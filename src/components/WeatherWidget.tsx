@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Cloud, Sun, CloudRain, Umbrella, Wind, Thermometer } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,28 +27,58 @@ export const WeatherWidget = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Try to get coordinates from settings in localStorage
-    let lat = 45.882550; // Default coordinates as fallback
+    // Default coordinates as fallback
+    let lat = 45.882550;
     let lon = 2.905965;
-    
-    try {
-      const savedSettings = localStorage.getItem("gardenSettings");
-      if (savedSettings) {
-        const settings: GardenSettings = JSON.parse(savedSettings);
-        if (settings.location) {
-          const [latitude, longitude] = settings.location.split(',').map(coord => parseFloat(coord.trim()));
-          if (!isNaN(latitude) && !isNaN(longitude)) {
-            lat = latitude;
-            lon = longitude;
-            console.log("Using coordinates from settings:", lat, lon);
+
+    const loadCoordinates = async () => {
+      try {
+        // First try to get coordinates from Supabase user settings
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user?.id) {
+          const { data: userSettings, error } = await supabase
+            .from('user_settings')
+            .select('location')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+            
+          if (!error && userSettings?.location) {
+            const [latitude, longitude] = userSettings.location.split(',').map(coord => parseFloat(coord.trim()));
+            if (!isNaN(latitude) && !isNaN(longitude)) {
+              lat = latitude;
+              lon = longitude;
+              console.log("Using coordinates from Supabase settings:", lat, lon);
+              return { lat, lon };
+            }
           }
         }
+        
+        // Fallback to localStorage
+        const savedSettings = localStorage.getItem("gardenSettings");
+        if (savedSettings) {
+          const settings: GardenSettings = JSON.parse(savedSettings);
+          if (settings.location) {
+            const [latitude, longitude] = settings.location.split(',').map(coord => parseFloat(coord.trim()));
+            if (!isNaN(latitude) && !isNaN(longitude)) {
+              lat = latitude;
+              lon = longitude;
+              console.log("Using coordinates from localStorage settings:", lat, lon);
+              return { lat, lon };
+            }
+          }
+        }
+        
+        // Return default if no other sources available
+        console.log("Using default coordinates:", lat, lon);
+        return { lat, lon };
+      } catch (error) {
+        console.error("Error getting coordinates:", error);
+        return { lat, lon }; // Return defaults on error
       }
-    } catch (error) {
-      console.error("Error parsing settings from localStorage:", error);
-    }
+    };
     
-    const fetchMeteomaticsWeatherViaEdgeFunction = async (): Promise<WeatherData | null> => {
+    const fetchMeteomaticsWeatherViaEdgeFunction = async (lat: number, lon: number): Promise<WeatherData | null> => {
       try {
         console.log("Fetching Meteomatics weather via edge function");
         
@@ -76,7 +105,7 @@ export const WeatherWidget = () => {
       }
     };
 
-    const fetchOpenWeatherMap = async (): Promise<WeatherData | null> => {
+    const fetchOpenWeatherMap = async (lat: number, lon: number): Promise<WeatherData | null> => {
       try {
         // Use OpenWeatherMap API - this API allows CORS requests from browsers
         const apiKey = "df9e9a54f5ccc054c06162e7ac854647"; 
@@ -104,10 +133,13 @@ export const WeatherWidget = () => {
     const fetchWeather = async () => {
       setLoading(true);
       try {
+        // Get coordinates
+        const { lat, lon } = await loadCoordinates();
+        
         // First try Meteomatics via the edge function
         let weatherData = null;
         try {
-          weatherData = await fetchMeteomaticsWeatherViaEdgeFunction();
+          weatherData = await fetchMeteomaticsWeatherViaEdgeFunction(lat, lon);
           console.log("Successfully fetched from Meteomatics API via edge function");
           toast({
             title: "Weather Updated",
@@ -118,7 +150,7 @@ export const WeatherWidget = () => {
           
           // If Meteomatics fails, try OpenWeatherMap
           try {
-            weatherData = await fetchOpenWeatherMap();
+            weatherData = await fetchOpenWeatherMap(lat, lon);
             console.log("Successfully fell back to OpenWeatherMap API");
             toast({
               title: "Weather Updated",
