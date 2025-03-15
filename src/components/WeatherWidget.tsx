@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Cloud, Sun, CloudRain, Umbrella, Wind, Thermometer, 
   CloudSnow, CloudFog, CloudLightning, ArrowRight, 
-  ArrowDown, ArrowUp, ChevronRight, DropletIcon
+  ArrowDown, ArrowUp, ChevronRight, DropletIcon, 
+  Sunset, SunIcon, ShieldAlert
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,10 @@ interface WeatherData {
   forecast?: ForecastDay[];
   hourlyPrecipitation?: HourlyPrecipitation[];
   tempComparison?: TemperatureComparison;
+  uvIndex?: number;
+  sunrise?: string;
+  sunset?: string;
+  dayDuration?: string;
 }
 
 interface ForecastDay {
@@ -59,13 +63,11 @@ export const WeatherWidget = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Default coordinates as fallback
     let lat = 45.882550;
     let lon = 2.905965;
 
     const loadCoordinates = async () => {
       try {
-        // First try to get coordinates from Supabase user settings
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user?.id) {
@@ -86,7 +88,6 @@ export const WeatherWidget = () => {
           }
         }
         
-        // Fallback to localStorage
         const savedSettings = localStorage.getItem("gardenSettings");
         if (savedSettings) {
           const settings: GardenSettings = JSON.parse(savedSettings);
@@ -101,12 +102,11 @@ export const WeatherWidget = () => {
           }
         }
         
-        // Return default if no other sources available
         console.log("Using default coordinates:", lat, lon);
         return { lat, lon };
       } catch (error) {
         console.error("Error getting coordinates:", error);
-        return { lat, lon }; // Return defaults on error
+        return { lat, lon };
       }
     };
     
@@ -129,7 +129,6 @@ export const WeatherWidget = () => {
         
         console.log("Edge function returned data:", data);
         
-        // Parse the Meteomatics response format
         return parseMeteomaticsData(data);
       } catch (err) {
         console.error("Error fetching Meteomatics weather via edge function:", err);
@@ -139,7 +138,6 @@ export const WeatherWidget = () => {
 
     const fetchOpenWeatherMap = async (lat: number, lon: number): Promise<WeatherData | null> => {
       try {
-        // Use OpenWeatherMap API with forecasts
         const apiKey = "df9e9a54f5ccc054c06162e7ac854647"; 
         const url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&units=metric&exclude=minutely&appid=${apiKey}`;
         
@@ -154,7 +152,6 @@ export const WeatherWidget = () => {
         const data = await response.json();
         console.log("OpenWeatherMap data received:", data);
         
-        // Parse the OpenWeatherMap response format with forecast
         return parseOpenWeatherData(data);
       } catch (err) {
         console.error("Error fetching OpenWeatherMap weather:", err);
@@ -165,10 +162,8 @@ export const WeatherWidget = () => {
     const fetchWeather = async () => {
       setLoading(true);
       try {
-        // Get coordinates
         const { lat, lon } = await loadCoordinates();
         
-        // First try Meteomatics via the edge function
         let weatherData = null;
         try {
           weatherData = await fetchMeteomaticsWeatherViaEdgeFunction(lat, lon);
@@ -180,7 +175,6 @@ export const WeatherWidget = () => {
         } catch (meteomaticsError) {
           console.log("Meteomatics API failed, trying OpenWeatherMap...", meteomaticsError);
           
-          // If Meteomatics fails, try OpenWeatherMap
           try {
             weatherData = await fetchOpenWeatherMap(lat, lon);
             console.log("Successfully fell back to OpenWeatherMap API");
@@ -195,14 +189,12 @@ export const WeatherWidget = () => {
         }
         
         if (weatherData) {
-          // Add mock temperature comparison data
           weatherData.tempComparison = {
             minDiff: -3,
             maxDiff: -5,
             month: "March"
           };
           
-          // Add mock hourly precipitation data if not available
           if (!weatherData.hourlyPrecipitation) {
             weatherData.hourlyPrecipitation = generateMockHourlyPrecipitation();
           }
@@ -219,7 +211,6 @@ export const WeatherWidget = () => {
           variant: "destructive",
         });
         
-        // Fallback data in case of error
         setWeather({
           location: "Auvergne-Rhône-Alpes, France",
           temperature: 17,
@@ -233,7 +224,11 @@ export const WeatherWidget = () => {
             minDiff: -3,
             maxDiff: -5,
             month: "March"
-          }
+          },
+          uvIndex: 3,
+          sunrise: "07:15",
+          sunset: "19:45",
+          dayDuration: "12h 30m"
         });
       } finally {
         setLoading(false);
@@ -242,7 +237,6 @@ export const WeatherWidget = () => {
 
     fetchWeather();
     
-    // Refresh every 30 minutes
     const intervalId = setInterval(fetchWeather, 30 * 60 * 1000);
     
     return () => clearInterval(intervalId);
@@ -250,14 +244,38 @@ export const WeatherWidget = () => {
   
   const parseMeteomaticsData = (data: any): WeatherData => {
     try {
-      // Extract temperature data from the first time point
       const temperatureData = data.data[0].coordinates[0].dates[0].value;
-      // Extract precipitation data
       const precipitationData = data.data[1].coordinates[0].dates[0].value;
-      // Extract wind speed data
       const windSpeedData = data.data[2].coordinates[0].dates[0].value;
       
-      // Determine weather condition based on precipitation
+      let uvIndex = 0;
+      if (data.data.length > 10 && data.data[10].coordinates[0].dates.length > 0) {
+        uvIndex = data.data[10].coordinates[0].dates[0].value;
+      }
+      
+      let sunrise = "";
+      let sunset = "";
+      let dayDuration = "";
+      
+      if (data.data.length > 11 && data.data[11].coordinates[0].dates.length > 0) {
+        const sunriseTime = new Date(data.data[11].coordinates[0].dates[0].value);
+        sunrise = sunriseTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      
+      if (data.data.length > 12 && data.data[12].coordinates[0].dates.length > 0) {
+        const sunsetTime = new Date(data.data[12].coordinates[0].dates[0].value);
+        sunset = sunsetTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      
+      if (sunrise && sunset) {
+        const sunriseDate = new Date(`1970-01-01T${sunrise}`);
+        const sunsetDate = new Date(`1970-01-01T${sunset}`);
+        const diffMs = sunsetDate.getTime() - sunriseDate.getTime();
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        dayDuration = `${diffHours}h ${diffMinutes}m`;
+      }
+      
       let condition = "Clear";
       let description = "clear sky";
       
@@ -280,17 +298,20 @@ export const WeatherWidget = () => {
         description = "clear sky";
       }
       
-      // Generate mock forecast data since Meteomatics data structure may not have forecast
       const forecastData = generateMockForecast();
       
       return {
-        location: "Auvergne-Rhône-Alpes, France", // Hardcoded for this location
+        location: "Auvergne-Rhône-Alpes, France",
         temperature: Math.round(temperatureData),
         condition,
         description,
         precipitation: Math.round(precipitationData * 10) / 10,
         windSpeed: Math.round(windSpeedData * 10) / 10,
-        forecast: forecastData
+        forecast: forecastData,
+        uvIndex: Math.round(uvIndex),
+        sunrise,
+        sunset,
+        dayDuration
       };
     } catch (error) {
       console.error("Error parsing Meteomatics data:", error);
@@ -300,22 +321,19 @@ export const WeatherWidget = () => {
   
   const parseOpenWeatherData = (data: any): WeatherData => {
     try {
-      // Extract relevant data from OpenWeatherMap response
       const temperature = data.current.temp;
       const condition = data.current.weather[0].main;
       const description = data.current.weather[0].description;
       const windSpeed = data.current.wind_speed;
       
-      // Extract hourly precipitation for the next 12 hours
       const hourlyPrecipitation = data.hourly.slice(0, 12).map((hour: any, index: number) => {
         return {
           hour: new Date(hour.dt * 1000).getHours() + ":00",
-          chance: Math.round(hour.pop * 100), // Probability of precipitation
+          chance: Math.round(hour.pop * 100),
           amount: hour.rain ? hour.rain["1h"] : 0
         };
       });
       
-      // Extract daily forecast for the next 7 days
       const forecast = data.daily.slice(1, 8).map((day: any) => {
         const date = new Date(day.dt * 1000);
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -332,7 +350,6 @@ export const WeatherWidget = () => {
         };
       });
       
-      // OpenWeatherMap doesn't directly provide precipitation in mm for current weather
       let precipitation = 0;
       if (data.current.rain && data.current.rain['1h']) {
         precipitation = data.current.rain['1h'];
@@ -340,15 +357,26 @@ export const WeatherWidget = () => {
         precipitation = data.current.snow['1h'];
       }
       
+      const sunrise = new Date(data.current.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sunset = new Date(data.current.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      const dayDuration = `${Math.floor((data.current.sunset - data.current.sunrise) / 3600)}h ${Math.floor((data.current.sunset - data.current.sunrise) % 3600 / 60)}m`;
+      
+      const uvIndex = data.current.uvi;
+      
       return {
-        location: "Auvergne-Rhône-Alpes, France", // We're hardcoding this as we know the location
+        location: "Auvergne-Rhône-Alpes, France",
         temperature: Math.round(temperature),
         condition,
         description,
         precipitation: Math.round(precipitation * 10) / 10,
         windSpeed: Math.round(windSpeed * 10) / 10,
         forecast,
-        hourlyPrecipitation
+        hourlyPrecipitation,
+        uvIndex: Math.round(uvIndex),
+        sunrise,
+        sunset,
+        dayDuration
       };
     } catch (error) {
       console.error("Error parsing OpenWeatherMap data:", error);
@@ -461,7 +489,37 @@ export const WeatherWidget = () => {
                   </div>
                 </div>
                 
-                <div className="flex justify-between mt-3 pt-3 border-t border-white/20">
+                <div className="grid grid-cols-2 gap-2 my-2 bg-blue-500/30 p-2 rounded">
+                  <div className="flex flex-col items-center">
+                    <div className="text-xs font-medium mb-1">UV Index</div>
+                    <div className="flex items-center">
+                      <ShieldAlert className="h-4 w-4 mr-1 text-yellow-200" />
+                      <span className="text-base font-bold">
+                        {weather?.uvIndex || 0}
+                      </span>
+                    </div>
+                    <div className="text-xs mt-1">
+                      {weather?.uvIndex && weather.uvIndex > 5 ? 'Protection needed' : 'Low exposure'}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="text-xs font-medium mb-1">Daylight</div>
+                    <div className="flex items-center justify-center">
+                      <SunIcon className="h-4 w-4 mr-1 text-yellow-300" />
+                      <span className="text-base font-bold">{weather?.dayDuration || '12h 00m'}</span>
+                    </div>
+                    <div className="text-xs mt-1 flex items-center justify-center space-x-2">
+                      <span className="flex items-center">
+                        <Sunset className="h-3 w-3 mr-1 rotate-180" /> {weather?.sunrise || '07:00'}
+                      </span>
+                      <span className="flex items-center">
+                        <Sunset className="h-3 w-3 mr-1" /> {weather?.sunset || '19:00'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between mt-2 pt-2 border-t border-white/20">
                   <div className="text-center">
                     <div className="text-xs">Morning</div>
                     {getWeatherIcon(weather?.condition || 'Clouds', 5)}
