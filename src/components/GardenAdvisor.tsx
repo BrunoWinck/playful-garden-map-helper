@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,7 +35,6 @@ export const GardenAdvisor = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Fetch chat history from Supabase on load
   useEffect(() => {
     const fetchChatHistory = async () => {
       try {
@@ -50,7 +48,6 @@ export const GardenAdvisor = () => {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          // Format the messages from DB
           const formattedMessages = data.map(msg => ({
             id: msg.id,
             role: msg.role as "user" | "assistant" | "system",
@@ -61,7 +58,6 @@ export const GardenAdvisor = () => {
           setMessages(formattedMessages);
           console.log("Loaded chat history:", formattedMessages.length, "messages");
         } else {
-          // If no history, add a welcome message
           const welcomeMessage: Message = {
             id: "welcome",
             role: "assistant",
@@ -71,19 +67,12 @@ export const GardenAdvisor = () => {
           
           setMessages([welcomeMessage]);
           
-          // Store welcome message in DB
-          await supabase.from('advisor_chats').insert({
-            role: welcomeMessage.role,
-            content: welcomeMessage.content,
-            timestamp: welcomeMessage.timestamp.toISOString(),
-            user_id: ANONYMOUS_USER_ID
-          });
+          await storeMessage(welcomeMessage);
           
           console.log("No chat history found, created welcome message");
         }
       } catch (error) {
         console.error("Error fetching chat history:", error);
-        // Fallback to welcome message
         setMessages([{
           id: "welcome",
           role: "assistant",
@@ -98,11 +87,44 @@ export const GardenAdvisor = () => {
     fetchChatHistory();
   }, []);
   
-  // Get garden state from Supabase and localStorage
+  const storeMessage = async (message: Message) => {
+    try {
+      const { error } = await supabase.from('advisor_chats').insert({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp.toISOString(),
+        user_id: ANONYMOUS_USER_ID
+      });
+      
+      if (error) {
+        console.error(`Error storing ${message.role} message:`, error);
+        toast.error(`Failed to save the message due to: ${error.message}`, {
+          duration: 8000,
+          important: true,
+        });
+        
+        if (error.code === '42501') {
+          console.error("Row-level security policy violation. Check RLS policies for advisor_chats table.");
+        }
+        
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Exception when storing message:", err);
+      toast.error("An error occurred while saving your message", {
+        duration: 8000,
+        important: true,
+      });
+      return false;
+    }
+  };
+  
   useEffect(() => {
     const fetchGardenState = async () => {
       try {
-        // First try to get patches from Supabase
         const { data: patchesData, error: patchesError } = await supabase
           .from('patches')
           .select('*');
@@ -120,19 +142,16 @@ export const GardenAdvisor = () => {
             naturalLightPercentage: patch.natural_light_percentage
           }));
         } else {
-          // Fallback to localStorage if DB fetch fails
           const storedPatches = localStorage.getItem('garden-patches');
           patches = storedPatches ? JSON.parse(storedPatches) : [];
         }
         
-        // Get patch tasks from Supabase
         const { data: tasksData, error: tasksError } = await supabase
           .from('patch_tasks')
           .select('*');
           
         let plantedItems: Record<string, any[]> = {};
         if (!tasksError && tasksData) {
-          // Group tasks by patch_id
           tasksData.forEach(task => {
             if (!plantedItems[task.patch_id]) {
               plantedItems[task.patch_id] = [];
@@ -140,14 +159,12 @@ export const GardenAdvisor = () => {
             plantedItems[task.patch_id].push(task.task);
           });
         } else {
-          // Fallback to localStorage
           const storedPlantedItems = localStorage.getItem('garden-planted-items');
           plantedItems = storedPlantedItems ? JSON.parse(storedPlantedItems) : {};
         }
         
         const weather = JSON.parse(localStorage.getItem('weather-data') || '{}');
         
-        // Get location from settings
         let location = "Unknown location";
         const savedSettings = localStorage.getItem("gardenSettings");
         if (savedSettings) {
@@ -164,13 +181,11 @@ export const GardenAdvisor = () => {
           location
         });
         
-        // Check if we should show a daily tip
         const lastTipTimestamp = localStorage.getItem('last-garden-tip-timestamp');
         const shouldShowTip = !lastTipTimestamp || 
           (Date.now() - parseInt(lastTipTimestamp, 10)) > 24 * 60 * 60 * 1000;
         
         if (!initialized) {
-          // Initialize the advisor with contextual information
           if (!isLoadingHistory) {
             initializeAdvisor(patches, plantedItems, weather, location);
             setInitialized(true);
@@ -188,17 +203,11 @@ export const GardenAdvisor = () => {
     fetchGardenState();
   }, [initialized, dailyTipShown, isLoadingHistory]);
   
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
   
   const initializeAdvisor = async (patches: any[], plantedItems: Record<string, any[]>, weather: any, location: string) => {
-    // If we have weather data and location, send a context message to the AI
     if (weather && weather.data && location) {
       try {
         const weatherSummary = summarizeWeather(weather);
@@ -233,7 +242,6 @@ export const GardenAdvisor = () => {
     }
     
     try {
-      // Get current temperature and precipitation from the first data point
       const tempData = weather.data.find((item: any) => item.parameter === "t_2m:C");
       const precipData = weather.data.find((item: any) => item.parameter === "precip_1h:mm");
       const windData = weather.data.find((item: any) => item.parameter === "wind_speed_10m:ms");
@@ -290,15 +298,8 @@ export const GardenAdvisor = () => {
         
         setMessages(prev => [...prev, tipMessage]);
         
-        // Store tip in database
-        await supabase.from('advisor_chats').insert({
-          role: tipMessage.role,
-          content: tipMessage.content,
-          timestamp: tipMessage.timestamp.toISOString(),
-          user_id: ANONYMOUS_USER_ID // Add the user ID
-        });
+        await storeMessage(tipMessage);
         
-        // Mark that we've shown a tip today
         localStorage.setItem('last-garden-tip-timestamp', Date.now().toString());
         setDailyTipShown(true);
       }
@@ -315,7 +316,6 @@ export const GardenAdvisor = () => {
     
     if (!input.trim() || isLoading) return;
     
-    // Add user message
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -328,20 +328,14 @@ export const GardenAdvisor = () => {
     setIsLoading(true);
     
     try {
-      // Store user message in database
-      const { error: insertError } = await supabase.from('advisor_chats').insert({
-        role: userMessage.role,
-        content: userMessage.content,
-        timestamp: userMessage.timestamp.toISOString(),
-        user_id: ANONYMOUS_USER_ID
-      });
+      const userMessageStored = await storeMessage(userMessage);
       
-      if (insertError) {
-        console.error("Error storing user message:", insertError);
-        toast.error("Failed to save your message, but will try to get a response.");
+      if (!userMessageStored) {
+        toast("Continuing without saving your message", {
+          duration: 5000,
+        });
       }
       
-      // Get response from garden advisor
       const { data, error } = await supabase.functions.invoke('garden-advisor', {
         body: { 
           message: input,
@@ -354,7 +348,6 @@ export const GardenAdvisor = () => {
       }
       
       if (data && data.success) {
-        // Add assistant response
         const assistantMessage: Message = {
           id: `assistant-${Date.now()}`,
           role: "assistant",
@@ -364,26 +357,23 @@ export const GardenAdvisor = () => {
         
         setMessages(prev => [...prev, assistantMessage]);
         
-        // Store assistant message in database
-        const { error: responseError } = await supabase.from('advisor_chats').insert({
-          role: assistantMessage.role,
-          content: assistantMessage.content,
-          timestamp: assistantMessage.timestamp.toISOString(),
-          user_id: ANONYMOUS_USER_ID
-        });
+        const assistantMessageStored = await storeMessage(assistantMessage);
         
-        if (responseError) {
-          console.error("Error storing assistant message:", responseError);
-          toast.error("Failed to save the AI response to your history.");
+        if (!assistantMessageStored) {
+          toast("The AI response won't be saved to your history", {
+            duration: 5000,
+          });
         }
       } else {
         throw new Error("Received invalid response from garden advisor");
       }
     } catch (error) {
       console.error("Error querying garden advisor:", error);
-      toast.error("Couldn't connect to the garden advisor. Please try again later.");
+      toast.error("Couldn't connect to the garden advisor. Please try again later.", {
+        duration: 8000,
+        important: true,
+      });
       
-      // Add error message
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: "system",
@@ -393,13 +383,7 @@ export const GardenAdvisor = () => {
       
       setMessages(prev => [...prev, errorMessage]);
       
-      // Store error message in database
-      await supabase.from('advisor_chats').insert({
-        role: errorMessage.role,
-        content: errorMessage.content,
-        timestamp: errorMessage.timestamp.toISOString(),
-        user_id: ANONYMOUS_USER_ID
-      });
+      await storeMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -413,7 +397,6 @@ export const GardenAdvisor = () => {
     }).format(date);
   };
   
-  // Render loading state
   if (isLoadingHistory) {
     return (
       <Card className="flex flex-col h-full border-green-200 bg-green-50">
