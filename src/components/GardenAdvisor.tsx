@@ -391,12 +391,7 @@ export const GardenAdvisor = () => {
       supabase
         .from('patch_tasks')
         .insert({
-          task: {
-            id: newTask.id,
-            name: task,
-            completed: false,
-            created_at: newTask.createdAt
-          },
+          task: task,
           user_id: ANONYMOUS_USER_ID,
           patch_id: "general"
         })
@@ -521,46 +516,39 @@ export const GardenAdvisor = () => {
   }
   
   const MarkdownRenderer = ({ content, isUser }: { content: string, isUser: boolean }) => {
-    const processSpecialMarkers = (text: string) => {
-      if (isUser) return text;
-      
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = text;
-      
-      return text
-        .replace(/\[\[(.*?)\]\]/g, (match, term) => {
-          setTimeout(() => addToGlossary(term), 0);
-          return `<span class="glossary-term" title="Click to view in glossary">${term}</span>`;
-        })
-        .replace(/\(\((.*?)\)\)/g, (match, task) => {
-          setTimeout(() => addToTasks(task), 0);
-          return `<span class="task-item" title="Added to tasks">${task}</span>`;
-        });
-    };
-    
+    if (isUser) {
+      return (
+        <div className="text-white whitespace-pre-wrap">
+          <ReactMarkdown>
+            {content}
+          </ReactMarkdown>
+        </div>
+      );
+    }
+
     return (
-      <div className={isUser ? "text-white" : "text-green-800"}>
+      <div className="text-green-800">
         <ReactMarkdown
           components={{
             p: ({children}) => <p className="mb-2">{children}</p>,
-            h1: ({children}) => <h1 className={`text-xl font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`}>{children}</h1>,
-            h2: ({children}) => <h2 className={`text-lg font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`}>{children}</h2>,
-            h3: ({children}) => <h3 className={`text-md font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`}>{children}</h3>,
+            h1: ({children}) => <h1 className="text-xl font-bold mb-2 text-green-700">{children}</h1>,
+            h2: ({children}) => <h2 className="text-lg font-bold mb-2 text-green-700">{children}</h2>,
+            h3: ({children}) => <h3 className="text-md font-bold mb-2 text-green-700">{children}</h3>,
             ul: ({children}) => <ul className="list-disc ml-5 mb-2">{children}</ul>,
             ol: ({children}) => <ol className="list-decimal ml-5 mb-2">{children}</ol>,
             li: ({children}) => <li className="mb-1">{children}</li>,
-            a: ({href, children}) => <a href={href} className={`underline ${isUser ? 'text-green-100' : 'text-green-600'} hover:opacity-80`}>{children}</a>,
+            a: ({href, children}) => <a href={href} className="underline text-green-600 hover:opacity-80">{children}</a>,
             code: ({className, children}) => {
               const isMultiline = className?.includes("language-");
               if (isMultiline) {
-                return <code className={`block p-2 rounded my-2 font-mono text-sm ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}>{children}</code>;
+                return <code className="block p-2 rounded my-2 font-mono text-sm bg-green-100 text-green-800">{children}</code>;
               }
-              return <code className={`px-1 py-0.5 rounded ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}>{children}</code>;
+              return <code className="px-1 py-0.5 rounded bg-green-100 text-green-800">{children}</code>;
             },
-            blockquote: ({children}) => <blockquote className={`border-l-4 pl-4 italic my-2 ${isUser ? 'border-green-400' : 'border-green-300'}`}>{children}</blockquote>,
-            hr: () => <hr className={`my-2 ${isUser ? 'border-green-400' : 'border-green-200'}`} />,
+            blockquote: ({children}) => <blockquote className="border-l-4 pl-4 italic my-2 border-green-300">{children}</blockquote>,
+            hr: () => <hr className="my-2 border-green-200" />,
             text: ({children}) => {
-              if (typeof children === 'string' && !isUser) {
+              if (typeof children === 'string') {
                 if (children.includes('[[') && children.includes(']]')) {
                   const parts = children.split(/(\[\[.*?\]\])/g);
                   return (
@@ -572,8 +560,8 @@ export const GardenAdvisor = () => {
                           return (
                             <span 
                               key={index}
-                              className="glossary-term bg-green-100 px-1 rounded cursor-pointer"
-                              title="Added to glossary"
+                              className="glossary-term bg-green-100 px-1 rounded cursor-pointer hover:bg-green-200 transition-colors inline-flex items-center"
+                              title="Click to view in glossary"
                               onClick={() => {
                                 document.getElementById("glossary-panel-trigger")?.click();
                               }}
@@ -600,8 +588,9 @@ export const GardenAdvisor = () => {
                           return (
                             <span 
                               key={index}
-                              className="task-item bg-yellow-100 px-1 rounded cursor-pointer"
-                              title="Added to tasks"
+                              className="task-item bg-yellow-100 px-1 rounded cursor-pointer hover:bg-yellow-200 transition-colors inline-flex items-center"
+                              title="Click to add to tasks"
+                              onClick={() => addToTasks(task)}
                             >
                               <CheckSquare className="inline-block h-3 w-3 mr-1" />
                               {task}

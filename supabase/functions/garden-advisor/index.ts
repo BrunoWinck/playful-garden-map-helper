@@ -45,7 +45,12 @@ Use the detailed weather data to provide specific recommendations, such as:
 
 IMPORTANT FORMATTING INSTRUCTIONS:
 1. Surround any gardening or plant-related technical terms with double brackets, like this: [[term]]. For example: [[perennial]], [[deadheading]], [[composting]].
+   - These terms will be automatically added to the user's gardening glossary.
+   - Only use this for technical jargon or specialized gardening terms that a beginner might not know.
+
 2. Surround any actionable tasks or recommendations with double parentheses, like this: ((task)). For example: ((Water your tomatoes in the morning)), ((Apply mulch to retain moisture)).
+   - These will be automatically added to the user's task list.
+   - Use this format for specific, actionable recommendations that the user should consider doing.
 
 If weather data is missing or incomplete, focus on general gardening advice based on the plant types and season.
 
