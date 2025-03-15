@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, X, Check, Move, Edit } from "lucide-react";
@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
 
@@ -21,73 +22,13 @@ type Patch = {
   heated: boolean;
   artificialLight: boolean;
   naturalLightPercentage: number;
-  task?: string;
 };
 
 export const PatchManager = () => {
-  const [patches, setPatches] = useState<Patch[]>([
-    { 
-      id: "patch-1", 
-      name: "Vegetable Patch", 
-      width: 3, 
-      height: 2, 
-      type: "outdoor-soil",
-      heated: false,
-      artificialLight: false,
-      naturalLightPercentage: 100
-    },
-    { 
-      id: "patch-2", 
-      name: "Herb Garden", 
-      width: 1, 
-      height: 0.5, 
-      type: "protected",
-      heated: false,
-      artificialLight: false,
-      naturalLightPercentage: 80
-    },
-    { 
-      id: "patch-3", 
-      name: "Strawberry Patch", 
-      width: 2, 
-      height: 3, 
-      type: "outdoor-soil",
-      heated: false,
-      artificialLight: false,
-      naturalLightPercentage: 90
-    },
-    { 
-      id: "patch-4", 
-      name: "Tree Patch", 
-      width: 5, 
-      height: 5, 
-      type: "perennials",
-      heated: false,
-      artificialLight: false,
-      naturalLightPercentage: 100
-    },
-    { 
-      id: "patch-5", 
-      name: "Indoor Seedling Trays", 
-      width: 1, 
-      height: 0.5, 
-      type: "indoor",
-      heated: true,
-      artificialLight: true,
-      naturalLightPercentage: 40
-    }
-  ]);
-  
+  const [patches, setPatches] = useState<Patch[]>([]);
+  const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({});
   const [editingPatchId, setEditingPatchId] = useState<string | null>(null);
-  
-  // Create a task for a patch
-  const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({
-    "patch-1": ["Water twice a week", "Add compost in spring"],
-    "patch-2": ["Trim herbs monthly", "Replant basil in summer"],
-    "patch-3": ["Check for runners weekly", "Mulch in autumn"],
-    "patch-4": ["Prune annually", "Check for pests quarterly"],
-    "patch-5": ["Check moisture daily", "Rotate trays weekly"]
-  });
+  const [isLoading, setIsLoading] = useState(true);
   
   const form = useForm({
     defaultValues: {
@@ -102,70 +43,224 @@ export const PatchManager = () => {
     }
   });
   
+  // Fetch patches from Supabase
+  const fetchPatches = async () => {
+    try {
+      const { data: patchesData, error: patchesError } = await supabase
+        .from('patches')
+        .select('*');
+      
+      if (patchesError) throw patchesError;
+      
+      // Format data to match our component's expected structure
+      const formattedPatches = patchesData.map(patch => ({
+        id: patch.id,
+        name: patch.name,
+        width: Number(patch.width),
+        height: Number(patch.height),
+        type: patch.type as PatchType,
+        heated: patch.heated,
+        artificialLight: patch.artificial_light,
+        naturalLightPercentage: patch.natural_light_percentage
+      }));
+      
+      setPatches(formattedPatches);
+      
+      // Fetch tasks for all patches
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('patch_tasks')
+        .select('*')
+        .in('patch_id', formattedPatches.map(p => p.id));
+      
+      if (tasksError) throw tasksError;
+      
+      // Group tasks by patch_id
+      const tasksByPatch: Record<string, string[]> = {};
+      tasksData.forEach(task => {
+        if (!tasksByPatch[task.patch_id]) {
+          tasksByPatch[task.patch_id] = [];
+        }
+        tasksByPatch[task.patch_id].push(task.task);
+      });
+      
+      setPatchTasks(tasksByPatch);
+    } catch (error) {
+      console.error("Error fetching patches:", error);
+      toast.error("Failed to load your garden patches");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Initial load of data
+  useEffect(() => {
+    fetchPatches();
+  }, []);
+  
+  // Also store in localStorage for components that rely on it
+  useEffect(() => {
+    if (patches.length > 0 && !isLoading) {
+      localStorage.setItem('garden-patches', JSON.stringify(patches));
+    }
+  }, [patches, isLoading]);
+  
+  useEffect(() => {
+    if (Object.keys(patchTasks).length > 0 && !isLoading) {
+      localStorage.setItem('garden-planted-items', JSON.stringify(patchTasks));
+    }
+  }, [patchTasks, isLoading]);
+  
   // Add a new patch
-  const handleAddPatch = (data: any) => {
-    const newPatch: Patch = {
-      id: `patch-${Date.now()}`,
-      name: data.name,
-      width: parseFloat(data.width) || 2,
-      height: parseFloat(data.height) || 2,
-      type: data.type || "outdoor-soil",
-      heated: data.heated || false,
-      artificialLight: data.artificialLight || false,
-      naturalLightPercentage: data.naturalLightPercentage || 100,
-    };
-    
-    setPatches([...patches, newPatch]);
-    form.reset({ 
-      name: "", 
-      width: 2, 
-      height: 2, 
-      type: "outdoor-soil",
-      heated: false,
-      artificialLight: false,
-      naturalLightPercentage: 100,
-      task: "" 
-    });
-    toast.success(`Added new patch: ${newPatch.name}`);
+  const handleAddPatch = async (data: any) => {
+    try {
+      // Insert into Supabase
+      const { data: newPatch, error } = await supabase
+        .from('patches')
+        .insert({
+          name: data.name,
+          width: parseFloat(data.width) || 2,
+          height: parseFloat(data.height) || 2,
+          type: data.type || "outdoor-soil",
+          heated: data.heated || false,
+          artificial_light: data.artificialLight || false,
+          natural_light_percentage: data.naturalLightPercentage || 100
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Add to local state
+      const formattedPatch: Patch = {
+        id: newPatch.id,
+        name: newPatch.name,
+        width: Number(newPatch.width),
+        height: Number(newPatch.height),
+        type: newPatch.type as PatchType,
+        heated: newPatch.heated,
+        artificialLight: newPatch.artificial_light,
+        naturalLightPercentage: newPatch.natural_light_percentage
+      };
+      
+      setPatches([...patches, formattedPatch]);
+      
+      form.reset({ 
+        name: "", 
+        width: 2, 
+        height: 2, 
+        type: "outdoor-soil",
+        heated: false,
+        artificialLight: false,
+        naturalLightPercentage: 100,
+        task: "" 
+      });
+      
+      toast.success(`Added new patch: ${formattedPatch.name}`);
+    } catch (error) {
+      console.error("Error adding patch:", error);
+      toast.error("Failed to add patch");
+    }
   };
   
   // Delete a patch
-  const handleDeletePatch = (patchId: string) => {
-    setPatches(patches.filter(patch => patch.id !== patchId));
-    // Also remove associated tasks
-    const newPatchTasks = { ...patchTasks };
-    delete newPatchTasks[patchId];
-    setPatchTasks(newPatchTasks);
-    toast.success("Patch removed");
+  const handleDeletePatch = async (patchId: string) => {
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('patches')
+        .delete()
+        .eq('id', patchId);
+      
+      if (error) throw error;
+      
+      // Remove from local state
+      setPatches(patches.filter(patch => patch.id !== patchId));
+      
+      // Also remove associated tasks
+      const newPatchTasks = { ...patchTasks };
+      delete newPatchTasks[patchId];
+      setPatchTasks(newPatchTasks);
+      
+      toast.success("Patch removed");
+    } catch (error) {
+      console.error("Error deleting patch:", error);
+      toast.error("Failed to delete patch");
+    }
   };
   
   // Add a task to a patch
-  const handleAddTask = (patchId: string, task: string) => {
+  const handleAddTask = async (patchId: string, task: string) => {
     if (!task.trim()) return;
     
-    setPatchTasks(prev => {
-      const currentTasks = prev[patchId] || [];
-      return {
-        ...prev,
-        [patchId]: [...currentTasks, task]
-      };
-    });
-    
-    form.setValue("task", "");
-    toast.success("Task added");
+    try {
+      // Add to Supabase
+      const { error } = await supabase
+        .from('patch_tasks')
+        .insert({
+          patch_id: patchId,
+          task: task
+        });
+      
+      if (error) throw error;
+      
+      // Update local state
+      setPatchTasks(prev => {
+        const currentTasks = prev[patchId] || [];
+        return {
+          ...prev,
+          [patchId]: [...currentTasks, task]
+        };
+      });
+      
+      form.setValue("task", "");
+      toast.success("Task added");
+    } catch (error) {
+      console.error("Error adding task:", error);
+      toast.error("Failed to add task");
+    }
   };
   
   // Delete a task
-  const handleDeleteTask = (patchId: string, taskIndex: number) => {
-    setPatchTasks(prev => {
-      const tasks = [...(prev[patchId] || [])];
-      tasks.splice(taskIndex, 1);
-      return {
-        ...prev,
-        [patchId]: tasks
-      };
-    });
-    toast.success("Task removed");
+  const handleDeleteTask = async (patchId: string, taskIndex: number) => {
+    try {
+      const tasks = patchTasks[patchId] || [];
+      const taskToDelete = tasks[taskIndex];
+      
+      // First, get the task ID from Supabase
+      const { data: taskData, error: fetchError } = await supabase
+        .from('patch_tasks')
+        .select('id')
+        .eq('patch_id', patchId)
+        .eq('task', taskToDelete)
+        .limit(1);
+      
+      if (fetchError) throw fetchError;
+      
+      if (taskData && taskData.length > 0) {
+        // Delete from Supabase
+        const { error } = await supabase
+          .from('patch_tasks')
+          .delete()
+          .eq('id', taskData[0].id);
+        
+        if (error) throw error;
+      }
+      
+      // Update local state
+      setPatchTasks(prev => {
+        const tasks = [...(prev[patchId] || [])];
+        tasks.splice(taskIndex, 1);
+        return {
+          ...prev,
+          [patchId]: tasks
+        };
+      });
+      
+      toast.success("Task removed");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      toast.error("Failed to delete task");
+    }
   };
   
   // Start editing a patch
@@ -184,36 +279,59 @@ export const PatchManager = () => {
   };
   
   // Save edit
-  const handleSaveEdit = (data: any) => {
+  const handleSaveEdit = async (data: any) => {
     if (!editingPatchId) return;
     
-    setPatches(patches.map(patch => 
-      patch.id === editingPatchId 
-        ? { 
-            ...patch, 
-            name: data.name, 
-            width: parseFloat(data.width) || 2, 
-            height: parseFloat(data.height) || 2,
-            type: data.type,
-            heated: data.heated,
-            artificialLight: data.artificialLight,
-            naturalLightPercentage: data.naturalLightPercentage
-          } 
-        : patch
-    ));
-    
-    setEditingPatchId(null);
-    form.reset({ 
-      name: "", 
-      width: 2, 
-      height: 2, 
-      type: "outdoor-soil",
-      heated: false,
-      artificialLight: false,
-      naturalLightPercentage: 100,
-      task: "" 
-    });
-    toast.success("Patch updated");
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('patches')
+        .update({
+          name: data.name,
+          width: parseFloat(data.width) || 2,
+          height: parseFloat(data.height) || 2,
+          type: data.type,
+          heated: data.heated,
+          artificial_light: data.artificialLight,
+          natural_light_percentage: data.naturalLightPercentage
+        })
+        .eq('id', editingPatchId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setPatches(patches.map(patch => 
+        patch.id === editingPatchId 
+          ? { 
+              ...patch, 
+              name: data.name, 
+              width: parseFloat(data.width) || 2, 
+              height: parseFloat(data.height) || 2,
+              type: data.type,
+              heated: data.heated,
+              artificialLight: data.artificialLight,
+              naturalLightPercentage: data.naturalLightPercentage
+            } 
+          : patch
+      ));
+      
+      setEditingPatchId(null);
+      form.reset({ 
+        name: "", 
+        width: 2, 
+        height: 2, 
+        type: "outdoor-soil",
+        heated: false,
+        artificialLight: false,
+        naturalLightPercentage: 100,
+        task: "" 
+      });
+      
+      toast.success("Patch updated");
+    } catch (error) {
+      console.error("Error updating patch:", error);
+      toast.error("Failed to update patch");
+    }
   };
 
   const getPatchTypeLabel = (type: PatchType): string => {
@@ -230,6 +348,15 @@ export const PatchManager = () => {
         return "Unknown";
     }
   };
+  
+  // Render loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-4">

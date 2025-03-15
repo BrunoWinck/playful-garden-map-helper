@@ -1,12 +1,9 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Lightbulb, SendHorizonal, ArrowDown, Sparkles, Clock } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Lightbulb, SendHorizonal, Sparkles, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -34,54 +31,155 @@ export const GardenAdvisor = () => {
   });
   const [dailyTipShown, setDailyTipShown] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Get garden state from localStorage
+  // Fetch chat history from Supabase on load
   useEffect(() => {
-    try {
-      const storedPatches = localStorage.getItem('garden-patches');
-      const storedPlantedItems = localStorage.getItem('garden-planted-items');
-      const weather = JSON.parse(localStorage.getItem('weather-data') || '{}');
-      
-      // Get location from settings
-      let location = "Unknown location";
-      const savedSettings = localStorage.getItem("gardenSettings");
-      if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        if (settings.location) {
-          location = settings.location;
-        }
-      }
-      
-      const patches = storedPatches ? JSON.parse(storedPatches) : [];
-      const plantedItems = storedPlantedItems ? JSON.parse(storedPlantedItems) : {};
-      
-      setGardenState({
-        patches,
-        plantedItems,
-        weather,
-        location
-      });
-      
-      // Check if we should show a daily tip
-      const lastTipTimestamp = localStorage.getItem('last-garden-tip-timestamp');
-      const shouldShowTip = !lastTipTimestamp || 
-        (Date.now() - parseInt(lastTipTimestamp, 10)) > 24 * 60 * 60 * 1000;
-      
-      if (!initialized) {
-        // Initialize the advisor with contextual information
-        initializeAdvisor(patches, plantedItems, weather, location);
-        setInitialized(true);
+    const fetchChatHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('advisor_chats')
+          .select('*')
+          .order('timestamp', { ascending: true });
+          
+        if (error) throw error;
         
-        if (shouldShowTip && !dailyTipShown) {
-          getDailyTip();
+        if (data && data.length > 0) {
+          // Format the messages from DB
+          const formattedMessages = data.map(msg => ({
+            id: msg.id,
+            role: msg.role as "user" | "assistant" | "system",
+            content: msg.content,
+            timestamp: new Date(msg.timestamp)
+          }));
+          
+          setMessages(formattedMessages);
+        } else {
+          // If no history, add a welcome message
+          const welcomeMessage: Message = {
+            id: "welcome",
+            role: "assistant",
+            content: "Hello! I'm your garden advisor. I can help with plant care, pest management, garden planning, and more. How can I assist you today?",
+            timestamp: new Date()
+          };
+          
+          setMessages([welcomeMessage]);
+          
+          // Store welcome message in DB
+          await supabase.from('advisor_chats').insert({
+            role: welcomeMessage.role,
+            content: welcomeMessage.content,
+            timestamp: welcomeMessage.timestamp.toISOString()
+          });
         }
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+        // Fallback to welcome message
+        setMessages([{
+          id: "welcome",
+          role: "assistant",
+          content: "Hello! I'm your garden advisor. I can help with plant care, pest management, garden planning, and more. How can I assist you today?",
+          timestamp: new Date()
+        }]);
+      } finally {
+        setIsLoadingHistory(false);
       }
-    } catch (error) {
-      console.error("Error loading garden state:", error);
-    }
-  }, [initialized, dailyTipShown]);
+    };
+    
+    fetchChatHistory();
+  }, []);
+  
+  // Get garden state from Supabase and localStorage
+  useEffect(() => {
+    const fetchGardenState = async () => {
+      try {
+        // First try to get patches from Supabase
+        const { data: patchesData, error: patchesError } = await supabase
+          .from('patches')
+          .select('*');
+          
+        let patches = [];
+        if (!patchesError && patchesData) {
+          patches = patchesData.map(patch => ({
+            id: patch.id,
+            name: patch.name,
+            width: Number(patch.width),
+            height: Number(patch.height),
+            type: patch.type,
+            heated: patch.heated,
+            artificialLight: patch.artificial_light,
+            naturalLightPercentage: patch.natural_light_percentage
+          }));
+        } else {
+          // Fallback to localStorage if DB fetch fails
+          const storedPatches = localStorage.getItem('garden-patches');
+          patches = storedPatches ? JSON.parse(storedPatches) : [];
+        }
+        
+        // Get patch tasks from Supabase
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('patch_tasks')
+          .select('*');
+          
+        let plantedItems: Record<string, any[]> = {};
+        if (!tasksError && tasksData) {
+          // Group tasks by patch_id
+          tasksData.forEach(task => {
+            if (!plantedItems[task.patch_id]) {
+              plantedItems[task.patch_id] = [];
+            }
+            plantedItems[task.patch_id].push(task.task);
+          });
+        } else {
+          // Fallback to localStorage
+          const storedPlantedItems = localStorage.getItem('garden-planted-items');
+          plantedItems = storedPlantedItems ? JSON.parse(storedPlantedItems) : {};
+        }
+        
+        const weather = JSON.parse(localStorage.getItem('weather-data') || '{}');
+        
+        // Get location from settings
+        let location = "Unknown location";
+        const savedSettings = localStorage.getItem("gardenSettings");
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings);
+          if (settings.location) {
+            location = settings.location;
+          }
+        }
+        
+        setGardenState({
+          patches,
+          plantedItems,
+          weather,
+          location
+        });
+        
+        // Check if we should show a daily tip
+        const lastTipTimestamp = localStorage.getItem('last-garden-tip-timestamp');
+        const shouldShowTip = !lastTipTimestamp || 
+          (Date.now() - parseInt(lastTipTimestamp, 10)) > 24 * 60 * 60 * 1000;
+        
+        if (!initialized) {
+          // Initialize the advisor with contextual information
+          if (!isLoadingHistory) {
+            initializeAdvisor(patches, plantedItems, weather, location);
+            setInitialized(true);
+            
+            if (shouldShowTip && !dailyTipShown) {
+              getDailyTip();
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading garden state:", error);
+      }
+    };
+    
+    fetchGardenState();
+  }, [initialized, dailyTipShown, isLoadingHistory]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -93,16 +191,6 @@ export const GardenAdvisor = () => {
   };
   
   const initializeAdvisor = async (patches: any[], plantedItems: Record<string, any[]>, weather: any, location: string) => {
-    // Add initial welcome message
-    const welcomeMessage: Message = {
-      id: "welcome",
-      role: "assistant",
-      content: "Hello! I'm your garden advisor. I can help with plant care, pest management, garden planning, and more. How can I assist you today?",
-      timestamp: new Date()
-    };
-    
-    setMessages([welcomeMessage]);
-    
     // If we have weather data and location, send a context message to the AI
     if (weather && weather.data && location) {
       try {
@@ -186,15 +274,21 @@ export const GardenAdvisor = () => {
       }
       
       if (data && data.success) {
-        setMessages(prev => [
-          ...prev,
-          {
-            id: `tip-${Date.now()}`,
-            role: "assistant",
-            content: data.response,
-            timestamp: new Date()
-          }
-        ]);
+        const tipMessage: Message = {
+          id: `tip-${Date.now()}`,
+          role: "assistant",
+          content: data.response,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, tipMessage]);
+        
+        // Store tip in database
+        await supabase.from('advisor_chats').insert({
+          role: tipMessage.role,
+          content: tipMessage.content,
+          timestamp: tipMessage.timestamp.toISOString()
+        });
         
         // Mark that we've shown a tip today
         localStorage.setItem('last-garden-tip-timestamp', Date.now().toString());
@@ -226,6 +320,14 @@ export const GardenAdvisor = () => {
     setIsLoading(true);
     
     try {
+      // Store user message in database
+      await supabase.from('advisor_chats').insert({
+        role: userMessage.role,
+        content: userMessage.content,
+        timestamp: userMessage.timestamp.toISOString()
+      });
+      
+      // Get response from garden advisor
       const { data, error } = await supabase.functions.invoke('garden-advisor', {
         body: { 
           message: input,
@@ -239,15 +341,21 @@ export const GardenAdvisor = () => {
       
       if (data && data.success) {
         // Add assistant response
-        setMessages(prev => [
-          ...prev,
-          {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            content: data.response,
-            timestamp: new Date()
-          }
-        ]);
+        const assistantMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: data.response,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+        
+        // Store assistant message in database
+        await supabase.from('advisor_chats').insert({
+          role: assistantMessage.role,
+          content: assistantMessage.content,
+          timestamp: assistantMessage.timestamp.toISOString()
+        });
       } else {
         throw new Error("Received invalid response from garden advisor");
       }
@@ -256,15 +364,21 @@ export const GardenAdvisor = () => {
       toast.error("Couldn't connect to the garden advisor. Please try again later.");
       
       // Add error message
-      setMessages(prev => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          role: "system",
-          content: "Sorry, I couldn't process your request. Please try again later.",
-          timestamp: new Date()
-        }
-      ]);
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: "system",
+        content: "Sorry, I couldn't process your request. Please try again later.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
+      // Store error message in database
+      await supabase.from('advisor_chats').insert({
+        role: errorMessage.role,
+        content: errorMessage.content,
+        timestamp: errorMessage.timestamp.toISOString()
+      });
     } finally {
       setIsLoading(false);
     }
@@ -277,6 +391,23 @@ export const GardenAdvisor = () => {
       hour12: true 
     }).format(date);
   };
+  
+  // Render loading state
+  if (isLoadingHistory) {
+    return (
+      <Card className="flex flex-col h-full border-green-200 bg-green-50">
+        <CardHeader className="bg-green-700 text-white rounded-t-lg py-3">
+          <CardTitle className="flex items-center text-lg">
+            <Lightbulb className="mr-2 h-5 w-5" />
+            Garden Advisor
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center flex-1 p-8">
+          <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card className="flex flex-col h-full border-green-200 bg-green-50">

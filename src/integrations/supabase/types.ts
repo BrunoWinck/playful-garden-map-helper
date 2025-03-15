@@ -9,7 +9,110 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      advisor_chats: {
+        Row: {
+          content: string
+          id: string
+          role: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          role: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          role?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      patch_tasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          patch_id: string
+          task: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          patch_id: string
+          task: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          patch_id?: string
+          task?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patch_tasks_patch_id_fkey"
+            columns: ["patch_id"]
+            isOneToOne: false
+            referencedRelation: "patches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patches: {
+        Row: {
+          artificial_light: boolean
+          created_at: string
+          heated: boolean
+          height: number
+          id: string
+          name: string
+          natural_light_percentage: number
+          type: string
+          updated_at: string
+          user_id: string
+          width: number
+        }
+        Insert: {
+          artificial_light?: boolean
+          created_at?: string
+          heated?: boolean
+          height: number
+          id?: string
+          name: string
+          natural_light_percentage?: number
+          type: string
+          updated_at?: string
+          user_id: string
+          width: number
+        }
+        Update: {
+          artificial_light?: boolean
+          created_at?: string
+          heated?: boolean
+          height?: number
+          id?: string
+          name?: string
+          natural_light_percentage?: number
+          type?: string
+          updated_at?: string
+          user_id?: string
+          width?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Shovel, Move } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Define our item types for DnD
 const ItemTypes = {
@@ -22,6 +24,7 @@ type Patch = {
   name: string;
   width: number;
   height: number;
+  type?: string;
 };
 
 // Define a Garden Grid cell
@@ -145,33 +148,66 @@ const patchColors = [
 ];
 
 export const GardenMap = () => {
-  // Default patches
-  const [patches, setPatches] = useState<Patch[]>([
-    { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2 },
-    { id: "patch-2", name: "Herb Garden", width: 2, height: 2 }
-  ]);
-  
-  // Load patches from localStorage if available
+  const [patches, setPatches] = useState<Patch[]>([]);
+  const [plantedItems, setPlantedItems] = useState<Record<string, PlantItem[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load patches from Supabase
   useEffect(() => {
-    const storedPatches = localStorage.getItem('garden-patches');
-    if (storedPatches) {
+    const fetchPatches = async () => {
       try {
-        setPatches(JSON.parse(storedPatches));
-      } catch (e) {
-        console.error("Error loading patches:", e);
+        const { data, error } = await supabase
+          .from('patches')
+          .select('*');
+          
+        if (error) throw error;
+        
+        // Format patches for our component
+        const formattedPatches = data.map(patch => ({
+          id: patch.id,
+          name: patch.name,
+          width: Number(patch.width),
+          height: Number(patch.height),
+          type: patch.type
+        }));
+        
+        setPatches(formattedPatches);
+        
+        // Also store in localStorage for other components that might rely on it
+        localStorage.setItem('garden-patches', JSON.stringify(formattedPatches));
+      } catch (error) {
+        console.error("Error fetching patches:", error);
+        toast.error("Failed to load garden patches");
+        
+        // Fallback to localStorage if available
+        const storedPatches = localStorage.getItem('garden-patches');
+        if (storedPatches) {
+          try {
+            setPatches(JSON.parse(storedPatches));
+          } catch (e) {
+            console.error("Error parsing stored patches:", e);
+            // Set default patches if all else fails
+            setPatches([
+              { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2 },
+              { id: "patch-2", name: "Herb Garden", width: 2, height: 2 }
+            ]);
+          }
+        } else {
+          // Set default patches if nothing available
+          setPatches([
+            { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2 },
+            { id: "patch-2", name: "Herb Garden", width: 2, height: 2 }
+          ]);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+    
+    fetchPatches();
   }, []);
   
-  // Save patches to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('garden-patches', JSON.stringify(patches));
-  }, [patches]);
-  
   // Track planted items in each patch
-  const [plantedItems, setPlantedItems] = useState<Record<string, PlantItem[]>>({});
-  
-  // Load planted items from localStorage if available
   useEffect(() => {
     const storedPlantedItems = localStorage.getItem('garden-planted-items');
     if (storedPlantedItems) {
@@ -185,7 +221,9 @@ export const GardenMap = () => {
   
   // Save planted items to localStorage when they change
   useEffect(() => {
-    localStorage.setItem('garden-planted-items', JSON.stringify(plantedItems));
+    if (Object.keys(plantedItems).length > 0) {
+      localStorage.setItem('garden-planted-items', JSON.stringify(plantedItems));
+    }
   }, [plantedItems]);
 
   // Filter state for plants
@@ -233,6 +271,15 @@ export const GardenMap = () => {
       }
     });
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
