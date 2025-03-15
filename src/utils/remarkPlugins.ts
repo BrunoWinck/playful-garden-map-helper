@@ -4,8 +4,11 @@ import { visit } from "unist-util-visit";
 export function remarkGlossarySyntax() {
   return (tree: any) => {
     visit(tree, "text", (node, index, parent) => {
-      const regex = /\[\[(.*?)\]\]/g;
+      // Updated regex to handle multiline content with 's' flag (dotAll)
+      const regex = /\[\[(.*?)\]\]/gs;
       const matches = [...node.value.matchAll(regex)];
+      
+      console.log("Glossary matches:", matches.length > 0 ? matches.map(m => m[1]) : "none");
 
       if (matches.length > 0 && parent && typeof index === "number") {
         const newChildren = [];
@@ -23,7 +26,7 @@ export function remarkGlossarySyntax() {
           // Insert custom glossary term node
           newChildren.push({
             type: "glossaryTerm",
-            value: termText,
+            value: termText.trim(), // Trim whitespace from the term
           });
 
           lastIndex = matchIndex + fullMatch.length;
@@ -45,8 +48,11 @@ export function remarkGlossarySyntax() {
 export function remarkTaskSyntax() {
   return (tree: any) => {
     visit(tree, "text", (node, index, parent) => {
-      const regex = /\(\((.*?)\)\)/g;
+      // Updated regex to handle multiline content with 's' flag (dotAll)
+      const regex = /\(\((.*?)\)\)/gs;
       const matches = [...node.value.matchAll(regex)];
+      
+      console.log("Task matches:", matches.length > 0 ? matches.map(m => m[1]) : "none");
 
       if (matches.length > 0 && parent && typeof index === "number") {
         const newChildren = [];
@@ -64,7 +70,7 @@ export function remarkTaskSyntax() {
           // Insert custom task node
           newChildren.push({
             type: "taskItem",
-            value: taskText,
+            value: taskText.trim(), // Trim whitespace from the task
           });
 
           lastIndex = matchIndex + fullMatch.length;

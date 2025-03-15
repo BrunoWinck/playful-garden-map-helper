@@ -48,11 +48,15 @@ IMPORTANT FORMATTING INSTRUCTIONS:
    - These terms will be automatically added to the user's gardening glossary.
    - Only use this for technical jargon or specialized gardening terms that a beginner might not know.
    - The double brackets will be used to detect terms and format them properly in the UI.
+   - If the term contains multiple words, keep them within a single set of brackets: [[companion planting]]
+   - IMPORTANT: Do not split terms across multiple lines. Keep each [[term]] on a single line.
 
 2. Surround any actionable tasks or recommendations with double parentheses, like this: ((task)). For example: ((Water your tomatoes in the morning)), ((Apply mulch to retain moisture)).
    - These will be automatically added to the user's task list.
    - Use this format for specific, actionable recommendations that the user should consider doing.
    - The double parentheses will be used to detect tasks and format them properly in the UI.
+   - If the task contains multiple lines, keep them within a single set of parentheses: ((Task step 1, then step 2))
+   - IMPORTANT: Do not split tasks across multiple lines. Keep each ((task)) on a single line.
 
 If weather data is missing or incomplete, focus on general gardening advice based on the plant types and season.
 
@@ -112,8 +116,18 @@ Keep your responses focused on gardening topics. If the user asks about non-gard
       const data = await response.json();
       console.log("Mistral API response received successfully");
       
+      // Process response to ensure proper formatting
+      let processedContent = data.choices[0].message.content;
+      
+      // Fix potential line breaks within markup
+      processedContent = processedContent
+        // Fix glossary terms that might be split across lines
+        .replace(/\[\[([^\]]*?)\n([^\]]*?)\]\]/g, "[[$1 $2]]")
+        // Fix tasks that might be split across lines
+        .replace(/\(\(([^)]*?)\n([^)]*?)\)\)/g, "(($1 $2))");
+      
       return new Response(JSON.stringify({
-        response: data.choices[0].message.content,
+        response: processedContent,
         success: true
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
