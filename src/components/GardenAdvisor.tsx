@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Lightbulb, SendHorizonal, Sparkles, Clock } from "lucide-react";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 interface GardenState {
   patches: any[];
@@ -212,9 +212,9 @@ export const GardenAdvisor = () => {
     fetchGardenState();
   }, [initialized, dailyTipShown, isLoadingHistory]);
   
-  const scrollToBottom = () => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, [messages]);
   
   const initializeAdvisor = async (patches: any[], plantedItems: Record<string, any[]>, weather: any, location: string) => {
     if (weather && weather.data && location) {
@@ -424,6 +424,34 @@ export const GardenAdvisor = () => {
     );
   }
   
+  const MarkdownRenderer = ({ content, isUser }: { content: string, isUser: boolean }) => {
+    const baseClasses = isUser ? "text-white" : "text-green-800";
+    
+    return (
+      <ReactMarkdown 
+        className={`markdown-content ${baseClasses}`}
+        components={{
+          p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+          h1: ({ node, ...props }) => <h1 className={`text-xl font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`} {...props} />,
+          h2: ({ node, ...props }) => <h2 className={`text-lg font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`} {...props} />,
+          h3: ({ node, ...props }) => <h3 className={`text-md font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`} {...props} />,
+          ul: ({ node, ...props }) => <ul className="list-disc ml-5 mb-2" {...props} />,
+          ol: ({ node, ...props }) => <ol className="list-decimal ml-5 mb-2" {...props} />,
+          li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+          a: ({ node, ...props }) => <a className={`underline ${isUser ? 'text-green-100' : 'text-green-600'} hover:opacity-80`} {...props} />,
+          code: ({ node, inline, ...props }) => 
+            inline 
+              ? <code className={`px-1 py-0.5 rounded ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`} {...props} />
+              : <code className={`block p-2 rounded my-2 font-mono text-sm ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`} {...props} />,
+          blockquote: ({ node, ...props }) => <blockquote className={`border-l-4 pl-4 italic my-2 ${isUser ? 'border-green-400' : 'border-green-300'}`} {...props} />,
+          hr: ({ node, ...props }) => <hr className={`my-2 ${isUser ? 'border-green-400' : 'border-green-200'}`} {...props} />,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
+  };
+  
   return (
     <Card className="flex flex-col h-full border-green-200 bg-green-50">
       <CardHeader className="bg-green-700 text-white rounded-t-lg py-3">
@@ -449,7 +477,14 @@ export const GardenAdvisor = () => {
                   : "bg-white text-green-800 border border-green-200"
               }`}
             >
-              <div className="whitespace-pre-wrap">{message.content}</div>
+              {message.role === "system" ? (
+                <div className="whitespace-pre-wrap">{message.content}</div>
+              ) : (
+                <MarkdownRenderer 
+                  content={message.content} 
+                  isUser={message.role === "user"} 
+                />
+              )}
               <div className={`text-xs mt-1 ${
                 message.role === "user" ? "text-green-100" : "text-gray-500"
               }`}>
