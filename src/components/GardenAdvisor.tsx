@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Lightbulb, SendHorizonal, Sparkles, Clock, BookOpen, CheckSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Lightbulb, SendHorizonal, Sparkles, Clock, BookOpen, CheckSquare, ListTodo, AlertTriangle, HelpCircle } from "lucide-react";
 import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -492,6 +494,27 @@ export const GardenAdvisor = () => {
     }
   };
   
+  const quickQueryOptions = [
+    {
+      label: "Check my tasks",
+      icon: <ListTodo className="h-3.5 w-3.5 mr-1" />,
+      color: "bg-green-100 text-green-800 border-green-300 hover:bg-green-200",
+      query: "Check if my plan for the next months is complete considering my location, climate, and garden state. Please review what's already done and planned, and suggest additional tasks with their timing."
+    },
+    {
+      label: "Urgent care needed?",
+      icon: <AlertTriangle className="h-3.5 w-3.5 mr-1" />,
+      color: "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200",
+      query: "Based on today's weather and the current state of my garden, are there any urgent actions I should take immediately? Please use the task format for recommendations."
+    },
+    {
+      label: "What's the procedure for...",
+      icon: <HelpCircle className="h-3.5 w-3.5 mr-1" />,
+      color: "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200", 
+      query: "What's the procedure for "
+    }
+  ];
+  
   const formatTimestamp = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', { 
       hour: 'numeric', 
@@ -636,64 +659,82 @@ export const GardenAdvisor = () => {
         <div ref={messagesEndRef} />
       </CardContent>
       <CardFooter className="border-t p-3 bg-green-100">
-        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2">
-          <div className="flex-1">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about your garden..."
-              className="min-h-[80px] resize-none bg-white"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Button 
-              type="submit" 
-              className="bg-green-700 hover:bg-green-800"
-              disabled={isLoading || !input.trim()}
-            >
-              {isLoading ? (
-                <Clock className="h-5 w-5 animate-spin" />
-              ) : (
-                <SendHorizonal className="h-5 w-5" />
-              )}
-            </Button>
-            
-            <Popover>
-              <PopoverTrigger asChild>
+        <form onSubmit={handleSubmit} className="flex flex-col w-full gap-2">
+          {input === "" && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {quickQueryOptions.map((option, index) => (
                 <Button
+                  key={index}
                   variant="outline"
-                  className="bg-green-200 hover:bg-green-300 border-green-300"
+                  className={`text-xs py-1 px-3 h-auto ${option.color}`}
+                  onClick={() => setInput(option.query)}
                 >
-                  <Sparkles className="h-5 w-5 text-green-700" />
+                  {option.icon}
+                  {option.label}
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Quick Questions</h4>
-                  <div className="grid gap-2">
-                    {[
-                      "What should I plant this month?",
-                      "How do I protect my plants from pests?",
-                      "When should I water my garden?",
-                      "What's the best fertilizer for my vegetables?",
-                      "How can I improve my soil quality?"
-                    ].map((suggestion, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        className="justify-start h-auto py-2 px-3 text-sm"
-                        onClick={() => {
-                          setInput(suggestion);
-                        }}
-                      >
-                        {suggestion}
-                      </Button>
-                    ))}
+              ))}
+            </div>
+          )}
+          
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask about your garden..."
+                className="min-h-[80px] resize-none bg-white"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button 
+                type="submit" 
+                className="bg-green-700 hover:bg-green-800"
+                disabled={isLoading || !input.trim()}
+              >
+                {isLoading ? (
+                  <Clock className="h-5 w-5 animate-spin" />
+                ) : (
+                  <SendHorizonal className="h-5 w-5" />
+                )}
+              </Button>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="bg-green-200 hover:bg-green-300 border-green-300"
+                  >
+                    <Sparkles className="h-5 w-5 text-green-700" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Quick Questions</h4>
+                    <div className="grid gap-2">
+                      {[
+                        "What should I plant this month?",
+                        "How do I protect my plants from pests?",
+                        "When should I water my garden?",
+                        "What's the best fertilizer for my vegetables?",
+                        "How can I improve my soil quality?"
+                      ].map((suggestion, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="justify-start h-auto py-2 px-3 text-sm"
+                          onClick={() => {
+                            setInput(suggestion);
+                          }}
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </form>
       </CardFooter>
