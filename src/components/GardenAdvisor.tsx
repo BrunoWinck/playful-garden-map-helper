@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -532,6 +531,7 @@ export const GardenAdvisor = () => {
       hr: () => <hr className="my-2 border-green-200" />,
       
       glossaryTerm: ({ node }: any) => {
+        console.log("Rendering glossaryTerm component:", node);
         const term = node.value;
         setTimeout(() => addToGlossary(term), 0);
         return (
@@ -548,6 +548,7 @@ export const GardenAdvisor = () => {
         );
       },
       taskItem: ({ node }: any) => {
+        console.log("Rendering taskItem component:", node);
         const task = node.value;
         setTimeout(() => addToTasks(task), 0);
         return (

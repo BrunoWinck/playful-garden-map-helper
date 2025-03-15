@@ -27,6 +27,13 @@ export function remarkGlossarySyntax() {
           newChildren.push({
             type: "glossaryTerm",
             value: termText.trim(), // Trim whitespace from the term
+            data: {
+              hName: 'span',
+              hProperties: {
+                className: 'glossary-term',
+                dataValue: termText.trim(),
+              },
+            },
           });
 
           lastIndex = matchIndex + fullMatch.length;
@@ -71,6 +78,13 @@ export function remarkTaskSyntax() {
           newChildren.push({
             type: "taskItem",
             value: taskText.trim(), // Trim whitespace from the task
+            data: {
+              hName: 'span',
+              hProperties: {
+                className: 'task-item',
+                dataValue: taskText.trim(),
+              },
+            },
           });
 
           lastIndex = matchIndex + fullMatch.length;
