@@ -21,7 +21,7 @@ serve(async (req) => {
   try {
     const { message, gardenState } = await req.json();
     console.log("Received message:", message);
-    console.log("Garden state:", JSON.stringify(gardenState).substring(0, 200) + "...");
+    console.log("Garden state summary:", JSON.stringify(gardenState).substring(0, 100) + "...");
     
     // Enhanced system prompt with special formatting instructions
     const systemPrompt = `You are a knowledgeable garden advisor specialized in gardening, plants, and sustainable practices.
@@ -60,48 +60,102 @@ Keep your responses concise and to the point. Focus on providing actionable advi
 
 Keep your responses focused on gardening topics. If the user asks about non-gardening topics, politely redirect them to gardening-related questions.`;
 
-    // Make request to Mistral AI API
-    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${mistralApiKey}`
-      },
-      body: JSON.stringify({
-        model: "mistral-large-latest",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 800,
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Mistral API error:", errorData);
-      throw new Error(`Mistral API error: ${response.status} ${response.statusText}`);
+    // Check if Mistral API key is available
+    if (!mistralApiKey) {
+      console.error("Mistral API key is not set");
+      return new Response(JSON.stringify({
+        success: false,
+        error: "API configuration error. Please check your environment variables."
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const data = await response.json();
-    console.log("Mistral API response received");
+    console.log("Sending request to Mistral API...");
     
-    return new Response(JSON.stringify({
-      response: data.choices[0].message.content,
-      success: true
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Make request to Mistral AI API with timeout and retry
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    try {
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${mistralApiKey}`
+        },
+        body: JSON.stringify({
+          model: "mistral-large-latest",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: message }
+          ],
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      console.log("Mistral API response status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Mistral API error status:", response.status);
+        console.error("Mistral API error details:", errorText);
+        
+        throw new Error(`Mistral API error (${response.status}): ${errorText.substring(0, 200)}`);
+      }
+
+      const data = await response.json();
+      console.log("Mistral API response received successfully");
+      
+      return new Response(JSON.stringify({
+        response: data.choices[0].message.content,
+        success: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (fetchError) {
+      console.error("Fetch error:", fetchError.message);
+      if (fetchError.name === 'AbortError') {
+        return new Response(JSON.stringify({
+          success: false,
+          error: "Request to Mistral API timed out after 30 seconds."
+        }), {
+          status: 504, // Gateway Timeout
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        throw fetchError; // Re-throw to be caught by outer try-catch
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
   } catch (error) {
     console.error("Error in garden-advisor function:", error);
     
+    // Provide detailed error information in the response
+    let errorMessage = error.message || "An unknown error occurred";
+    let statusCode = 500;
+    
+    if (errorMessage.includes("Failed to fetch") || 
+        errorMessage.includes("NetworkError") ||
+        errorMessage.includes("network") ||
+        errorMessage.includes("502") ||
+        errorMessage.includes("Bad Gateway")) {
+      errorMessage = "Connection to Mistral AI failed. The service might be temporarily unavailable.";
+      statusCode = 502; // Bad Gateway
+    }
+    
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: errorMessage
     }), {
-      status: 500,
+      status: statusCode,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
