@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 
 type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
 
@@ -43,7 +42,6 @@ export const PatchManager = () => {
     }
   });
   
-  // Fetch patches from Supabase
   const fetchPatches = async () => {
     try {
       const { data: patchesData, error: patchesError } = await supabase
@@ -52,7 +50,6 @@ export const PatchManager = () => {
       
       if (patchesError) throw patchesError;
       
-      // Format data to match our component's expected structure
       const formattedPatches = patchesData.map(patch => ({
         id: patch.id,
         name: patch.name,
@@ -66,7 +63,6 @@ export const PatchManager = () => {
       
       setPatches(formattedPatches);
       
-      // Fetch tasks for all patches
       const { data: tasksData, error: tasksError } = await supabase
         .from('patch_tasks')
         .select('*')
@@ -74,7 +70,6 @@ export const PatchManager = () => {
       
       if (tasksError) throw tasksError;
       
-      // Group tasks by patch_id
       const tasksByPatch: Record<string, string[]> = {};
       tasksData.forEach(task => {
         if (!tasksByPatch[task.patch_id]) {
@@ -92,12 +87,10 @@ export const PatchManager = () => {
     }
   };
   
-  // Initial load of data
   useEffect(() => {
     fetchPatches();
   }, []);
   
-  // Also store in localStorage for components that rely on it
   useEffect(() => {
     if (patches.length > 0 && !isLoading) {
       localStorage.setItem('garden-patches', JSON.stringify(patches));
@@ -110,10 +103,8 @@ export const PatchManager = () => {
     }
   }, [patchTasks, isLoading]);
   
-  // Add a new patch
   const handleAddPatch = async (data: any) => {
     try {
-      // Insert into Supabase
       const { data: newPatch, error } = await supabase
         .from('patches')
         .insert({
@@ -123,14 +114,14 @@ export const PatchManager = () => {
           type: data.type || "outdoor-soil",
           heated: data.heated || false,
           artificial_light: data.artificialLight || false,
-          natural_light_percentage: data.naturalLightPercentage || 100
+          natural_light_percentage: data.naturalLightPercentage || 100,
+          user_id: ANONYMOUS_USER_ID
         })
         .select()
         .single();
       
       if (error) throw error;
       
-      // Add to local state
       const formattedPatch: Patch = {
         id: newPatch.id,
         name: newPatch.name,
@@ -162,10 +153,8 @@ export const PatchManager = () => {
     }
   };
   
-  // Delete a patch
   const handleDeletePatch = async (patchId: string) => {
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('patches')
         .delete()
@@ -173,10 +162,8 @@ export const PatchManager = () => {
       
       if (error) throw error;
       
-      // Remove from local state
       setPatches(patches.filter(patch => patch.id !== patchId));
       
-      // Also remove associated tasks
       const newPatchTasks = { ...patchTasks };
       delete newPatchTasks[patchId];
       setPatchTasks(newPatchTasks);
@@ -188,22 +175,20 @@ export const PatchManager = () => {
     }
   };
   
-  // Add a task to a patch
   const handleAddTask = async (patchId: string, task: string) => {
     if (!task.trim()) return;
     
     try {
-      // Add to Supabase
       const { error } = await supabase
         .from('patch_tasks')
         .insert({
           patch_id: patchId,
-          task: task
+          task: task,
+          user_id: ANONYMOUS_USER_ID
         });
       
       if (error) throw error;
       
-      // Update local state
       setPatchTasks(prev => {
         const currentTasks = prev[patchId] || [];
         return {
@@ -220,13 +205,11 @@ export const PatchManager = () => {
     }
   };
   
-  // Delete a task
   const handleDeleteTask = async (patchId: string, taskIndex: number) => {
     try {
       const tasks = patchTasks[patchId] || [];
       const taskToDelete = tasks[taskIndex];
       
-      // First, get the task ID from Supabase
       const { data: taskData, error: fetchError } = await supabase
         .from('patch_tasks')
         .select('id')
@@ -237,7 +220,6 @@ export const PatchManager = () => {
       if (fetchError) throw fetchError;
       
       if (taskData && taskData.length > 0) {
-        // Delete from Supabase
         const { error } = await supabase
           .from('patch_tasks')
           .delete()
@@ -246,7 +228,6 @@ export const PatchManager = () => {
         if (error) throw error;
       }
       
-      // Update local state
       setPatchTasks(prev => {
         const tasks = [...(prev[patchId] || [])];
         tasks.splice(taskIndex, 1);
@@ -263,7 +244,6 @@ export const PatchManager = () => {
     }
   };
   
-  // Start editing a patch
   const handleEditPatch = (patch: Patch) => {
     setEditingPatchId(patch.id);
     form.reset({
@@ -278,12 +258,10 @@ export const PatchManager = () => {
     });
   };
   
-  // Save edit
   const handleSaveEdit = async (data: any) => {
     if (!editingPatchId) return;
     
     try {
-      // Update in Supabase
       const { error } = await supabase
         .from('patches')
         .update({
@@ -299,7 +277,6 @@ export const PatchManager = () => {
       
       if (error) throw error;
       
-      // Update local state
       setPatches(patches.map(patch => 
         patch.id === editingPatchId 
           ? { 
@@ -349,7 +326,6 @@ export const PatchManager = () => {
     }
   };
   
-  // Render loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -580,7 +556,6 @@ export const PatchManager = () => {
                   </div>
                 </div>
                 
-                {/* Tasks section */}
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center">
                     <Input 
@@ -604,7 +579,6 @@ export const PatchManager = () => {
                     </Button>
                   </div>
                   
-                  {/* Task list */}
                   <ul className="space-y-1 text-sm">
                     {(patchTasks[patch.id] || []).map((task, index) => (
                       <li key={index} className="flex items-center justify-between py-1 px-2 rounded bg-white">

@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Lightbulb, SendHorizonal, Sparkles, Clock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface GardenState {
@@ -71,7 +72,8 @@ export const GardenAdvisor = () => {
           await supabase.from('advisor_chats').insert({
             role: welcomeMessage.role,
             content: welcomeMessage.content,
-            timestamp: welcomeMessage.timestamp.toISOString()
+            timestamp: welcomeMessage.timestamp.toISOString(),
+            user_id: ANONYMOUS_USER_ID // Add the user ID
           });
         }
       } catch (error) {
@@ -287,7 +289,8 @@ export const GardenAdvisor = () => {
         await supabase.from('advisor_chats').insert({
           role: tipMessage.role,
           content: tipMessage.content,
-          timestamp: tipMessage.timestamp.toISOString()
+          timestamp: tipMessage.timestamp.toISOString(),
+          user_id: ANONYMOUS_USER_ID // Add the user ID
         });
         
         // Mark that we've shown a tip today
@@ -324,7 +327,8 @@ export const GardenAdvisor = () => {
       await supabase.from('advisor_chats').insert({
         role: userMessage.role,
         content: userMessage.content,
-        timestamp: userMessage.timestamp.toISOString()
+        timestamp: userMessage.timestamp.toISOString(),
+        user_id: ANONYMOUS_USER_ID // Add the user ID
       });
       
       // Get response from garden advisor
@@ -354,7 +358,8 @@ export const GardenAdvisor = () => {
         await supabase.from('advisor_chats').insert({
           role: assistantMessage.role,
           content: assistantMessage.content,
-          timestamp: assistantMessage.timestamp.toISOString()
+          timestamp: assistantMessage.timestamp.toISOString(),
+          user_id: ANONYMOUS_USER_ID // Add the user ID
         });
       } else {
         throw new Error("Received invalid response from garden advisor");
@@ -377,7 +382,8 @@ export const GardenAdvisor = () => {
       await supabase.from('advisor_chats').insert({
         role: errorMessage.role,
         content: errorMessage.content,
-        timestamp: errorMessage.timestamp.toISOString()
+        timestamp: errorMessage.timestamp.toISOString(),
+        user_id: ANONYMOUS_USER_ID // Add the user ID
       });
     } finally {
       setIsLoading(false);
