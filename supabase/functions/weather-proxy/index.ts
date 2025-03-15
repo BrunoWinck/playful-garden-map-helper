@@ -31,21 +31,20 @@ serve(async (req) => {
     const password = "3Ijssv14QC";
     const authHeader = 'Basic ' + btoa(username + ':' + password);
     
-    // Expanded parameters for more comprehensive weather data
+    // Reduced parameters to 10 maximum to comply with API limitations
+    // We're selecting the most essential weather parameters
     const params = [
       't_2m:C',                // temperature
       'precip_1h:mm',          // precipitation last hour
       'wind_speed_10m:ms',     // wind speed
       'wind_dir_10m:d',        // wind direction
-      'wind_gusts_10m_1h:ms',  // wind gusts
+      'weather_symbol_1h:idx', // weather symbol
       't_max_2m_24h:C',        // max temp in 24h
       't_min_2m_24h:C',        // min temp in 24h
       'msl_pressure:hPa',      // pressure
-      'precip_24h:mm',         // precipitation last 24h
-      'weather_symbol_1h:idx', // weather symbol
       'uv:idx',                // UV index
-      'sunrise:sql',           // sunrise time
-      'sunset:sql'             // sunset time
+      'sunrise:sql'            // sunrise time
+      // Removed sunset:sql to stay within 10-parameter limit
     ].join(',');
     
     // Access the Meteomatics API

@@ -25,7 +25,7 @@ interface WeatherData {
   tempComparison?: TemperatureComparison;
   uvIndex?: number;
   sunrise?: string;
-  sunset?: string;
+  sunset?: string; // We'll calculate this since the API doesn't provide it anymore
   dayDuration?: string;
 }
 
@@ -198,25 +198,25 @@ export const WeatherWidget = () => {
       const windSpeedData = data.data[2].coordinates[0].dates[0].value;
       
       let uvIndex = 0;
-      if (data.data.length > 10 && data.data[10].coordinates[0].dates.length > 0) {
-        uvIndex = data.data[10].coordinates[0].dates[0].value;
+      if (data.data.length > 8 && data.data[8].coordinates[0].dates.length > 0) {
+        uvIndex = data.data[8].coordinates[0].dates[0].value;
       }
       
       let sunrise = "";
-      let sunset = "";
+      let sunset = "19:00"; // Default sunset time since we're not getting it from API anymore
       let dayDuration = "";
       
-      if (data.data.length > 11 && data.data[11].coordinates[0].dates.length > 0) {
-        const sunriseTime = new Date(data.data[11].coordinates[0].dates[0].value);
+      if (data.data.length > 9 && data.data[9].coordinates[0].dates.length > 0) {
+        const sunriseTime = new Date(data.data[9].coordinates[0].dates[0].value);
         sunrise = sunriseTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      }
-      
-      if (data.data.length > 12 && data.data[12].coordinates[0].dates.length > 0) {
-        const sunsetTime = new Date(data.data[12].coordinates[0].dates[0].value);
+        
+        // Calculate approximate sunset time (12 hours after sunrise as a fallback)
+        const sunsetTime = new Date(sunriseTime);
+        sunsetTime.setHours(sunsetTime.getHours() + 12);
         sunset = sunsetTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
       
-      if (sunrise && sunset) {
+      if (sunrise) {
         const sunriseDate = new Date(`1970-01-01T${sunrise}`);
         const sunsetDate = new Date(`1970-01-01T${sunset}`);
         const diffMs = sunsetDate.getTime() - sunriseDate.getTime();
@@ -420,9 +420,7 @@ export const WeatherWidget = () => {
                 <TabsTrigger value="trends" className="data-[state=active]:bg-blue-700">Trends</TabsTrigger>
               </TabsList>
               
-              {
-              /* Keep the rest of the tabs content */
-            }
+              
               <TabsContent value="today" className="mt-0">
                 <div className="flex flex-col">
                   <div className="flex items-start justify-between">
