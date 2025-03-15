@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -527,13 +526,9 @@ export const GardenAdvisor = () => {
       );
     }
 
-    // Process glossary terms [[term]] and tasks ((task)) before rendering
     const processContent = (text: string) => {
-      // Replace glossary terms [[term]] with a special marker
-      let processed = text.replace(/\[\[(.*?)\]\]/g, 'GLOSSARY_TERM$1GLOSSARY_TERM_END');
-      
-      // Replace tasks ((task)) with a special marker
-      processed = processed.replace(/\(\((.*?)\)\)/g, 'TASK$1TASK_END');
+      let processed = text.replace(/\[\[(.*?)\]\]/g, '{{GLOSSARY_TERM}}$1{{GLOSSARY_TERM_END}}');
+      processed = processed.replace(/\(\((.*?)\)\)/g, '{{TASK}}$1{{TASK_END}}');
       
       return processed;
     };
@@ -561,15 +556,13 @@ export const GardenAdvisor = () => {
             hr: () => <hr className="my-2 border-green-200" />,
             text: ({children}) => {
               if (typeof children === 'string') {
-                // Check for our special markers for glossary terms
-                if (children.includes('GLOSSARY_TERM')) {
-                  const parts = children.split(/GLOSSARY_TERM(.+?)GLOSSARY_TERM_END/g);
+                if (children.includes('{{GLOSSARY_TERM}}')) {
+                  const parts = children.split(/({{GLOSSARY_TERM}}.*?{{GLOSSARY_TERM_END}})/g);
                   return (
                     <>
                       {parts.map((part, index) => {
-                        if (index % 2 === 1) {
-                          // This is a glossary term (odd index in the split array)
-                          const term = part;
+                        if (part.startsWith('{{GLOSSARY_TERM}}') && part.endsWith('{{GLOSSARY_TERM_END}}')) {
+                          const term = part.replace('{{GLOSSARY_TERM}}', '').replace('{{GLOSSARY_TERM_END}}', '');
                           setTimeout(() => addToGlossary(term), 0);
                           return (
                             <span 
@@ -591,15 +584,13 @@ export const GardenAdvisor = () => {
                   );
                 }
                 
-                // Check for our special markers for tasks
-                if (children.includes('TASK')) {
-                  const parts = children.split(/TASK(.+?)TASK_END/g);
+                if (children.includes('{{TASK}}')) {
+                  const parts = children.split(/({{TASK}}.*?{{TASK_END}})/g);
                   return (
                     <>
                       {parts.map((part, index) => {
-                        if (index % 2 === 1) {
-                          // This is a task (odd index in the split array)
-                          const task = part;
+                        if (part.startsWith('{{TASK}}') && part.endsWith('{{TASK_END}}')) {
+                          const task = part.replace('{{TASK}}', '').replace('{{TASK_END}}', '');
                           setTimeout(() => addToTasks(task), 0);
                           return (
                             <span 
@@ -619,8 +610,6 @@ export const GardenAdvisor = () => {
                   );
                 }
                 
-                // For legacy content with double brackets and parentheses - process them directly
-                // This can be removed once all messages have been updated to use the new format
                 if (children.includes('[[') && children.includes(']]')) {
                   const parts = children.split(/(\[\[.*?\]\])/g);
                   return (
