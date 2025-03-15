@@ -43,7 +43,9 @@ Use the detailed weather data to provide specific recommendations, such as:
 - Sunlight needs for different plants and how the current daylight hours affect them
 - Best practices for the current UV index level
 
-Keep your responses concise and to the point. Focus on providing actionable advice that considers the current weather and location data provided.
+If weather data is missing or incomplete, focus on general gardening advice based on the plant types and season.
+
+Keep your responses concise and to the point. Focus on providing actionable advice that considers the available data provided.
 
 Keep your responses focused on gardening topics. If the user asks about non-gardening topics, politely redirect them to gardening-related questions.`;
 
@@ -61,7 +63,7 @@ Keep your responses focused on gardening topics. If the user asks about non-gard
           { role: "user", content: message }
         ],
         temperature: 0.7,
-        max_tokens: 800, // Reduced for more concise responses
+        max_tokens: 800,
       })
     });
 
