@@ -7,6 +7,7 @@ interface NasaImageryParams {
   lon: number;
   date?: string; // Optional: YYYY-MM-DD format
   dim?: number;  // Optional: dimension in degrees (0.025 to 0.1)
+  key?: number;  // Optional: Used for forcing refresh
 }
 
 interface NasaApiResponse {
@@ -29,7 +30,7 @@ interface NasaApiResponse {
   timestamp?: string;
 }
 
-export const useNasaImagery = ({ lat, lon, date, dim }: NasaImageryParams) => {
+export const useNasaImagery = ({ lat, lon, date, dim, key }: NasaImageryParams) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +121,7 @@ export const useNasaImagery = ({ lat, lon, date, dim }: NasaImageryParams) => {
       console.log("[NASA Imagery] Missing coordinates, not fetching");
       setLoading(false);
     }
-  }, [lat, lon, date, dim]);
+  }, [lat, lon, date, dim, key]);
 
-  return { imageUrl, loading, error, debugInfo };
+  return { imageUrl, loading, error, setError, debugInfo };
 };

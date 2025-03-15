@@ -24,7 +24,7 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
   
-  const { imageUrl, loading, error, debugInfo } = useNasaImagery({ 
+  const { imageUrl, loading, error, setError, debugInfo } = useNasaImagery({ 
     lat, 
     lon, 
     date, 
@@ -38,6 +38,13 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
     
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
+  };
+  
+  // Create a local error handler function for the image
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error('[NASA Imagery] Image loading error:', e);
+    e.currentTarget.style.display = 'none';
+    setError('Failed to load satellite image. NASA API may be rate-limited or the image is unavailable.');
   };
   
   // Debug panel
@@ -133,11 +140,7 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
                   src={imageUrl} 
                   alt={`Satellite view from ${formattedDate}`}
                   className="w-full rounded-md shadow-sm"
-                  onError={(e) => {
-                    console.error('[NASA Imagery] Image loading error:', e);
-                    e.currentTarget.style.display = 'none';
-                    setError('Failed to load satellite image. NASA API may be rate-limited or the image is unavailable.');
-                  }}
+                  onError={handleImageError}
                 />
                 <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                   NASA Earth Imagery
