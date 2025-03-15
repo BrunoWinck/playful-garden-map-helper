@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -526,6 +527,17 @@ export const GardenAdvisor = () => {
       );
     }
 
+    // Process glossary terms [[term]] and tasks ((task)) before rendering
+    const processContent = (text: string) => {
+      // Replace glossary terms [[term]] with a special marker
+      let processed = text.replace(/\[\[(.*?)\]\]/g, '___GLOSSARY_TERM___$1___GLOSSARY_TERM_END___');
+      
+      // Replace tasks ((task)) with a special marker
+      processed = processed.replace(/\(\((.*?)\)\)/g, '___TASK___$1___TASK_END___');
+      
+      return processed;
+    };
+
     return (
       <div className="text-green-800">
         <ReactMarkdown
@@ -549,6 +561,66 @@ export const GardenAdvisor = () => {
             hr: () => <hr className="my-2 border-green-200" />,
             text: ({children}) => {
               if (typeof children === 'string') {
+                // Check for our special markers for glossary terms
+                if (children.includes('___GLOSSARY_TERM___')) {
+                  const parts = children.split(/___GLOSSARY_TERM___(.+?)___GLOSSARY_TERM_END___/g);
+                  return (
+                    <>
+                      {parts.map((part, index) => {
+                        if (index % 2 === 1) {
+                          // This is a glossary term (odd index in the split array)
+                          const term = part;
+                          setTimeout(() => addToGlossary(term), 0);
+                          return (
+                            <span 
+                              key={index}
+                              className="glossary-term bg-green-100 px-1 rounded cursor-pointer hover:bg-green-200 transition-colors inline-flex items-center"
+                              title="Click to view in glossary"
+                              onClick={() => {
+                                document.getElementById("glossary-panel-trigger")?.click();
+                              }}
+                            >
+                              <BookOpen className="inline-block h-3 w-3 mr-1" />
+                              {term}
+                            </span>
+                          );
+                        }
+                        return part;
+                      })}
+                    </>
+                  );
+                }
+                
+                // Check for our special markers for tasks
+                if (children.includes('___TASK___')) {
+                  const parts = children.split(/___TASK___(.+?)___TASK_END___/g);
+                  return (
+                    <>
+                      {parts.map((part, index) => {
+                        if (index % 2 === 1) {
+                          // This is a task (odd index in the split array)
+                          const task = part;
+                          setTimeout(() => addToTasks(task), 0);
+                          return (
+                            <span 
+                              key={index}
+                              className="task-item bg-yellow-100 px-1 rounded cursor-pointer hover:bg-yellow-200 transition-colors inline-flex items-center"
+                              title="Click to add to tasks"
+                              onClick={() => addToTasks(task)}
+                            >
+                              <CheckSquare className="inline-block h-3 w-3 mr-1" />
+                              {task}
+                            </span>
+                          );
+                        }
+                        return part;
+                      })}
+                    </>
+                  );
+                }
+                
+                // For legacy content with double brackets and parentheses - process them directly
+                // This can be removed once all messages have been updated to use the new format
                 if (children.includes('[[') && children.includes(']]')) {
                   const parts = children.split(/(\[\[.*?\]\])/g);
                   return (
@@ -607,7 +679,7 @@ export const GardenAdvisor = () => {
             }
           }}
         >
-          {content}
+          {processContent(content)}
         </ReactMarkdown>
       </div>
     );
