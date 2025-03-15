@@ -73,8 +73,9 @@ export const WeatherWidget: React.FC = () => {
         }
         
         // Call the Supabase Edge Function for weather data
+        // Fix: Use the correct Supabase project ID from the configuration
         const response = await fetch(
-          'https://jlcnjcbjxtnzmwnbmgzr.supabase.co/functions/v1/weather-proxy',
+          'https://uumgewfrulrhiqnfeoas.supabase.co/functions/v1/weather-proxy',
           {
             method: 'POST',
             headers: {
