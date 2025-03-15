@@ -23,7 +23,7 @@ serve(async (req) => {
     console.log("Received message:", message);
     console.log("Garden state:", JSON.stringify(gardenState).substring(0, 200) + "...");
     
-    // Prepare system prompt with garden context
+    // Enhanced system prompt with more detailed weather context
     const systemPrompt = `You are a knowledgeable garden advisor specialized in gardening, plants, and sustainable practices.
     
 Current Garden State:
@@ -31,10 +31,15 @@ ${JSON.stringify(gardenState, null, 2)}
 
 Provide helpful, practical advice about gardening based on the user's question and the current garden state.
 Consider:
-- Current weather conditions and forecast
+- Current weather conditions and forecast (temperature, precipitation, wind, UV index)
 - Plant types in the garden and their growth stages
-- Seasonal factors
+- Seasonal factors including sunrise/sunset times
 - Sustainable practices
+
+Use the detailed weather data to provide specific recommendations, such as:
+- When to water based on precipitation forecasts
+- How to protect plants based on temperature, wind, and UV predictions
+- Optimal times for garden activities based on conditions
 
 Keep your responses concise and to the point. Focus on providing actionable advice that considers the current weather and location data provided.
 

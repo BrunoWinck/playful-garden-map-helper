@@ -31,8 +31,24 @@ serve(async (req) => {
     const password = "3Ijssv14QC";
     const authHeader = 'Basic ' + btoa(username + ':' + password);
     
-    // Expanded parameters to get more forecast data
-    const url = `https://api.meteomatics.com/${now}--${endTime}:PT3H/t_2m:C,precip_1h:mm,wind_speed_10m:ms,weather_symbol_1h:idx/${lat},${lon}/json`;
+    // Expanded parameters for more comprehensive weather data
+    const params = [
+      't_2m:C',                // temperature
+      'precip_1h:mm',          // precipitation last hour
+      'wind_speed_10m:ms',     // wind speed
+      'wind_dir_10m:d',        // wind direction
+      'wind_gusts_10m_1h:ms',  // wind gusts
+      't_max_2m_24h:C',        // max temp in 24h
+      't_min_2m_24h:C',        // min temp in 24h
+      'msl_pressure:hPa',      // pressure
+      'precip_24h:mm',         // precipitation last 24h
+      'weather_symbol_1h:idx', // weather symbol
+      'uv:idx',                // UV index
+      'sunrise:sql',           // sunrise time
+      'sunset:sql'             // sunset time
+    ].join(',');
+    
+    const url = `https://api.meteomatics.com/${now}--${endTime}:PT3H/${params}/${lat},${lon}/json`;
     
     console.log("Proxying request to Meteomatics:", url);
     
@@ -48,7 +64,7 @@ serve(async (req) => {
     }
     
     const data = await response.json();
-    console.log("Received Meteomatics data");
+    console.log("Received Meteomatics data with parameters:", Object.keys(data.data).length);
     
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
