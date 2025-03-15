@@ -31,8 +31,7 @@ serve(async (req) => {
     const password = "3Ijssv14QC";
     const authHeader = 'Basic ' + btoa(username + ':' + password);
     
-    // Reduced parameters to 10 maximum to comply with API limitations
-    // We're selecting the most essential weather parameters
+    // Exactly 10 parameters to comply with API limitations
     const params = [
       't_2m:C',                // temperature
       'precip_1h:mm',          // precipitation last hour
@@ -43,8 +42,7 @@ serve(async (req) => {
       't_min_2m_24h:C',        // min temp in 24h
       'msl_pressure:hPa',      // pressure
       'uv:idx',                // UV index
-      'sunrise:sql'            // sunrise time
-      // Removed sunset:sql to stay within 10-parameter limit
+      'relative_humidity_2m:p' // humidity
     ].join(',');
     
     // Access the Meteomatics API
@@ -75,6 +73,10 @@ serve(async (req) => {
     }
     
     const data = await response.json();
+    
+    // Add lat/lon to the response data for use in frontend calculations
+    data.coordinates = { latitude: lat, longitude: lon };
+    
     console.log("Received Meteomatics data with parameters:", Object.keys(data.data).length);
     
     return new Response(JSON.stringify(data), {
