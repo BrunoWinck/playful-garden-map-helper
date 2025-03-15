@@ -29,7 +29,9 @@ import {
   TreePalm,
   TreePine,
   Sprout,
-  PanelRight
+  PanelRight,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +51,11 @@ export const GardenSidebar = () => {
           className="text-white hover:bg-green-700 hover:text-white"
           title={state === "expanded" ? "Collapse sidebar" : "Expand sidebar"}
         >
-          <PanelRight className="h-5 w-5" />
+          {state === "expanded" ? (
+            <ChevronLeft className="h-5 w-5" />
+          ) : (
+            <ChevronRight className="h-5 w-5" />
+          )}
         </Button>
       </SidebarHeader>
       
@@ -162,7 +168,7 @@ export const GardenSidebar = () => {
             className="w-full text-white hover:bg-green-700 hover:text-white flex items-center justify-center"
             title="Expand sidebar"
           >
-            <PanelRight className="h-5 w-5 rotate-180" />
+            <ChevronRight className="h-5 w-5" />
           </Button>
         )}
       </SidebarFooter>
