@@ -58,6 +58,17 @@ IMPORTANT FORMATTING INSTRUCTIONS:
    - If the task contains multiple lines, keep them within a single set of parentheses: ((Task step 1, then step 2))
    - IMPORTANT: Do not split tasks across multiple lines. Keep each ((task)) on a single line.
 
+3. For tasks that need to be repeated at specific times or intervals, use this format: ((task | timing)). For example: ((Water deeply | every 3-4 days during summer)), ((Apply fertilizer | after the 10th of May)).
+   - The part before the pipe (|) is the task itself.
+   - The part after the pipe is when the task should be done or repeated.
+   - Be specific about timing using natural language patterns like:
+     - After specific dates: "after the 10th of May"
+     - Seasonal events: "when soil temperature reaches 10°C"
+     - Weather-dependent: "after the last frost"
+     - Periodic: "every 2 weeks during growing season"
+     - Calendar-based: "first Sunday of every month"
+   - This information will be used to help schedule the task in the garden calendar.
+
 If weather data is missing or incomplete, focus on general gardening advice based on the plant types and season.
 
 Keep your responses concise and to the point. Focus on providing actionable advice that considers the available data provided.

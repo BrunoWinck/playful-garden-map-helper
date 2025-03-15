@@ -49,22 +49,23 @@ export function remarkGlossarySyntax() {
   };
 }
 
-// Plugin to transform ((text)) into task nodes
+// Plugin to transform ((text)) or ((text | timing)) into task nodes
 export function remarkTaskSyntax() {
   return (tree: any) => {
     visit(tree, "text", (node, index, parent) => {
       // Updated regex to handle multiline content with 's' flag (dotAll)
-      const regex = /\(\((.*?)\)\)/gs;
+      // Also handle optional timing information after a pipe character
+      const regex = /\(\((.*?)(?:\|(.*?))?\)\)/gs;
       const matches = [...node.value.matchAll(regex)];
       
-      console.log("Task matches:", matches.length > 0 ? matches.map(m => m[1]) : "none");
+      console.log("Task matches:", matches.length > 0 ? matches.map(m => [m[1], m[2]]) : "none");
 
       if (matches.length > 0 && parent && typeof index === "number") {
         const newChildren = [];
         let lastIndex = 0;
 
         matches.forEach((match) => {
-          const [fullMatch, taskText] = match;
+          const [fullMatch, taskText, timingText] = match;
           const matchIndex = node.value.indexOf(fullMatch, lastIndex);
 
           // Keep text before match
@@ -76,7 +77,9 @@ export function remarkTaskSyntax() {
           const taskNode = {
             type: "element",
             tagName: "taskItem",
-            properties: {},
+            properties: {
+              timing: timingText ? timingText.trim() : undefined
+            },
             children: [{ type: "text", value: taskText.trim() }]
           };
           
