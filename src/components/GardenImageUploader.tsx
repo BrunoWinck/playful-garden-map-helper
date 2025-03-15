@@ -58,7 +58,7 @@ export const GardenImageUploader: React.FC<GardenImageUploaderProps> = ({
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id || ANONYMOUS_USER_ID;
 
-      // Create a unique file name
+      // Create a unique file name with timestamp to avoid overwriting
       const fileExt = selectedImage.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;

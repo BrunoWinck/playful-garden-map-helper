@@ -46,9 +46,9 @@ export const GardenImageCollage: React.FC<GardenImageCollageProps> = ({
 
         // Calculate current day of year for seasonal similarity
         const now = new Date();
-        const currentDayOfYear = Math.floor(
-          (now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
-        );
+        const startOfYear = new Date(now.getFullYear(), 0, 0);
+        const diff = now.getTime() - startOfYear.getTime();
+        const currentDayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
         
         // Query for images with similar conditions, prioritizing by:
         // 1. Temperature similarity
