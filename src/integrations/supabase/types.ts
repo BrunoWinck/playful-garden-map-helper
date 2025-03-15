@@ -33,6 +33,45 @@ export type Database = {
         }
         Relationships: []
       }
+      garden_images: {
+        Row: {
+          created_at: string
+          day_of_year: number | null
+          id: string
+          image_path: string
+          precipitation: number | null
+          season: string | null
+          temperature: number | null
+          user_id: string
+          uv_index: number | null
+          weather_condition: string | null
+        }
+        Insert: {
+          created_at?: string
+          day_of_year?: number | null
+          id?: string
+          image_path: string
+          precipitation?: number | null
+          season?: string | null
+          temperature?: number | null
+          user_id: string
+          uv_index?: number | null
+          weather_condition?: string | null
+        }
+        Update: {
+          created_at?: string
+          day_of_year?: number | null
+          id?: string
+          image_path?: string
+          precipitation?: number | null
+          season?: string | null
+          temperature?: number | null
+          user_id?: string
+          uv_index?: number | null
+          weather_condition?: string | null
+        }
+        Relationships: []
+      }
       patch_tasks: {
         Row: {
           completed: boolean
@@ -151,7 +190,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      day_of_year: {
+        Args: {
+          "": string
+        }
+        Returns: number
+      }
+      get_season: {
+        Args: {
+          "": string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
