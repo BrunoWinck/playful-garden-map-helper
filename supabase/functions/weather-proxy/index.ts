@@ -51,7 +51,8 @@ serve(async (req) => {
     // Access the Meteomatics API
     const url = `https://api.meteomatics.com/${now}--${endTime}:PT3H/${params}/${lat},${lon}/json`;
     
-    console.log("Requesting weather data from Meteomatics:", url);
+    console.log("EXACT API URL BEING REQUESTED:", url);
+    console.log("Authorization method: Basic Authentication with username:", username);
     
     const response = await fetch(url, {
       headers: {
@@ -60,10 +61,18 @@ serve(async (req) => {
     });
     
     if (!response.ok) {
-      console.error(`Meteomatics API responded with status: ${response.status}`);
-      const responseText = await response.text();
-      console.error(`Response body: ${responseText}`);
-      throw new Error(`Meteomatics API responded with status: ${response.status}`);
+      const statusCode = response.status;
+      console.error(`Meteomatics API responded with status: ${statusCode}`);
+      
+      let responseText = '';
+      try {
+        responseText = await response.text();
+        console.error(`Response body: ${responseText}`);
+      } catch (textError) {
+        console.error("Could not read response text:", textError);
+      }
+      
+      throw new Error(`Meteomatics API responded with status: ${statusCode}. Details: ${responseText}`);
     }
     
     const data = await response.json();
