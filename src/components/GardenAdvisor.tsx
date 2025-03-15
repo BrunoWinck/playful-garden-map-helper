@@ -425,30 +425,32 @@ export const GardenAdvisor = () => {
   }
   
   const MarkdownRenderer = ({ content, isUser }: { content: string, isUser: boolean }) => {
-    const baseClasses = isUser ? "text-white" : "text-green-800";
-    
     return (
-      <ReactMarkdown 
-        className={`markdown-content ${baseClasses}`}
-        components={{
-          p: ({ node, ...props }) => <p className="mb-2" {...props} />,
-          h1: ({ node, ...props }) => <h1 className={`text-xl font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`} {...props} />,
-          h2: ({ node, ...props }) => <h2 className={`text-lg font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`} {...props} />,
-          h3: ({ node, ...props }) => <h3 className={`text-md font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`} {...props} />,
-          ul: ({ node, ...props }) => <ul className="list-disc ml-5 mb-2" {...props} />,
-          ol: ({ node, ...props }) => <ol className="list-decimal ml-5 mb-2" {...props} />,
-          li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-          a: ({ node, ...props }) => <a className={`underline ${isUser ? 'text-green-100' : 'text-green-600'} hover:opacity-80`} {...props} />,
-          code: ({ node, inline, ...props }) => 
-            inline 
-              ? <code className={`px-1 py-0.5 rounded ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`} {...props} />
-              : <code className={`block p-2 rounded my-2 font-mono text-sm ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`} {...props} />,
-          blockquote: ({ node, ...props }) => <blockquote className={`border-l-4 pl-4 italic my-2 ${isUser ? 'border-green-400' : 'border-green-300'}`} {...props} />,
-          hr: ({ node, ...props }) => <hr className={`my-2 ${isUser ? 'border-green-400' : 'border-green-200'}`} {...props} />,
-        }}
-      >
-        {content}
-      </ReactMarkdown>
+      <div className={isUser ? "text-white" : "text-green-800"}>
+        <ReactMarkdown
+          components={{
+            p: ({children}) => <p className="mb-2">{children}</p>,
+            h1: ({children}) => <h1 className={`text-xl font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`}>{children}</h1>,
+            h2: ({children}) => <h2 className={`text-lg font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`}>{children}</h2>,
+            h3: ({children}) => <h3 className={`text-md font-bold mb-2 ${isUser ? 'text-green-100' : 'text-green-700'}`}>{children}</h3>,
+            ul: ({children}) => <ul className="list-disc ml-5 mb-2">{children}</ul>,
+            ol: ({children}) => <ol className="list-decimal ml-5 mb-2">{children}</ol>,
+            li: ({children}) => <li className="mb-1">{children}</li>,
+            a: ({href, children}) => <a href={href} className={`underline ${isUser ? 'text-green-100' : 'text-green-600'} hover:opacity-80`}>{children}</a>,
+            code: ({className, children}) => {
+              const isMultiline = className?.includes("language-");
+              if (isMultiline) {
+                return <code className={`block p-2 rounded my-2 font-mono text-sm ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}>{children}</code>;
+              }
+              return <code className={`px-1 py-0.5 rounded ${isUser ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}>{children}</code>;
+            },
+            blockquote: ({children}) => <blockquote className={`border-l-4 pl-4 italic my-2 ${isUser ? 'border-green-400' : 'border-green-300'}`}>{children}</blockquote>,
+            hr: () => <hr className={`my-2 ${isUser ? 'border-green-400' : 'border-green-200'}`} />,
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
     );
   };
   
