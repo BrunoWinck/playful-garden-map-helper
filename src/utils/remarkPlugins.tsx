@@ -199,12 +199,13 @@ function GlossaryTerm({ node }: any) {
 function TaskItem({ node }: any) {
   // console.log("Rendering taskItem component:", node);
   const task = node.children[0].value;
+  const timing = node.properties?.timing;
   // no setTimeout(() => addToTasks(task), 0);
   return (
     <span 
       className="task-item bg-yellow-100 px-1 rounded cursor-pointer hover:bg-yellow-200 transition-colors inline-flex items-center"
       title="Click to add to tasks"
-      onClick={() => addToTasks(task)}
+      onClick={() => addToTasks(task, timing)}
     >
       <CheckSquare className="inline-block h-3 w-3 mr-1" />
       {task}

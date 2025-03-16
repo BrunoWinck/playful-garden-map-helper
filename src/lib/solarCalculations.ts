@@ -1,4 +1,3 @@
-
 /**
  * Solar Position Algorithm (SPA) Implementation
  * This module provides functions to compute sunrise and sunset times using 
@@ -230,7 +229,7 @@ function example()
   const { elevation, azimuth } = solarPosition(latitude, longitude, date);
   const radiation = solarRadiation(elevation);
   const { sunrise, sunset, civilTwilightStart, civilTwilightEnd } = computeDaylight(40.7128, -74.0060, 80);
-  const heat = heatIndex(30, 70);
+  const heat = getHeatIndex(30, 70);
   const chill = windChill(5, 20);
   const dew = dewPoint(15, 80);
   const frost = frostPoint(15, 80);
@@ -735,120 +734,4 @@ function getMoonAltitude(date: Date, latitude: number, longitude: number): numbe
   }
 
   // Compute Greenwich Mean Sidereal Time (GMST) in radians.
-  const GMST = toRadians((280.46061837 + 360.98564736629 * (JD - 2451545.0)) % 360);
-  // Local Sidereal Time (radians).
-  const LST = GMST + toRadians(longitude);
-
-  // Hour Angle (radians).
-  let HA = LST - RA;
-  // Normalize HA between -π and +π.
-  if (HA < -Math.PI) HA += 2 * Math.PI;
-  if (HA > Math.PI) HA -= 2 * Math.PI;
-
-  const latRad = toRadians(latitude);
-  // Calculate the altitude of the Moon.
-  const altitude = Math.asin(
-    Math.sin(latRad) * Math.sin(dec) +
-    Math.cos(latRad) * Math.cos(dec) * Math.cos(HA)
-  );
-  return toDegrees(altitude);
-}
-
-/**
- * Find the time when the Moon's altitude crosses the horizon between start and end.
- * Uses a binary search for a crossing (within ~1 minute tolerance).
- * @param start Date object representing the start of the search interval.
- * @param end Date object representing the end of the search interval.
- * @param latitude Observer's latitude.
- * @param longitude Observer's longitude.
- * @param isRising True for moonrise (altitude crossing from negative to positive),
- *                 false for moonset (positive to negative).
- */
-function findMoonCrossing(start: Date, end: Date, latitude: number, longitude: number, isRising: boolean): Date {
-  const tolerance = 60 * 1000; // 1 minute in milliseconds
-  let t1 = start.getTime();
-  let t2 = end.getTime();
-  let mid: number;
-  while (t2 - t1 > tolerance) {
-    mid = (t1 + t2) / 2;
-    const midDate = new Date(mid);
-    const altitude = getMoonAltitude(midDate, latitude, longitude);
-    if (isRising) {
-      // For rising, search for the time when altitude goes from below 0 to above 0.
-      if (altitude < 0) {
-        t1 = mid;
-      } else {
-        t2 = mid;
-      }
-    } else {
-      // For setting, search for the time when altitude goes from above 0 to below 0.
-      if (altitude > 0) {
-        t1 = mid;
-      } else {
-        t2 = mid;
-      }
-    }
-  }
-  return new Date((t1 + t2) / 2);
-}
-
-/**
- * Compute the moonrise and moonset times (UTC) for a given date and observer location.
- * The function samples the Moon’s altitude every few minutes during the day and
- * uses a binary search to refine the times of horizon crossing.
- * @param date A Date object (UTC) for which the calculations are done.
- * @param latitude Observer's latitude in degrees.
- * @param longitude Observer's longitude in degrees.
- * @returns An object with `moonrise` and `moonset` as Date objects (or null if not found).
- */
-export function getMoonriseMoonset(date: Date, latitude: number, longitude: number): { moonrise: Date | null; moonset: Date | null } {
-  // Create Date objects for the start and end of the day (UTC).
-  const startOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0));
-  const endOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59));
-
-  const sampleIntervalMinutes = 5; // sampling interval
-  let prevTime = startOfDay.getTime();
-  let prevAltitude = getMoonAltitude(startOfDay, latitude, longitude);
-
-  let moonrise: Date | null = null;
-  let moonset: Date | null = null;
-
-  // Sample the Moon's altitude throughout the day.
-  for (let t = startOfDay.getTime() + sampleIntervalMinutes * 60000; t <= endOfDay.getTime(); t += sampleIntervalMinutes * 60000) {
-    const currentDate = new Date(t);
-    const currentAltitude = getMoonAltitude(currentDate, latitude, longitude);
-
-    // Detect a moonrise (altitude crossing from below 0 to above 0).
-    if (!moonrise && prevAltitude < 0 && currentAltitude >= 0) {
-      moonrise = findMoonCrossing(new Date(prevTime), currentDate, latitude, longitude, true);
-    }
-    // Detect a moonset (altitude crossing from above 0 to below 0).
-    if (!moonset && prevAltitude >= 0 && currentAltitude < 0) {
-      moonset = findMoonCrossing(new Date(prevTime), currentDate, latitude, longitude, false);
-    }
-
-    prevAltitude = currentAltitude;
-    prevTime = t;
-  }
-
-  return { moonrise, moonset };
-}
-
-/*
-// Example usage:
-const date = new Date(); // current UTC date and time
-const latitude = 40.7128; // Example: New York City
-const longitude = -74.0060;
-
-const { moonrise, moonset } = getMoonriseMoonset(date, latitude, longitude);
-if (moonrise) {
-  console.log("Moonrise (UTC):", moonrise.toUTCString());
-} else {
-  console.log("Moonrise not found for this date/location.");
-}
-if (moonset) {
-  console.log("Moonset (UTC):", moonset.toUTCString());
-} else {
-  console.log("Moonset not found for this date/location.");
-}
-  */
+  const GMST =
