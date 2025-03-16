@@ -84,51 +84,9 @@ export const GlossaryPanel = () => {
   return (
     <Card className="flex flex-col h-full border-green-200 bg-green-50">
       <CardHeader className="bg-green-700 text-white rounded-t-lg py-3">
-        <CardTitle className="flex items-center justify-between text-lg">
-          <div className="flex items-center">
-            <Book className="mr-2 h-5 w-5" />
-            Garden Knowledge Base
-          </div>
-          {activeTab === "tasks" && (
-            <Drawer open={isTaskDrawerOpen} onOpenChange={setIsTaskDrawerOpen}>
-              <DrawerTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-white hover:bg-green-600">
-                  <Plus className="h-4 w-4 mr-1" />
-                  <span className="text-sm">Add Task</span>
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent className="max-w-md mx-auto">
-                <div className="p-4 space-y-4">
-                  <h3 className="text-lg font-medium">Add New Garden Task</h3>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Task Description</label>
-                    <Input 
-                      value={newTask}
-                      onChange={(e) => setNewTask(e.target.value)}
-                      placeholder="What needs to be done?"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">When to do it</label>
-                    <Input 
-                      value={newTaskTiming}
-                      onChange={(e) => setNewTaskTiming(e.target.value)}
-                      placeholder="Today, Tomorrow, In 2 days, etc."
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <DrawerClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
-                    <Button onClick={handleAddTask}>
-                      <Save className="h-4 w-4 mr-1" />
-                      Save Task
-                    </Button>
-                  </div>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          )}
+        <CardTitle className="flex items-center text-lg">
+          <Book className="mr-2 h-5 w-5" />
+          Garden Knowledge Base
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
@@ -176,7 +134,48 @@ export const GlossaryPanel = () => {
             </TabsContent>
             
             <TabsContent value="tasks" className="h-full m-0 overflow-hidden">
-              <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
+              <div className="p-3 bg-white border-b flex justify-between items-center">
+                <h3 className="text-sm font-medium text-green-800">Garden Tasks</h3>
+                <Drawer open={isTaskDrawerOpen} onOpenChange={setIsTaskDrawerOpen}>
+                  <DrawerTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 px-2 bg-green-50 border-green-200 hover:bg-green-100 text-green-800">
+                      <Plus className="h-4 w-4 mr-1" />
+                      <span className="text-sm">Add Task</span>
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent className="max-w-md mx-auto">
+                    <div className="p-4 space-y-4">
+                      <h3 className="text-lg font-medium">Add New Garden Task</h3>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Task Description</label>
+                        <Input 
+                          value={newTask}
+                          onChange={(e) => setNewTask(e.target.value)}
+                          placeholder="What needs to be done?"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">When to do it</label>
+                        <Input 
+                          value={newTaskTiming}
+                          onChange={(e) => setNewTaskTiming(e.target.value)}
+                          placeholder="Today, Tomorrow, In 2 days, etc."
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <DrawerClose asChild>
+                          <Button variant="outline">Cancel</Button>
+                        </DrawerClose>
+                        <Button onClick={handleAddTask}>
+                          <Save className="h-4 w-4 mr-1" />
+                          Save Task
+                        </Button>
+                      </div>
+                    </div>
+                  </DrawerContent>
+                </Drawer>
+              </div>
+              <ScrollArea className="h-full max-h-[calc(100vh-340px)]">
                 <TasksContent careTasks={careTasks}/>
               </ScrollArea>
             </TabsContent>
