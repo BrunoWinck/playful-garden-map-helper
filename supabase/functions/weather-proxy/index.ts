@@ -53,14 +53,33 @@ serve(async (req) => {
       't_2m:C',                // temperature
       'precip_1h:mm',          // precipitation last hour
       'wind_speed_10m:ms',     // wind speed
-      'wind_dir_10m:d',        // wind direction
+      // 'wind_dir_10m:d',        // wind direction
       'weather_symbol_1h:idx', // weather symbol
-      't_max_2m_24h:C',        // max temp in 24h
-      't_min_2m_24h:C',        // min temp in 24h
-      'msl_pressure:hPa',      // pressure
+      // 't_max_2m_24h:C',        // max temp in 24h
+      // 't_min_2m_24h:C',        // min temp in 24h
+      // 'msl_pressure:hPa',      // pressure
       'uv:idx',                // UV index
-      'relative_humidity_2m:p' // humidity
+      // not in basic plan 'relative_humidity_2m:p' // humidity
     ].join(',');
+    /*
+    15 basic weather parameters, listed below:
+    API parameter	Description
+    wind_speed_10m:ms	Instantaneous wind speed at 10m above ground
+    wind_dir_10m:d	Instantaneous wind direction at 10m above ground in degrees
+    wind_gusts_10m_1h:ms	Wind gusts in 10 m in the previous 1h, in Beaufort(bft), kilometers/hour(km/h), knots(kn), meters/second(m/s)
+    wind_gusts_10m_24h:ms	Wind gusts in 10 m in the previous 24h, in Beaufort(bft), kilometers/hour(km/h), knots(kn), meters/second(m/s)
+    t_2m:C	Instantaneous temperature at 2m above ground in degrees Celsius (C), kelvin (K) or degree Fahrenheit (F)
+    t_max_2m_24h:C	Maximum temperature at 2m height in the previous 24h, in degrees Celsius (C), kelvin (K) or degree Fahrenheit (F)
+    t_min_2m_24h:C	Minimum temperature at 2m height in the previous 24h, in degrees Celsius (C), kelvin (K) or degree Fahrenheit (F)
+    msl_pressure:hPa	Mean sea level pressure in hectopascal (hPa) or pascal (Pa)
+    precip_1h:mm	Precipitation accumulated over the past hour in millimeter (equivalent to litres per square meter)
+    precip_24h:mm	Precipitation accumulated over the past 24 hours in millimeter (equivalent to litres per square meter)
+    weather_symbol_1h:idx	Weather symbol giving an overall impression of the weather state of the past hour. (see this sectionfor more information)
+    weather_symbol_24h:idx	Weather symbol giving an overall impression of the weather state of the past 24 hours. (see this section for more information)
+    uv:idx	UV index
+    sunrise:sql	Sunrise
+    sunset:sql	Sunset
+    */
     
     // Access the Meteomatics API
     const url = `https://api.meteomatics.com/${now}--${endTime}:PT3H/${params}/${lat},${lon}/json`;
@@ -182,7 +201,9 @@ async function getFallbackClimateData(lat: number, lon: number, userId: string) 
         }, {
           onConflict: 'user_id,location,month'
         });
-    } else {
+    } 
+    else 
+    {
       console.log("Using climate data from database:", climateData);
       averageData = {
         avg_temperature: climateData.avg_temperature,
@@ -250,7 +271,9 @@ async function getFallbackClimateData(lat: number, lon: number, userId: string) 
     return new Response(JSON.stringify(mockWeatherData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } 
+  catch (error) 
+  {
     console.error("Error generating fallback climate data:", error);
     
     // Return a minimal response with generated data

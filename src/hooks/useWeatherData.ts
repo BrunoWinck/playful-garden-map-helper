@@ -141,6 +141,7 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
       "latitude:", latitude,
       "longitude:", longitude
     );
+    console.log("apiData:", apiData);
     
     // Extract coordinates if available
     const coords = apiData.coordinates || { latitude, longitude };
@@ -150,25 +151,36 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
     const isClimateFallback = apiData.isClimateFallback || false;
     console.log("Using climate fallback data:", isClimateFallback);
     
+    function getData( apiData, parameter, def ) {
+      // weird the format depends on the number of params asked
+      const data = ( Array.isArray( apiData.data))
+        ? apiData.data.find( data => data.parameter == parameter)
+        : apiData.data[  parameter];
+        if (data)
+          return data.coordinates[0].dates[0].value;
+        else
+          return def;
+    }
+
     // Extract temperature data (first value from time series)
     // Fix: Use bracket notation for properties with special characters
-    const tempData = apiData.data["t_2m:C"]?.coordinates[0]?.dates[0] || {};
-    const temp = Math.round(tempData.value || 20);
+    const tempData = getData( apiData, "t_2m:C", 20);
+    const temp = Math.round(tempData);
     console.log("Temperature data:", tempData, "Processed temp:", temp);
     
     // Extract precipitation data
-    const precipData = apiData.data["precip_1h:mm"]?.coordinates[0]?.dates[0] || {};
-    const precip = Math.round(precipData.value * 10) / 10 || 0;
+    const precipData = getData( apiData, "precip_1h:mm", 0);
+    const precip = Math.round(precipData * 10) / 10;
     console.log("Precipitation data:", precipData, "Processed precip:", precip);
     
     // Extract wind speed data
-    const windData = apiData.data["wind_speed_10m:ms"]?.coordinates[0]?.dates[0] || {};
-    const windSpeed = Math.round(windData.value || 0);
+    const windData = getData( apiData, "wind_speed_10m:ms", 0);
+    const windSpeed = Math.round(windData);
     console.log("Wind data:", windData, "Processed wind speed:", windSpeed);
     
     // Extract weather symbol
-    const symbolData = apiData.data["weather_symbol_1h:idx"]?.coordinates[0]?.dates[0] || {};
-    const symbolValue = symbolData.value || 1;
+    const symbolData = getData( apiData, "weather_symbol_1h:idx", 1);
+    const symbolValue = symbolData;
     console.log("Symbol data:", symbolData, "Symbol value:", symbolValue);
     
     // Map symbol code to condition and description
@@ -176,13 +188,14 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
     console.log("Mapped condition:", condition, "description:", description);
     
     // Extract UV index
-    const uvData = apiData.data["uv:idx"]?.coordinates[0]?.dates[0] || {};
-    const uvIndex = Math.round(uvData.value || 0);
+    const uvData = getData( apiData, "uv:idx", 0);
+    const uvIndex = Math.round(uvData);
     console.log("UV data:", uvData, "Processed UV index:", uvIndex);
     
     // Extract humidity data
-    const humidityData = apiData.data["relative_humidity_2m:p"]?.coordinates[0]?.dates[0] || {};
-    const humidity = Math.round(humidityData.value || 50);
+    // Not in basic data!
+    const humidityData = getData( apiData, "relative_humidity_2m:p", 50);
+    const humidity = Math.round(humidityData);
     console.log("Humidity data:", humidityData, "Processed humidity:", humidity);
     
     // Calculate sunrise and sunset using our utility
@@ -230,7 +243,9 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
     
     console.log("Final processed weather data:", result);
     return result;
-  } catch (error) {
+  } 
+  catch (error) 
+  {
     console.error('Error processing weather data:', error);
     return {
       location: "Unknown",
