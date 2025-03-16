@@ -104,9 +104,10 @@ export const GardenAdvisor = () => {
     const fetchHiddenMessages = async () => {
       try {
         setIsLoadingHiddenMessages(true);
-        const { data, error } = await supabase.rpc('get_hidden_messages', {
-          user_id_param: ANONYMOUS_USER_ID
-        });
+        const { data, error } = await supabase
+          .from('hidden_messages')
+          .select('message_id')
+          .eq('user_id', ANONYMOUS_USER_ID);
           
         if (error) throw error;
         
@@ -365,11 +366,12 @@ export const GardenAdvisor = () => {
       
       // Update database
       if (isCurrentlyHidden) {
-        // Remove from hidden messages using RPC
-        const { error } = await supabase.rpc('unhide_message', {
-          message_id_param: messageId,
-          user_id_param: ANONYMOUS_USER_ID
-        });
+        // Remove from hidden messages
+        const { error } = await supabase
+          .from('hidden_messages')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('user_id', ANONYMOUS_USER_ID);
           
         if (error) {
           throw error;
@@ -377,12 +379,14 @@ export const GardenAdvisor = () => {
         
         console.log("Message unhidden in database:", messageId);
       } else {
-        // Add to hidden messages using RPC
-        const { error } = await supabase.rpc('hide_message', {
-          message_id_param: messageId,
-          user_id_param: ANONYMOUS_USER_ID,
-          id_param: crypto.randomUUID()
-        });
+        // Add to hidden messages
+        const { error } = await supabase
+          .from('hidden_messages')
+          .insert({
+            id: crypto.randomUUID(),
+            message_id: messageId,
+            user_id: ANONYMOUS_USER_ID
+          });
           
         if (error) {
           throw error;

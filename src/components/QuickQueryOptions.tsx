@@ -35,13 +35,13 @@ export function QuickQueryOptions({ setInput, handleSubmit, setIsInputFocused }:
   ];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm transition-opacity rounded-b-md border-t border-gray-100">
-      <div className="flex flex-wrap gap-1 justify-center p-1.5">
+    <div className="absolute bottom-0 left-0 right-0 pb-1 bg-white/90 backdrop-blur-sm transition-opacity rounded-b-md border-t border-gray-100">
+      <div className="flex flex-wrap gap-0.5 justify-center p-1">
         {quickQueryOptions.map((option, index) => (
           <Button
             key={index}
             variant="outline"
-            className={`text-xs py-0.5 px-2 h-6 ${option.color}`}
+            className={`text-xs py-0 px-1.5 h-5 ${option.color}`}
             onClick={() => {
               setInput(option.query);
               if (option.instantSubmit) {
@@ -57,7 +57,7 @@ export function QuickQueryOptions({ setInput, handleSubmit, setIsInputFocused }:
             }}
           >
             {option.icon}
-            <span className="ml-0.5">{option.label}</span>
+            <span className="ml-0.5 text-xs">{option.label}</span>
           </Button>
         ))}
       </div>
