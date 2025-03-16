@@ -1,6 +1,4 @@
-
 import React from "react";
-import { WeatherWidget } from "./WeatherWidget";
 import { 
   Sidebar, 
   SidebarHeader, 
@@ -160,8 +158,11 @@ export const GardenSidebar = () => {
       </SidebarContent>
       
       <SidebarFooter className="p-4 border-t border-green-700">
-        {state === "expanded" && <WeatherWidget />}
-        {state === "collapsed" && (
+        {state === "expanded" ? (
+          <div className="text-center text-white">
+            <p className="text-sm">Garden Planner v1.0</p>
+          </div>
+        ) : (
           <Button 
             variant="ghost" 
             onClick={toggleSidebar} 
