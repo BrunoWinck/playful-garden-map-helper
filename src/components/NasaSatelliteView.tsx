@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useNasaImagery } from "@/hooks/useNasaImagery";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, isAfter, subWeeks } from "date-fns";
 import { Bug, Info, RefreshCw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -47,10 +46,19 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
     setError('Failed to load satellite image. NASA API may be rate-limited or the image is unavailable.');
   };
   
-  // Format the last updated time
-  const lastUpdatedText = lastUpdated 
-    ? `(${formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })} - ${format(new Date(lastUpdated), 'MMM d, yyyy')})`
-    : '';
+  // Format the last updated time in a concise way
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return "never fetched";
+    
+    const lastUpdatedDate = new Date(lastUpdated);
+    const oneWeekAgo = subWeeks(new Date(), 1);
+    
+    if (isAfter(lastUpdatedDate, oneWeekAgo)) {
+      return formatDistanceToNow(lastUpdatedDate, { addSuffix: true });
+    } else {
+      return lastUpdatedDate.toLocaleDateString();
+    }
+  };
   
   // Debug panel
   const renderDebugInfo = () => {
@@ -112,7 +120,7 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
       <CardHeader className="pb-2">
         <CardTitle className="text-lg text-green-700 flex items-center justify-between">
           <div className="flex flex-col">
-            <span>{formattedDate} Satellite View {lastUpdatedText}</span>
+            <span>Satellite View <span className="text-xs text-gray-500">({formatLastUpdated()})</span></span>
           </div>
           <div className="flex items-center gap-1">
             <Button

@@ -7,15 +7,26 @@ import { WeatherDetails } from "./WeatherComponents/WeatherDetails";
 import { SunriseSunsetInfo } from "./WeatherComponents/SunriseSunsetInfo";
 import { WeatherLoadingSkeleton } from "./WeatherComponents/WeatherLoadingSkeleton";
 import { WeatherErrorDisplay } from "./WeatherComponents/WeatherErrorDisplay";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, isAfter, subWeeks } from "date-fns";
 
 export const WeatherWidget: React.FC = () => {
   const { weather, loading, error, lastUpdated } = useWeatherData();
   
-  // Format the last updated time
-  const lastUpdatedText = lastUpdated 
-    ? `(${formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })} - ${format(new Date(lastUpdated), 'MMM d, yyyy')})`
-    : '';
+  // Format the last updated time in a more concise way
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return "never fetched";
+    
+    const lastUpdatedDate = new Date(lastUpdated);
+    const oneWeekAgo = subWeeks(new Date(), 1);
+    
+    if (isAfter(lastUpdatedDate, oneWeekAgo)) {
+      return `(${formatDistanceToNow(lastUpdatedDate, { addSuffix: true })})`;
+    } else {
+      return `(${lastUpdatedDate.toLocaleDateString()})`;
+    }
+  };
+  
+  const lastUpdatedText = lastUpdated ? formatLastUpdated() : '';
     
   // Loading state
   if (loading) {
