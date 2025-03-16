@@ -1,10 +1,15 @@
+
 import React from "react";
 import { ListTodo, AlertTriangle, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function QuickQueryOptions({})
-{
+interface QuickQueryOptionsProps {
+  setInput: (input: string) => void;
+  handleSubmit: (event: any) => void;
+  setIsInputFocused: (focused: boolean) => void;
+}
 
+export function QuickQueryOptions({ setInput, handleSubmit, setIsInputFocused }: QuickQueryOptionsProps) {
   const quickQueryOptions = [
     {
       label: "Check my tasks",
@@ -28,31 +33,32 @@ export function QuickQueryOptions({})
       instantSubmit: false
     }
   ];
-return <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity rounded-md">
-  <div className="flex flex-wrap gap-2 justify-center p-2">
-    {quickQueryOptions.map((option, index) => (
-      <Button
-        key={index}
-        variant="outline"
-        className={`text-xs py-1 px-3 h-auto ${option.color}`}
-        onClick={() => {
-          setInput(option.query);
-          if (option.instantSubmit) {
-            setTimeout(() => {
-              handleSubmit(new Event('submit') as any);
-            }, 100);
-          } else {
-            setIsInputFocused(true);
-            setTimeout(() => {
-              document.querySelector('textarea')?.focus();
-            }, 100);
-          }
-        }}
-      >
-        {option.icon}
-        {option.label}
-      </Button>
-    ))}
+
+  return <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity rounded-md">
+    <div className="flex flex-wrap gap-2 justify-center p-2">
+      {quickQueryOptions.map((option, index) => (
+        <Button
+          key={index}
+          variant="outline"
+          className={`text-xs py-1 px-3 h-auto ${option.color}`}
+          onClick={() => {
+            setInput(option.query);
+            if (option.instantSubmit) {
+              setTimeout(() => {
+                handleSubmit(new Event('submit') as any);
+              }, 100);
+            } else {
+              setIsInputFocused(true);
+              setTimeout(() => {
+                document.querySelector('textarea')?.focus();
+              }, 100);
+            }
+          }}
+        >
+          {option.icon}
+          {option.label}
+        </Button>
+      ))}
     </div>
   </div>;
 }

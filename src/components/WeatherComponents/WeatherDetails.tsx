@@ -7,8 +7,7 @@ interface WeatherDetailsProps {
   weather: WeatherData;
 }
 
-function isSet( value: number | undefined ): value is boolean 
-{
+function isSet(value: number | undefined): value is number {
   return value !== undefined;
 }
 
@@ -30,13 +29,13 @@ export const WeatherDetails: React.FC<WeatherDetailsProps> = ({ weather }) => {
       <div className="text-center p-2 bg-white rounded-lg shadow-sm">
         <ArrowUp className="h-5 w-5 mx-auto text-orange-500 mb-1" />
         <p className="text-sm text-gray-500">UV Index</p>
-        <p className="font-semibold">{isSet(weather.uvIndex)?weather.uvIndex:'N/A'}</p>
+        <p className="font-semibold">{isSet(weather.uvIndex) ? weather.uvIndex : 'N/A'}</p>
       </div>
       
       <div className="text-center p-2 bg-white rounded-lg shadow-sm">
         <Droplets className="h-5 w-5 mx-auto text-blue-500 mb-1" />
         <p className="text-sm text-gray-500">Humidity</p>
-        <p className="font-semibold">{isSet( weather.humidity)?weather.humidity:'N/A'}%</p>
+        <p className="font-semibold">{isSet(weather.humidity) ? weather.humidity : 'N/A'}%</p>
       </div>
     </div>
   );

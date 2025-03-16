@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -387,7 +386,11 @@ export const GardenAdvisor = () => {
               
               {/* Quick query buttons as overlay */}
               {input === "" && !isInputFocused && (
-                <QuickQueryOptions />
+                <QuickQueryOptions 
+                  setInput={setInput}
+                  handleSubmit={handleSubmit}
+                  setIsInputFocused={setIsInputFocused}
+                />
               )}
             </div>
             
