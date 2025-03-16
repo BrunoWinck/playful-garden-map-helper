@@ -26,14 +26,9 @@ import {
 } from "@/components/ui/card";
 import { Sun, Moon, CloudRain, Cloud } from "lucide-react";
 
-type CareTask = {
-  id: string;
-  plant: string;
-  task: string;
-  dueDate: string;
-  date?: Date;
-  completed: boolean;
-};
+import { TasksContent } from "@/components/TasksContent.tsx";
+import { TasksCalendar } from "@/components/TasksCalendar.tsx";
+
 
 // Mock weather data - in a real app, this would come from an API
 type WeatherForecast = {
@@ -46,57 +41,7 @@ type WeatherForecast = {
   daylightHours: number;
 };
 
-// Convert string dates to actual Date objects for the tasks
-const careTasks: CareTask[] = [
-  {
-    id: "1",
-    plant: "Tomato",
-    task: "Water plants",
-    dueDate: "Today",
-    date: new Date(),
-    completed: false
-  },
-  {
-    id: "2",
-    plant: "Lettuce",
-    task: "Add fertilizer",
-    dueDate: "Tomorrow",
-    date: addDays(new Date(), 1),
-    completed: false
-  },
-  {
-    id: "3",
-    plant: "Carrot",
-    task: "Remove weeds",
-    dueDate: "Today",
-    date: new Date(),
-    completed: true
-  },
-  {
-    id: "4",
-    plant: "Cucumber",
-    task: "Check for pests",
-    dueDate: "In 2 days",
-    date: addDays(new Date(), 2),
-    completed: false
-  },
-  {
-    id: "5",
-    plant: "Pepper",
-    task: "Prune leaves",
-    dueDate: "In 3 days",
-    date: addDays(new Date(), 3),
-    completed: false
-  },
-  {
-    id: "6",
-    plant: "Eggplant",
-    task: "Apply organic pesticide",
-    dueDate: "In 5 days",
-    date: addDays(new Date(), 5),
-    completed: false
-  }
-];
+import { careTasks } from "@/lib/mockData.ts";
 
 // Generate mock weather forecasts for the next 30 days
 const generateWeatherForecasts = (): WeatherForecast[] => {
@@ -273,135 +218,11 @@ export const CareSchedule = () => {
         </div>
       </div>
       
-      {viewMode === "list" ? (
-        <div className="space-y-3">
-          {careTasks.map((task) => (
-            <div 
-              key={task.id} 
-              className={`p-3 rounded-lg border ${
-                task.completed ? 'bg-gray-50 border-gray-200' : 'bg-white border-green-200'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <Checkbox 
-                  id={`task-${task.id}`} 
-                  checked={task.completed}
-                />
-                <div className="flex-1">
-                  <label 
-                    htmlFor={`task-${task.id}`}
-                    className={`font-medium ${task.completed ? 'line-through text-gray-500' : 'text-green-800'}`}
-                  >
-                    {task.task}
-                  </label>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {task.plant} • Due {task.dueDate}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <Tabs value={calendarView} onValueChange={(v) => setCalendarView(v as any)}>
-            <TabsList className="grid grid-cols-3">
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="twoWeeks">2 Weeks</TabsTrigger>
-              <TabsTrigger value="month">Month</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value={calendarView} className="mt-4">
-              <div className="grid grid-cols-1 gap-3">
-                {dateRange.map((day, index) => {
-                  const tasksForDay = getTasksForDate(day);
-                  const weather = getWeatherForDate(day);
-                  const isActualForecast = isWithinForecastRange(day);
-                  
-                  return (
-                    <Card key={index} className={isSameDay(day, new Date()) ? 'border-green-500' : ''}>
-                      <CardHeader className="py-2 px-4 flex flex-row justify-between items-center">
-                        <div>
-                          <CardTitle className="text-sm font-medium">
-                            {format(day, "EEEE")}
-                          </CardTitle>
-                          <CardDescription>
-                            {format(day, "MMMM d")}
-                          </CardDescription>
-                        </div>
-                        {weather && (
-                          <div className="flex items-center space-x-2 text-sm">
-                            <div className="flex flex-col items-end">
-                              <div className="flex items-center">
-                                {renderWeatherIcon(weather.condition)}
-                                <span className="ml-1 font-medium">{weather.temperature}°C</span>
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {isActualForecast ? 'Forecast' : 'Climate avg'}
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end text-xs text-gray-500">
-                              <div className="flex items-center">
-                                <Sun className="h-3 w-3 text-yellow-500 mr-1" />
-                                {weather.sunrise}
-                              </div>
-                              <div className="flex items-center">
-                                <Moon className="h-3 w-3 text-blue-900 mr-1" />
-                                {weather.sunset}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </CardHeader>
-                      <CardContent className="py-2 px-4">
-                        {tasksForDay.length > 0 ? (
-                          <div className="space-y-2">
-                            {tasksForDay.map((task) => (
-                              <div 
-                                key={task.id}
-                                className="flex items-center p-2 rounded-md bg-green-50 border border-green-100"
-                              >
-                                <Checkbox
-                                  id={`cal-task-${task.id}`}
-                                  checked={task.completed}
-                                  className="mr-2"
-                                />
-                                <div>
-                                  <label
-                                    htmlFor={`cal-task-${task.id}`}
-                                    className={`text-sm font-medium ${task.completed ? 'line-through text-gray-500' : 'text-green-800'}`}
-                                  >
-                                    {task.task}
-                                  </label>
-                                  <div className="text-xs text-gray-500">
-                                    {task.plant}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-gray-400 py-1">No tasks</div>
-                        )}
-                        
-                        {weather && (
-                          <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
-                            <div>
-                              {weather.condition} 
-                              {weather.precipitation > 0 && `, ${weather.precipitation}mm`}
-                            </div>
-                            <div>{weather.daylightHours}h daylight</div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      )}
+      {(viewMode === "list") ? <TasksContent careTasks={careTasks}/> : 
+      (viewMode === "calendar") ? <TasksCalendar/> : 
+        ""
+
+      }
     </div>
   );
 };

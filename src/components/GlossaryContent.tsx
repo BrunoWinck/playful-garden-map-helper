@@ -90,12 +90,8 @@ export const GlossaryContent: React.FC = () => {
     }
   }, [terms, isLoading]);
 
-  const handleAddTerm = async () => {
-    if (!newTerm.trim() || !newDefinition.trim()) {
-      toast.error("Both term and definition are required.");
-      return;
-    }
-
+  async function addTerm( newTerm, newDefinition = "" )
+  {
     const termObject: Omit<GlossaryTerm, "id" | "created_at"> = {
       term: newTerm.trim(),
       definition: newDefinition.trim()
@@ -137,6 +133,24 @@ export const GlossaryContent: React.FC = () => {
       setNewDefinition("");
       setIsAddingTerm(false);
     }
+  };
+
+  useEffect(() => {
+    const onAddTerm = e => {
+      console.log( "addTerm", e);
+      addTerm( e.detail.term, e.detail.definition);
+    };
+    window.addEventListener('addToGlossary', onAddTerm);
+    return () => window.removeEventListener('addToGlossary',onAddTerm);
+  }, []);
+
+  const handleAddTerm = async () => {
+    if (!newTerm.trim() || !newDefinition.trim()) {
+      toast.error("Both term and definition are required.");
+      return;
+    }
+
+    addTerm( newTerm, newDefinition);
   };
 
   const handleDeleteTerm = async () => {

@@ -6,17 +6,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Lightbulb, SendHorizonal, Sparkles, Clock, BookOpen, CheckSquare, ListTodo, AlertTriangle, HelpCircle } from "lucide-react";
+import { Lightbulb, SendHorizonal, Sparkles, Clock } from "lucide-react";
 import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MarkdownRenderer} from "@/components/GardenMarkdown";
-
-interface GardenState {
-  patches: any[];
-  plantedItems: Record<string, any[]>;
-  weather?: any;
-  location?: string;
-}
+import { MarkdownRenderer} from "@/components/GardenMarkdown";
+import { QuickQueryOptions} from "@/components/QuickQueryOptions";
+import { GardenState, fetchGardenState } from "@/lib/fetchGardenState";
 
 interface Message {
   id: string;
@@ -136,94 +131,36 @@ export const GardenAdvisor = () => {
   };
   
   useEffect(() => {
-    const fetchGardenState = async () => {
-      try {
-        const { data: patchesData, error: patchesError } = await supabase
-          .from('patches')
-          .select('*');
+    function updateAdvisor( patches, plantedItems, weather, location, weatherSummary, shouldShowTip)
+    {
+      setGardenState({
+        patches,
+        plantedItems,
+        weather,
+        location
+      });
+      if (!initialized) {
+        if (!isLoadingHistory) {
+          initializeAdvisor(patches, plantedItems, weather, weatherSummary, location);
+          setInitialized(true);
           
-        let patches = [];
-        if (!patchesError && patchesData) {
-          patches = patchesData.map(patch => ({
-            id: patch.id,
-            name: patch.name,
-            width: Number(patch.width),
-            height: Number(patch.height),
-            type: patch.type,
-            heated: patch.heated,
-            artificialLight: patch.artificial_light,
-            naturalLightPercentage: patch.natural_light_percentage
-          }));
-        } else {
-          const storedPatches = localStorage.getItem('garden-patches');
-          patches = storedPatches ? JSON.parse(storedPatches) : [];
-        }
-        
-        const { data: tasksData, error: tasksError } = await supabase
-          .from('patch_tasks')
-          .select('*');
-          
-        let plantedItems: Record<string, any[]> = {};
-        if (!tasksError && tasksData) {
-          tasksData.forEach(task => {
-            if (!plantedItems[task.patch_id]) {
-              plantedItems[task.patch_id] = [];
-            }
-            plantedItems[task.patch_id].push(task.task);
-          });
-        } else {
-          const storedPlantedItems = localStorage.getItem('garden-planted-items');
-          plantedItems = storedPlantedItems ? JSON.parse(storedPlantedItems) : {};
-        }
-        
-        const weather = JSON.parse(localStorage.getItem('weather-data') || '{}');
-        
-        let location = "Unknown location";
-        const savedSettings = localStorage.getItem("gardenSettings");
-        if (savedSettings) {
-          const settings = JSON.parse(savedSettings);
-          if (settings.location) {
-            location = settings.location;
+          if (shouldShowTip && !dailyTipShown) {
+            getDailyTip();
           }
         }
-        
-        setGardenState({
-          patches,
-          plantedItems,
-          weather,
-          location
-        });
-        
-        const lastTipTimestamp = localStorage.getItem('last-garden-tip-timestamp');
-        const shouldShowTip = !lastTipTimestamp || 
-          (Date.now() - parseInt(lastTipTimestamp, 10)) > 24 * 60 * 60 * 1000;
-        
-        if (!initialized) {
-          if (!isLoadingHistory) {
-            initializeAdvisor(patches, plantedItems, weather, location);
-            setInitialized(true);
-            
-            if (shouldShowTip && !dailyTipShown) {
-              getDailyTip();
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error loading garden state:", error);
       }
-    };
+    }
     
-    fetchGardenState();
+    fetchGardenState( updateAdvisor);
   }, [initialized, dailyTipShown, isLoadingHistory]);
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const initializeAdvisor = async (patches: any[], plantedItems: Record<string, any[]>, weather: any, location: string) => {
+  const initializeAdvisor = async (patches: any[], plantedItems: Record<string, any[]>, weather: any, weatherSummary: any, location: string) => {
     if (weather && weather.data && location) {
       try {
-        const weatherSummary = summarizeWeather(weather);
         const contextMessage = `I'm analyzing your garden at ${location} with current weather: ${weatherSummary}`;
         
         const { data, error } = await supabase.functions.invoke('garden-advisor', {
@@ -246,44 +183,6 @@ export const GardenAdvisor = () => {
       } catch (error) {
         console.error("Error sending context to advisor:", error);
       }
-    }
-  };
-  
-  const summarizeWeather = (weather: any): string => {
-    if (!weather || !weather.data || !weather.data.length) {
-      return "unknown weather conditions";
-    }
-    
-    try {
-      const tempData = weather.data.find((item: any) => item.parameter === "t_2m:C");
-      const precipData = weather.data.find((item: any) => item.parameter === "precip_1h:mm");
-      const windData = weather.data.find((item: any) => item.parameter === "wind_speed_10m:ms");
-      
-      let summary = "";
-      
-      if (tempData && tempData.coordinates[0].dates[0]) {
-        const temp = tempData.coordinates[0].dates[0].value;
-        summary += `${temp.toFixed(1)}°C`;
-      }
-      
-      if (precipData && precipData.coordinates[0].dates[0]) {
-        const precip = precipData.coordinates[0].dates[0].value;
-        if (precip > 0) {
-          summary += `, ${precip.toFixed(1)}mm precipitation`;
-        } else {
-          summary += ", no precipitation";
-        }
-      }
-      
-      if (windData && windData.coordinates[0].dates[0]) {
-        const wind = windData.coordinates[0].dates[0].value;
-        summary += `, wind ${wind.toFixed(1)}m/s`;
-      }
-      
-      return summary;
-    } catch (error) {
-      console.error("Error summarizing weather:", error);
-      return "unknown weather conditions";
     }
   };
   
@@ -325,8 +224,6 @@ export const GardenAdvisor = () => {
       setIsLoading(false);
     }
   };
-  
-
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -405,31 +302,7 @@ export const GardenAdvisor = () => {
       setIsLoading(false);
     }
   };
-  
-  const quickQueryOptions = [
-    {
-      label: "Check my tasks",
-      icon: <ListTodo className="h-3.5 w-3.5 mr-1" />,
-      color: "bg-green-100 text-green-800 border-green-300 hover:bg-green-200",
-      query: "Check if my plan for the next months is complete considering my location, climate, and garden state. Please review what's already done and planned, and suggest additional tasks with their timing.",
-      instantSubmit: true
-    },
-    {
-      label: "Urgent care needed?",
-      icon: <AlertTriangle className="h-3.5 w-3.5 mr-1" />,
-      color: "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200",
-      query: "Based on today's weather and the current state of my garden, are there any urgent actions I should take immediately? Please use the task format for recommendations.",
-      instantSubmit: true
-    },
-    {
-      label: "What's the procedure for...",
-      icon: <HelpCircle className="h-3.5 w-3.5 mr-1" />,
-      color: "bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200", 
-      query: "What's the procedure for ",
-      instantSubmit: false
-    }
-  ];
-  
+    
   const formatTimestamp = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', { 
       hour: 'numeric', 
@@ -514,33 +387,7 @@ export const GardenAdvisor = () => {
               
               {/* Quick query buttons as overlay */}
               {input === "" && !isInputFocused && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-opacity rounded-md">
-                  <div className="flex flex-wrap gap-2 justify-center p-2">
-                    {quickQueryOptions.map((option, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        className={`text-xs py-1 px-3 h-auto ${option.color}`}
-                        onClick={() => {
-                          setInput(option.query);
-                          if (option.instantSubmit) {
-                            setTimeout(() => {
-                              handleSubmit(new Event('submit') as any);
-                            }, 100);
-                          } else {
-                            setIsInputFocused(true);
-                            setTimeout(() => {
-                              document.querySelector('textarea')?.focus();
-                            }, 100);
-                          }
-                        }}
-                      >
-                        {option.icon}
-                        {option.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+                <QuickQueryOptions />
               )}
             </div>
             

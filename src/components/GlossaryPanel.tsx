@@ -22,6 +22,8 @@ export interface GlossaryTerm {
   updated_at?: string;
 }
 
+import { careTasks } from "@/lib/mockData.ts";
+
 export const GlossaryPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("glossary");
@@ -103,7 +105,7 @@ export const GlossaryPanel = () => {
             </TabsContent>
             
             <TabsContent value="tasks" className="h-full m-0">
-              <TasksContent />
+              <TasksContent careTasks={careTasks}/>
             </TabsContent>
           </div>
         </Tabs>
