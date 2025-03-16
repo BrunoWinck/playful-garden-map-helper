@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -360,7 +361,7 @@ export const GardenAdvisor = () => {
                 isMessageHidden(message.id) ? 'py-0.5' : 'py-2'
               }`}>
                 {isMessageHidden(message.id) ? (
-                  <div className="flex items-center justify-between px-3 py-1 bg-green-50 border border-green-200 rounded text-xs text-gray-500">
+                  <div className="flex items-center justify-between px-3 py-0.5 bg-green-50 border border-green-200 rounded text-xs text-gray-500">
                     <span>
                       {message.role === "user" ? "Your message" : "Advisor response"} • {formatTimestamp(message.timestamp)}
                     </span>
@@ -368,9 +369,9 @@ export const GardenAdvisor = () => {
                       variant="ghost" 
                       size="icon" 
                       onClick={() => toggleMessageVisibility(message.id)}
-                      className="h-6 w-6"
+                      className="h-5 w-5"
                     >
-                      <Eye className="h-3.5 w-3.5" />
+                      <Eye className="h-3 w-3" />
                     </Button>
                   </div>
                 ) : (
