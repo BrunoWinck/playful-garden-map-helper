@@ -1,3 +1,4 @@
+
 import React from "react";
 import { 
   Sidebar, 
@@ -38,7 +39,7 @@ export const GardenSidebar = () => {
   
   return (
     <Sidebar>
-      <SidebarHeader className="flex items-center gap-2 px-4 py-3">
+      <SidebarHeader className="flex items-center gap-2 px-4 py-3 border-b border-green-700 bg-green-800">
         <TreeDeciduous className="h-6 w-6 text-green-100" />
         <h2 className="text-2xl font-bold text-white">Garden Planner</h2>
         <div className="flex-1" />
@@ -157,7 +158,7 @@ export const GardenSidebar = () => {
         </SidebarMenu>
       </SidebarContent>
       
-      <SidebarFooter className="p-4 border-t border-green-700">
+      <SidebarFooter className="p-4 border-t border-green-700 bg-green-800">
         {state === "expanded" ? (
           <div className="text-center text-white">
             <p className="text-sm">Garden Planner v1.0</p>
