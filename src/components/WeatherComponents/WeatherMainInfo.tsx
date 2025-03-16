@@ -15,28 +15,9 @@ export const WeatherMainInfo: React.FC<WeatherMainInfoProps> = ({ weather, lastU
     if (!lastUpdatedText || lastUpdatedText === '') return null;
     
     // If it contains "never fetched", return that
-    if (lastUpdatedText.includes("never fetched")) return "(never fetched)";
+    if (lastUpdatedText.includes("never fetched")) return "never fetched";
     
-    // Extract the date from the lastUpdatedText
-    try {
-      const match = lastUpdatedText.match(/\(([^)]+)\)/);
-      if (!match || !match[1]) return null;
-      
-      const lastUpdatedDate = new Date(match[1].split(' - ')[1]);
-      const oneWeekAgo = subWeeks(new Date(), 1);
-      
-      // If it's within the last week, just show the relative time
-      if (isAfter(lastUpdatedDate, oneWeekAgo)) {
-        return `(${formatDistanceToNow(lastUpdatedDate, { addSuffix: true })})`;
-      } 
-      // If it's older than a week, show the date
-      else {
-        return `(${lastUpdatedDate.toLocaleDateString()})`;
-      }
-    } catch (error) {
-      console.error("Error formatting last updated text:", error);
-      return null;
-    }
+    return lastUpdatedText;
   };
 
   const formattedLastUpdated = formatLastUpdated(lastUpdatedText);

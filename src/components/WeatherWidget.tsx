@@ -20,9 +20,9 @@ export const WeatherWidget: React.FC = () => {
     const oneWeekAgo = subWeeks(new Date(), 1);
     
     if (isAfter(lastUpdatedDate, oneWeekAgo)) {
-      return `(${formatDistanceToNow(lastUpdatedDate, { addSuffix: true })})`;
+      return `${formatDistanceToNow(lastUpdatedDate, { addSuffix: true })}`;
     } else {
-      return `(${lastUpdatedDate.toLocaleDateString()})`;
+      return `${lastUpdatedDate.toLocaleDateString()}`;
     }
   };
   
@@ -60,7 +60,7 @@ export const WeatherWidget: React.FC = () => {
   
   // Fallback for unexpected state
   return (
-    <Card className="w-full bg-white">
+    <Card className="w-full bg-gradient-to-br from-blue-50 to-sky-50">
       <CardContent className="p-6 text-center">
         <p className="text-gray-500">Weather information unavailable</p>
       </CardContent>

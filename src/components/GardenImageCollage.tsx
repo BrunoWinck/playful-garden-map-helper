@@ -50,11 +50,7 @@ export const GardenImageCollage: React.FC<GardenImageCollageProps> = ({
         const diff = now.getTime() - startOfYear.getTime();
         const currentDayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
         
-        // Query for images with similar conditions, prioritizing by:
-        // 1. Temperature similarity
-        // 2. Rain conditions similarity
-        // 3. UV index similarity
-        // 4. Time of year similarity (season/day of year)
+        // Query for images with similar conditions
         const { data, error } = await supabase
           .from('garden_images')
           .select('*')
@@ -139,17 +135,25 @@ export const GardenImageCollage: React.FC<GardenImageCollageProps> = ({
     );
   }
 
+  // Return blue gradient background if no images
   if (images.length === 0) {
-    return null;
+    return (
+      <div className={className}>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-sky-50 rounded-lg z-0" />
+      </div>
+    );
   }
 
   return (
     <div className={className}>
-      {selectedImage && (
+      {selectedImage ? (
         <div 
           className="absolute inset-0 bg-cover bg-center rounded-lg opacity-15 z-0" 
           style={{ backgroundImage: `url(${selectedImage})` }}
         />
+      ) : (
+        // Fallback gradient if selectedImage is null but we have images
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-sky-50 rounded-lg z-0" />
       )}
       
       <div className="relative z-10 p-1">
