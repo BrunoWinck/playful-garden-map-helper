@@ -53,10 +53,10 @@ export function useLongPress({
   }, [start]);
 
   const handleTouchEnd = useCallback(() => {
+    clear();
     if (!isLongPress.current && onClick) {
       onClick();
     }
-    clear();
   }, [clear, onClick]);
 
   return {
