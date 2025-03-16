@@ -39,12 +39,12 @@ export const SunriseSunsetInfo: React.FC<SunriseSunsetInfoProps> = ({ weather })
       <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
         <div className="text-center">
           <p className="text-sm text-gray-500">UV Dose</p>
-          <p className="font-semibold">{uvDose.toFixed(1)} J/m²</p>
+          <p className="font-semibold">{uvDose.toFixed(1)}&nbsp;J/m²</p>
         </div>
         
         <div className="text-center">
           <p className="text-sm text-gray-500">Daily Light Integral</p>
-          <p className="font-semibold">{dli.toFixed(1)} mol/m²/day</p>
+          <p className="font-semibold">{dli.toFixed(1)}&nbsp;mol/m²/day</p>
         </div>
       </div>
     </div>
