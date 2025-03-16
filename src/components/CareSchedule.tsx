@@ -41,7 +41,7 @@ type WeatherForecast = {
   daylightHours: number;
 };
 
-import { careTasks } from "@/lib/mockData.ts";
+import { careTasks } from "@/lib/mockdata.ts";
 
 // Generate mock weather forecasts for the next 30 days
 const generateWeatherForecasts = (): WeatherForecast[] => {
@@ -218,10 +218,18 @@ export const CareSchedule = () => {
         </div>
       </div>
       
-      {(viewMode === "list") ? <TasksContent careTasks={careTasks}/> : 
-      (viewMode === "calendar") ? <TasksCalendar/> : 
-        ""
-
+      {viewMode === "list" ? 
+        <TasksContent careTasks={careTasks}/> : 
+        <TasksCalendar 
+          careTasks={careTasks}
+          calendarView={calendarView}
+          setCalendarView={setCalendarView}
+          dateRange={dateRange}
+          getTasksForDate={getTasksForDate}
+          getWeatherForDate={getWeatherForDate}
+          isWithinForecastRange={isWithinForecastRange}
+          renderWeatherIcon={renderWeatherIcon}
+        />
       }
     </div>
   );

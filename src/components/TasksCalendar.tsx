@@ -1,23 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Check, Clock, ListTodo, Trash2 } from "lucide-react";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { toast } from "sonner";
 
-interface GardenTask {
-  id: string;
-  task: string;
-  completed: boolean;
-  created_at: string;
-  patch_id?: string;
-  patch_name?: string;
+import React from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Sun, Moon } from "lucide-react";
+import { format, isSameDay } from "date-fns";
+import type { CareTask } from "@/lib/types";
+
+interface TasksCalendarProps {
+  careTasks: CareTask[];
+  calendarView: string;
+  setCalendarView: (view: string) => void;
+  dateRange: Date[];
+  getTasksForDate: (date: Date) => CareTask[];
+  getWeatherForDate: (date: Date) => any;
+  isWithinForecastRange: (date: Date) => boolean;
+  renderWeatherIcon: (condition: string) => JSX.Element;
 }
 
-export const TasksCalendar: React.FC = ({careTasks}) => 
+export const TasksCalendar: React.FC<TasksCalendarProps> = ({
+  careTasks,
+  calendarView,
+  setCalendarView,
+  dateRange,
+  getTasksForDate,
+  getWeatherForDate,
+  isWithinForecastRange,
+  renderWeatherIcon
+}) => (
   <div className="space-y-4">
     <Tabs value={calendarView} onValueChange={(v) => setCalendarView(v as any)}>
       <TabsList className="grid grid-cols-3">
@@ -116,3 +126,4 @@ export const TasksCalendar: React.FC = ({careTasks}) =>
       </TabsContent>
     </Tabs>
   </div>
+);

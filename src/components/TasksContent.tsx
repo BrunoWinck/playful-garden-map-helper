@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,6 +8,7 @@ import { Check, Clock, ListTodo, Trash2 } from "lucide-react";
 import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
+import type { CareTask } from "@/lib/types";
 
 interface GardenTask {
   id: string;
@@ -17,7 +19,13 @@ interface GardenTask {
   patch_name?: string;
 }
 
-export const TasksContent: React.FC = ({careTasks}) => {
+interface TasksContentProps {
+  careTasks: CareTask[];
+}
+
+export const TasksContent: React.FC<TasksContentProps> = ({ careTasks }) => {
+  const [newTask, setNewTask] = useState("");
+  const [newTiming, setNewTiming] = useState("");
 
   const addTask = (task: string, timing: string) => {
     try {
@@ -65,12 +73,12 @@ export const TasksContent: React.FC = ({careTasks}) => {
   };
 
   useEffect(() => {
-    const onAddTask = e => {
-      console.log( "addTask", e);
-      addTask( e.detail.task, e.detail.timing);
+    const onAddTask = (e: CustomEvent) => {
+      console.log("addTask", e);
+      addTask(e.detail.task, e.detail.timing);
     };
-    window.addEventListener('addTask', onAddTask);
-    return () => window.removeEventListener('addTask',onAddTask);
+    window.addEventListener('addTask', onAddTask as EventListener);
+    return () => window.removeEventListener('addTask', onAddTask as EventListener);
   }, []);
 
   const handleAddTask = async () => {
@@ -79,7 +87,7 @@ export const TasksContent: React.FC = ({careTasks}) => {
       return;
     }
 
-    addTask( newTask, newTiming);
+    addTask(newTask, newTiming);
   };
   
   return <div className="space-y-3">
