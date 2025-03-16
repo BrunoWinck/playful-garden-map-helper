@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ export const AdviceContent: React.FC = () => {
   const [editingAdvice, setEditingAdvice] = useState<string | null>(null);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedContent, setEditedContent] = useState("");
+  const [editedSource, setEditedSource] = useState("");
+  const [newSource, setNewSource] = useState("Manual Entry");
 
   useEffect(() => {
     const fetchAdvices = async () => {
@@ -163,7 +166,7 @@ export const AdviceContent: React.FC = () => {
       return;
     }
 
-    await addAdvice(newTitle, newContent, "Manual Entry");
+    await addAdvice(newTitle, newContent, newSource);
     
     setNewTitle("");
     setNewContent("");
@@ -200,12 +203,14 @@ export const AdviceContent: React.FC = () => {
     setEditingAdvice(advice.id);
     setEditedTitle(advice.title);
     setEditedContent(advice.content);
+    setEditedSource(advice.source || "");
   };
 
   const cancelEditing = () => {
     setEditingAdvice(null);
     setEditedTitle("");
     setEditedContent("");
+    setEditedSource("");
   };
 
   const saveEditedAdvice = async (adviceId: string) => {
@@ -220,6 +225,7 @@ export const AdviceContent: React.FC = () => {
         .update({
           title: editedTitle.trim(),
           content: editedContent.trim(),
+          source: editedSource.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', adviceId);
@@ -231,7 +237,8 @@ export const AdviceContent: React.FC = () => {
           ? { 
               ...advice, 
               title: editedTitle.trim(), 
-              content: editedContent.trim()
+              content: editedContent.trim(),
+              source: editedSource.trim()
             } 
           : advice
       ));
@@ -245,7 +252,8 @@ export const AdviceContent: React.FC = () => {
           ? { 
               ...advice, 
               title: editedTitle.trim(), 
-              content: editedContent.trim()
+              content: editedContent.trim(),
+              source: editedSource.trim()
             } 
           : advice
       ));
@@ -301,6 +309,15 @@ export const AdviceContent: React.FC = () => {
                   className="min-h-[150px]"
                 />
               </div>
+              <div className="space-y-2">
+                <label htmlFor="advice-source" className="text-sm font-medium">Source</label>
+                <Input 
+                  id="advice-source" 
+                  value={newSource} 
+                  onChange={(e) => setNewSource(e.target.value)} 
+                  placeholder="Where did this advice come from?"
+                />
+              </div>
               <div className="flex justify-end gap-2">
                 <DrawerClose asChild>
                   <Button variant="outline" className="gap-1">
@@ -352,6 +369,12 @@ export const AdviceContent: React.FC = () => {
                         value={editedContent}
                         onChange={(e) => setEditedContent(e.target.value)}
                         className="text-sm text-gray-700 min-h-[120px]"
+                      />
+                      <Input
+                        value={editedSource}
+                        onChange={(e) => setEditedSource(e.target.value)}
+                        className="text-sm text-gray-700"
+                        placeholder="Source"
                       />
                       <div className="flex justify-end gap-2 pt-1">
                         <Button 
