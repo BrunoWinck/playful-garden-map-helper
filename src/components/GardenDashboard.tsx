@@ -65,12 +65,16 @@ export const GardenDashboard = () => {
             </div>
             
             {/* Garden Advisor and Glossary */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div className="md:col-span-3">
-                <GardenAdvisor />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="md:col-span-2">
+                <div className="h-full">
+                  <GardenAdvisor />
+                </div>
               </div>
               <div className="md:col-span-1">
-                <GlossaryPanel />
+                <div className="h-full">
+                  <GlossaryPanel />
+                </div>
               </div>
             </div>
             

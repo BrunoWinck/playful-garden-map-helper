@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ export const GlossaryPanel = () => {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex-1 flex flex-col">
+      <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
         <Tabs 
           defaultValue="glossary" 
           value={activeTab} 
@@ -95,16 +96,22 @@ export const GlossaryPanel = () => {
           </TabsList>
           
           <div className="flex-1 overflow-hidden">
-            <TabsContent value="glossary" className="h-full m-0">
-              <GlossaryContent />
+            <TabsContent value="glossary" className="h-full m-0 overflow-hidden">
+              <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
+                <GlossaryContent />
+              </ScrollArea>
             </TabsContent>
             
-            <TabsContent value="advices" className="h-full m-0">
-              <AdviceContent />
+            <TabsContent value="advices" className="h-full m-0 overflow-hidden">
+              <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
+                <AdviceContent />
+              </ScrollArea>
             </TabsContent>
             
-            <TabsContent value="tasks" className="h-full m-0">
-              <TasksContent careTasks={careTasks}/>
+            <TabsContent value="tasks" className="h-full m-0 overflow-hidden">
+              <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
+                <TasksContent careTasks={careTasks}/>
+              </ScrollArea>
             </TabsContent>
           </div>
         </Tabs>

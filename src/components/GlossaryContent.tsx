@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "@/components/ui/drawer";
@@ -22,7 +21,6 @@ export const GlossaryContent: React.FC = () => {
   const [editedTermValue, setEditedTermValue] = useState("");
   const [editedDefinitionValue, setEditedDefinitionValue] = useState("");
 
-  // Fetch glossary terms from Supabase
   useEffect(() => {
     const fetchGlossaryTerms = async () => {
       try {
@@ -82,7 +80,6 @@ export const GlossaryContent: React.FC = () => {
     fetchGlossaryTerms();
   }, []);
 
-  // Save terms to localStorage as a backup when they change
   useEffect(() => {
     if (terms.length > 0 && !isLoading) {
       localStorage.setItem('glossary-terms', JSON.stringify(terms));
@@ -237,14 +234,14 @@ export const GlossaryContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full p-6">
+      <div className="flex justify-center items-center p-6">
         <div className="animate-spin h-6 w-6 border-4 border-green-500 rounded-full border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       <div className="flex justify-end p-3">
         <Drawer open={isAddingTerm} onOpenChange={setIsAddingTerm}>
           <DrawerTrigger asChild>
@@ -301,95 +298,93 @@ export const GlossaryContent: React.FC = () => {
         </Drawer>
       </div>
       
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
-          {terms.length === 0 ? (
-            <div className="text-center py-6 text-gray-500">
-              <p>No terms in the glossary yet.</p>
-              <p className="text-sm">Click the + button to add your first term.</p>
-            </div>
-          ) : (
-            terms.map((term) => {
-              const longPressProps = useLongPress({
-                onLongPress: () => startEditingTerm(term)
-              });
+      <div className="p-4 space-y-4">
+        {terms.length === 0 ? (
+          <div className="text-center py-6 text-gray-500">
+            <p>No terms in the glossary yet.</p>
+            <p className="text-sm">Click the + button to add your first term.</p>
+          </div>
+        ) : (
+          terms.map((term) => {
+            const longPressProps = useLongPress({
+              onLongPress: () => startEditingTerm(term)
+            });
 
-              return (
-                <div 
-                  key={term.id} 
-                  className="border-b border-green-100 pb-3 last:border-b-0 relative group"
-                >
-                  {editingTerm === term.id ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={editedTermValue}
-                        onChange={(e) => setEditedTermValue(e.target.value)}
-                        className="font-bold text-green-800"
-                        autoFocus
-                      />
-                      <Textarea
-                        value={editedDefinitionValue}
-                        onChange={(e) => setEditedDefinitionValue(e.target.value)}
-                        className="text-sm text-gray-700 min-h-[100px]"
-                      />
-                      <div className="flex justify-end gap-2 pt-1">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={cancelEditing}
-                          className="gap-1"
-                        >
-                          <X className="h-3 w-3" />
-                          Cancel
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          onClick={() => saveEditedTerm(term.id)}
-                          className="gap-1 bg-green-700 hover:bg-green-800"
-                        >
-                          <Save className="h-3 w-3" />
-                          Save
-                        </Button>
-                      </div>
+            return (
+              <div 
+                key={term.id} 
+                className="border-b border-green-100 pb-3 last:border-b-0 relative group"
+              >
+                {editingTerm === term.id ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={editedTermValue}
+                      onChange={(e) => setEditedTermValue(e.target.value)}
+                      className="font-bold text-green-800"
+                      autoFocus
+                    />
+                    <Textarea
+                      value={editedDefinitionValue}
+                      onChange={(e) => setEditedDefinitionValue(e.target.value)}
+                      className="text-sm text-gray-700 min-h-[100px]"
+                    />
+                    <div className="flex justify-end gap-2 pt-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={cancelEditing}
+                        className="gap-1"
+                      >
+                        <X className="h-3 w-3" />
+                        Cancel
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={() => saveEditedTerm(term.id)}
+                        className="gap-1 bg-green-700 hover:bg-green-800"
+                      >
+                        <Save className="h-3 w-3" />
+                        Save
+                      </Button>
                     </div>
-                  ) : (
-                    <>
-                      <h3 
-                        className="font-bold text-green-800"
-                        {...longPressProps}
+                  </div>
+                ) : (
+                  <>
+                    <h3 
+                      className="font-bold text-green-800"
+                      {...longPressProps}
+                    >
+                      {term.term}
+                    </h3>
+                    <p 
+                      className="text-sm text-gray-700 mt-1"
+                      {...longPressProps}
+                    >
+                      {term.definition}
+                    </p>
+                    <div className="absolute right-1 top-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button 
+                        className="p-1 rounded hover:bg-green-100"
+                        onClick={() => startEditingTerm(term)}
+                        title="Edit term"
                       >
-                        {term.term}
-                      </h3>
-                      <p 
-                        className="text-sm text-gray-700 mt-1"
-                        {...longPressProps}
+                        <Pencil className="h-3 w-3 text-green-600" />
+                      </button>
+                      <button 
+                        className="p-1 rounded hover:bg-red-100"
+                        onClick={() => setSelectedTerm(term)}
+                        title="Delete term"
                       >
-                        {term.definition}
-                      </p>
-                      <div className="absolute right-1 top-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <button 
-                          className="p-1 rounded hover:bg-green-100"
-                          onClick={() => startEditingTerm(term)}
-                          title="Edit term"
-                        >
-                          <Pencil className="h-3 w-3 text-green-600" />
-                        </button>
-                        <button 
-                          className="p-1 rounded hover:bg-red-100"
-                          onClick={() => setSelectedTerm(term)}
-                          title="Delete term"
-                        >
-                          <Trash2 className="h-3 w-3 text-red-500" />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </ScrollArea>
+                        <Trash2 className="h-3 w-3 text-red-500" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
       
       {selectedTerm && (
         <Drawer open={!!selectedTerm} onOpenChange={(open) => !open && setSelectedTerm(null)}>

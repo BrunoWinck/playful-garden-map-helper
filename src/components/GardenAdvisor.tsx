@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Lightbulb, SendHorizonal, Sparkles, Clock } from "lucide-react";
@@ -335,42 +337,46 @@ export const GardenAdvisor = () => {
           Garden Advisor
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px]">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === "user"
-                  ? "bg-green-600 text-white"
-                  : message.role === "system"
-                  ? "bg-amber-100 text-amber-800 border border-amber-200"
-                  : "bg-white text-green-800 border border-green-200"
-              }`}
-            >
-              {message.role === "system" ? (
-                <div className="whitespace-pre-wrap">{message.content}</div>
-              ) : (
-                <MarkdownRenderer 
-                  content={message.content} 
-                  isUser={message.role === "user"} 
-                />
-              )}
-              <div className={`text-xs mt-1 ${
-                message.role === "user" ? "text-green-100" : "text-gray-500"
-              }`}>
-                {formatTimestamp(message.timestamp)}
+      <CardContent className="flex-1 p-0 overflow-hidden relative">
+        <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
+          <div className="p-4 space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.role === "user"
+                      ? "bg-green-600 text-white"
+                      : message.role === "system"
+                      ? "bg-amber-100 text-amber-800 border border-amber-200"
+                      : "bg-white text-green-800 border border-green-200"
+                  }`}
+                >
+                  {message.role === "system" ? (
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                  ) : (
+                    <MarkdownRenderer 
+                      content={message.content} 
+                      isUser={message.role === "user"} 
+                    />
+                  )}
+                  <div className={`text-xs mt-1 ${
+                    message.role === "user" ? "text-green-100" : "text-gray-500"
+                  }`}>
+                    {formatTimestamp(message.timestamp)}
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-        ))}
-        <div ref={messagesEndRef} />
+        </ScrollArea>
       </CardContent>
-      <CardFooter className="border-t p-3 bg-green-100 relative">
+      <CardFooter className="border-t p-3 bg-green-100">
         <form onSubmit={handleSubmit} className="flex flex-col w-full gap-2">
           <div className="flex items-end gap-2 relative">
             <div className="flex-1 relative">
