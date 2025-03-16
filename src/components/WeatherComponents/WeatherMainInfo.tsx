@@ -18,6 +18,26 @@ export const WeatherMainInfo: React.FC<WeatherMainInfoProps> = ({
   debugInfo
 }) => {
   const [showDebug, setShowDebug] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  
+  // Update the date and time every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Format time as HH:MM
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  
+  // Format date as "Month Day"
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString([], { month: 'long', day: 'numeric' });
+  };
   
   // Format the lastUpdated text to be more concise
   const formatLastUpdated = (lastUpdatedText?: string) => {
@@ -66,6 +86,7 @@ export const WeatherMainInfo: React.FC<WeatherMainInfoProps> = ({
         <div>
           <h3 className="text-xl font-semibold text-gray-800">{weather.location}</h3>
           <p className="text-4xl font-bold text-gray-800">{weather.temperature}°C</p>
+          <p className="text-[#0EA5E9] font-medium">{formatTime(currentDateTime)} · {formatDate(currentDateTime)}</p>
           <p className="text-gray-600">{weather.description}</p>
           {formattedLastUpdated && <p className="text-xs text-gray-500 mt-1">{formattedLastUpdated}</p>}
         </div>
