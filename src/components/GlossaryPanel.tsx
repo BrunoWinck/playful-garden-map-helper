@@ -71,26 +71,26 @@ export const GlossaryPanel = () => {
           onValueChange={setActiveTab}
           className="flex flex-col h-full"
         >
-          <TabsList className="mx-4 mt-3 bg-green-100 justify-between">
+          <TabsList className="mx-0 mt-3 bg-green-100 justify-between w-full grid grid-cols-3 p-0">
             <TabsTrigger 
               value="glossary" 
-              className="data-[state=active]:bg-white data-[state=active]:text-green-800"
+              className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
             >
-              <Book className="h-4 w-4 mr-1" />
+              <Book className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
               Glossary
             </TabsTrigger>
             <TabsTrigger 
               value="advices" 
-              className="data-[state=active]:bg-white data-[state=active]:text-green-800"
+              className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
             >
-              <Bookmark className="h-4 w-4 mr-1" />
+              <Bookmark className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
               Advices
             </TabsTrigger>
             <TabsTrigger 
               value="tasks" 
-              className="data-[state=active]:bg-white data-[state=active]:text-green-800"
+              className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
             >
-              <ListTodo className="h-4 w-4 mr-1" />
+              <ListTodo className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
               Tasks
             </TabsTrigger>
           </TabsList>
