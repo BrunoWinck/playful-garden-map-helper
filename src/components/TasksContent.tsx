@@ -4,11 +4,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Clock, ListTodo, Trash2 } from "lucide-react";
+import { Check, Clock, ListTodo, Trash2, Pencil } from "lucide-react";
 import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import type { CareTask } from "@/lib/types";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface GardenTask {
   id: string;
@@ -26,6 +29,10 @@ interface TasksContentProps {
 export const TasksContent: React.FC<TasksContentProps> = ({ careTasks }) => {
   const [newTask, setNewTask] = useState("");
   const [newTiming, setNewTiming] = useState("");
+  const [editingTask, setEditingTask] = useState<GardenTask | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
   const addTask = (task: string, timing: string) => {
     try {
@@ -124,6 +131,10 @@ export const TasksContentSorted: React.FC = () => {
   const [tasks, setTasks] = useState<GardenTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+  const [editingTask, setEditingTask] = useState<GardenTask | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -178,7 +189,6 @@ export const TasksContentSorted: React.FC = () => {
     fetchTasks();
   }, []);
 
-  
   const toggleTaskCompletion = async (taskId: string) => {
     try {
       // Find the task
@@ -239,6 +249,52 @@ export const TasksContentSorted: React.FC = () => {
     } catch (error) {
       console.error("Error deleting task:", error);
       toast.error("Failed to delete task");
+    }
+  };
+
+  const openEditDialog = (task: GardenTask) => {
+    setEditingTask(task);
+    setIsEditDialogOpen(true);
+  };
+
+  const saveEditedTask = async () => {
+    if (!editingTask) return;
+    
+    try {
+      const { error } = await supabase
+        .from('patch_tasks')
+        .update({ task: editingTask.task })
+        .eq('id', editingTask.id);
+
+      if (error) throw error;
+
+      // Update in local state
+      setTasks(prev => 
+        prev.map(task => 
+          task.id === editingTask.id 
+            ? { ...task, task: editingTask.task } 
+            : task
+        )
+      );
+      
+      setIsEditDialogOpen(false);
+      toast.success("Task updated successfully");
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast.error("Failed to update task");
+    }
+  };
+
+  const confirmDeleteTask = (taskId: string) => {
+    setTaskToDelete(taskId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (taskToDelete) {
+      await deleteTask(taskToDelete);
+      setIsDeleteDialogOpen(false);
+      setTaskToDelete(null);
     }
   };
 
@@ -328,14 +384,24 @@ export const TasksContentSorted: React.FC = () => {
                                 </div>
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 h-7 w-7 p-0"
-                              onClick={() => deleteTask(task.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                            <div className="flex items-center opacity-0 group-hover:opacity-100">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 mr-1"
+                                onClick={() => openEditDialog(task)}
+                              >
+                                <Pencil className="h-4 w-4 text-gray-500" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0"
+                                onClick={() => confirmDeleteTask(task.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -347,6 +413,54 @@ export const TasksContentSorted: React.FC = () => {
           )}
         </div>
       </ScrollArea>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Task Description</label>
+              <Input 
+                value={editingTask?.task || ""}
+                onChange={(e) => setEditingTask(editingTask ? {...editingTask, task: e.target.value} : null)}
+                placeholder="What needs to be done?"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveEditedTask}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the task.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
+
