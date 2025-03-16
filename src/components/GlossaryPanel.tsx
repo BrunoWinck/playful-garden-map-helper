@@ -27,6 +27,9 @@ import { careTasks } from "@/lib/mockdata.ts";
 export const GlossaryPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("glossary");
+  const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false);
+  const [newTask, setNewTask] = useState("");
+  const [newTaskTiming, setNewTaskTiming] = useState("");
   
   useEffect(() => {
     // Just set loading to false after a short delay
@@ -36,6 +39,30 @@ export const GlossaryPanel = () => {
     
     return () => clearTimeout(timer);
   }, []);
+
+  const handleAddTask = () => {
+    if (!newTask.trim()) {
+      toast.error("Task cannot be empty");
+      return;
+    }
+
+    if (!newTaskTiming.trim()) {
+      toast.error("Please specify when the task should be done");
+      return;
+    }
+
+    // Create custom event to trigger the addTask function in TasksContent
+    const addTaskEvent = new CustomEvent('addTask', {
+      detail: { task: newTask, timing: newTaskTiming }
+    });
+    window.dispatchEvent(addTaskEvent);
+
+    // Reset form and close drawer
+    setNewTask("");
+    setNewTaskTiming("");
+    setIsTaskDrawerOpen(false);
+    toast.success("Task added successfully");
+  };
 
   // Render loading state
   if (isLoading) {
@@ -62,6 +89,46 @@ export const GlossaryPanel = () => {
             <Book className="mr-2 h-5 w-5" />
             Garden Knowledge Base
           </div>
+          {activeTab === "tasks" && (
+            <Drawer open={isTaskDrawerOpen} onOpenChange={setIsTaskDrawerOpen}>
+              <DrawerTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-white hover:bg-green-600">
+                  <Plus className="h-4 w-4 mr-1" />
+                  <span className="text-sm">Add Task</span>
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent className="max-w-md mx-auto">
+                <div className="p-4 space-y-4">
+                  <h3 className="text-lg font-medium">Add New Garden Task</h3>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Task Description</label>
+                    <Input 
+                      value={newTask}
+                      onChange={(e) => setNewTask(e.target.value)}
+                      placeholder="What needs to be done?"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">When to do it</label>
+                    <Input 
+                      value={newTaskTiming}
+                      onChange={(e) => setNewTaskTiming(e.target.value)}
+                      placeholder="Today, Tomorrow, In 2 days, etc."
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <DrawerClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DrawerClose>
+                    <Button onClick={handleAddTask}>
+                      <Save className="h-4 w-4 mr-1" />
+                      Save Task
+                    </Button>
+                  </div>
+                </div>
+              </DrawerContent>
+            </Drawer>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
