@@ -1,4 +1,3 @@
-
 /**
  * Computes the Moon's phase for a given date.
  * The phase is calculated as the age (in days) since the last New Moon,
@@ -252,4 +251,39 @@ export function getMoonriseMoonset(date: Date, latitude: number, longitude: numb
   }
 
   return { moonrise, moonset };
+}
+
+/**
+ * Finds the highest altitude of the Moon for a given day and location.
+ * It samples the Moon's altitude at regular intervals and returns the highest value.
+ * 
+ * @param date - The date for which to compute the highest Moon altitude.
+ * @param latitude - Observer's latitude in degrees.
+ * @param longitude - Observer's longitude in degrees.
+ * @returns An object containing the highest altitude and the time it occurs.
+ */
+export function getHighestMoonAltitude(date: Date, latitude: number, longitude: number): { altitude: number; time: Date } {
+  // Create a date object for the start of the day in UTC
+  const startOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0));
+  
+  // Sample interval in minutes
+  const sampleIntervalMinutes = 15;
+  let highestAltitude = -90; // Start below the horizon
+  let timeOfHighestAltitude = new Date(startOfDay);
+  
+  // Sample the Moon's altitude throughout the day
+  for (let minutes = 0; minutes < 24 * 60; minutes += sampleIntervalMinutes) {
+    const sampleTime = new Date(startOfDay.getTime() + minutes * 60000);
+    const altitude = getMoonAltitude(sampleTime, latitude, longitude);
+    
+    if (altitude > highestAltitude) {
+      highestAltitude = altitude;
+      timeOfHighestAltitude = new Date(sampleTime);
+    }
+  }
+  
+  return {
+    altitude: Math.round(highestAltitude * 10) / 10, // Round to 1 decimal place
+    time: timeOfHighestAltitude
+  };
 }

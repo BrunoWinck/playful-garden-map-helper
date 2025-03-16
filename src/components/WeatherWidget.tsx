@@ -8,6 +8,7 @@ import { SunriseSunsetInfo } from "./WeatherComponents/SunriseSunsetInfo";
 import { WeatherLoadingSkeleton } from "./WeatherComponents/WeatherLoadingSkeleton";
 import { WeatherErrorDisplay } from "./WeatherComponents/WeatherErrorDisplay";
 import { formatDistanceToNow, isAfter, subWeeks } from "date-fns";
+import { MoonInfo } from "./WeatherComponents/MoonInfo";
 
 export const WeatherWidget: React.FC = () => {
   const { weather, loading, error, lastUpdated, debugInfo } = useWeatherData();
@@ -74,6 +75,14 @@ export const WeatherWidget: React.FC = () => {
           
           {/* Sunrise and sunset information */}
           <SunriseSunsetInfo weather={weather} />
+          
+          {/* Moon information */}
+          {weather.coordinates && (
+            <MoonInfo 
+              latitude={weather.coordinates.latitude} 
+              longitude={weather.coordinates.longitude} 
+            />
+          )}
         </CardContent>
       </Card>
     );

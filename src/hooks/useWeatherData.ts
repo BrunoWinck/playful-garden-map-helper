@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { computeSunriseSunset, utcToLocalTime } from "@/lib/solarCalculations";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +39,10 @@ export interface WeatherData {
   dayDuration?: string;
   humidity?: number;
   isClimateFallback?: boolean;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export const useWeatherData = () => {
@@ -245,7 +250,8 @@ const processWeatherData = (apiData: any, latitude: number, longitude: number): 
       sunset: localSunset,
       dayDuration,
       humidity,
-      isClimateFallback
+      isClimateFallback,
+      coordinates: coords // Include coordinates in the result
     };
     
     console.log("Final processed weather data:", result);
