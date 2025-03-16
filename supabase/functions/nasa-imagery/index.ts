@@ -1,8 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const NASA_API_KEY = "gImd7DeDkPV8CgfcGRhb6FzDL3h3SfzCQCGrdCZa";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -17,6 +15,13 @@ serve(async (req) => {
 
   try {
     console.log("NASA imagery function called");
+    
+    // Get the NASA API key from environment variables
+    const NASA_API_KEY = Deno.env.get("NASA_API_KEY");
+    
+    if (!NASA_API_KEY) {
+      throw new Error("NASA API key not configured in environment variables");
+    }
     
     const { lat, lon, date, dim } = await req.json();
     

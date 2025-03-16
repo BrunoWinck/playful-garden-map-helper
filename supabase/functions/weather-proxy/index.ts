@@ -43,9 +43,16 @@ serve(async (req) => {
     // For forecast data - get 7 days
     const endTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
     
+    // Get credentials from Supabase secrets
+    const username = Deno.env.get("METEOMATICS_USERNAME");
+    const password = Deno.env.get("METEOMATICS_PASSWORD");
+    
+    if (!username || !password) {
+      console.error("Missing Meteomatics credentials in environment variables");
+      throw new Error("Meteomatics API credentials not configured");
+    }
+    
     // Create Basic Authentication header
-    const username = "na_winck_bruno";
-    const password = "3Ijssv14QC";
     const authHeader = 'Basic ' + btoa(username + ':' + password);
     
     // Exactly 10 parameters to comply with API limitations
@@ -61,25 +68,6 @@ serve(async (req) => {
       'uv:idx',                // UV index
       // not in basic plan 'relative_humidity_2m:p' // humidity
     ].join(',');
-    /*
-    15 basic weather parameters, listed below:
-    API parameter	Description
-    wind_speed_10m:ms	Instantaneous wind speed at 10m above ground
-    wind_dir_10m:d	Instantaneous wind direction at 10m above ground in degrees
-    wind_gusts_10m_1h:ms	Wind gusts in 10 m in the previous 1h, in Beaufort(bft), kilometers/hour(km/h), knots(kn), meters/second(m/s)
-    wind_gusts_10m_24h:ms	Wind gusts in 10 m in the previous 24h, in Beaufort(bft), kilometers/hour(km/h), knots(kn), meters/second(m/s)
-    t_2m:C	Instantaneous temperature at 2m above ground in degrees Celsius (C), kelvin (K) or degree Fahrenheit (F)
-    t_max_2m_24h:C	Maximum temperature at 2m height in the previous 24h, in degrees Celsius (C), kelvin (K) or degree Fahrenheit (F)
-    t_min_2m_24h:C	Minimum temperature at 2m height in the previous 24h, in degrees Celsius (C), kelvin (K) or degree Fahrenheit (F)
-    msl_pressure:hPa	Mean sea level pressure in hectopascal (hPa) or pascal (Pa)
-    precip_1h:mm	Precipitation accumulated over the past hour in millimeter (equivalent to litres per square meter)
-    precip_24h:mm	Precipitation accumulated over the past 24 hours in millimeter (equivalent to litres per square meter)
-    weather_symbol_1h:idx	Weather symbol giving an overall impression of the weather state of the past hour. (see this sectionfor more information)
-    weather_symbol_24h:idx	Weather symbol giving an overall impression of the weather state of the past 24 hours. (see this section for more information)
-    uv:idx	UV index
-    sunrise:sql	Sunrise
-    sunset:sql	Sunset
-    */
     
     // Access the Meteomatics API
     const url = `https://api.meteomatics.com/${now}--${endTime}:PT3H/${params}/${lat},${lon}/json`;
