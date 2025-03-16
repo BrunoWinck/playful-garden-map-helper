@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { computeSunriseSunset, utcToLocalTime } from "@/lib/solarCalculations";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +45,7 @@ export const useWeatherData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { currentMonthData, loading: climateLoading } = useClimateData();
 
   useEffect(() => {
@@ -111,6 +111,9 @@ export const useWeatherData = () => {
           throw new Error(functionData.error || 'Unknown error fetching weather data');
         }
         
+        // Store debug info
+        setDebugInfo(functionData);
+        
         // Set the last updated timestamp
         setLastUpdated(new Date().toISOString());
         
@@ -134,7 +137,7 @@ export const useWeatherData = () => {
     fetchWeatherData();
   }, []);
 
-  return { weather, loading, error, lastUpdated };
+  return { weather, loading, error, lastUpdated, debugInfo };
 };
 
 // Helper function to process raw weather data

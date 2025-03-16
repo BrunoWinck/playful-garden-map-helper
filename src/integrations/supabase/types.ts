@@ -257,6 +257,8 @@ export type Database = {
           language: string
           length_unit: string
           location: string
+          show_satellite_debug: boolean | null
+          show_weather_debug: boolean | null
           temperature_unit: string
           updated_at: string
           user_id: string
@@ -267,6 +269,8 @@ export type Database = {
           language?: string
           length_unit?: string
           location?: string
+          show_satellite_debug?: boolean | null
+          show_weather_debug?: boolean | null
           temperature_unit?: string
           updated_at?: string
           user_id: string
@@ -277,6 +281,8 @@ export type Database = {
           language?: string
           length_unit?: string
           location?: string
+          show_satellite_debug?: boolean | null
+          show_weather_debug?: boolean | null
           temperature_unit?: string
           updated_at?: string
           user_id?: string
