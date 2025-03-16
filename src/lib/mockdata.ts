@@ -1,5 +1,7 @@
+
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
-import CareTask from "@/lib/types"
+import { CareTask } from "@/lib/types";
+
 // Convert string dates to actual Date objects for the tasks
 export const careTasks: CareTask[] = [
   {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,7 @@ export interface GlossaryTerm {
   updated_at?: string;
 }
 
-import { careTasks } from "@/lib/mockData.ts";
+import { careTasks } from "@/lib/mockdata.ts";
 
 export const GlossaryPanel = () => {
   const [isLoading, setIsLoading] = useState(true);

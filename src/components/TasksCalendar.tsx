@@ -9,8 +9,8 @@ import type { CareTask } from "@/lib/types";
 
 interface TasksCalendarProps {
   careTasks: CareTask[];
-  calendarView: string;
-  setCalendarView: (view: string) => void;
+  calendarView: "week" | "twoWeeks" | "month";
+  setCalendarView: React.Dispatch<React.SetStateAction<"week" | "twoWeeks" | "month">>;
   dateRange: Date[];
   getTasksForDate: (date: Date) => CareTask[];
   getWeatherForDate: (date: Date) => any;
