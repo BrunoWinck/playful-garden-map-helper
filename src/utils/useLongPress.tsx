@@ -1,4 +1,3 @@
-
 import { useCallback, useRef } from "react";
 
 interface LongPressOptions {
@@ -12,6 +11,15 @@ export function useLongPress({
   onClick,
   threshold = 500,
 }: LongPressOptions) {
+  return {
+    onMouseDown: () => {},
+    onMouseUp: () => {},
+    onMouseLeave: () => {},
+    onClick: () => {},
+    onTouchStart: () => {},
+    onTouchEnd: () => {},
+  };
+  
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPress = useRef<boolean>(false);
 
