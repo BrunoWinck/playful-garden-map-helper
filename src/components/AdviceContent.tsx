@@ -113,16 +113,12 @@ export const AdviceContent: React.FC = () => {
     }
   }, [advices, isLoading]);
 
-  const handleAddAdvice = async () => {
-    if (!newTitle.trim() || !newContent.trim()) {
-      toast.error("Both title and content are required.");
-      return;
-    }
-
+  // Add a new function to handle adding advice from selected text
+  async function addAdvice(title: string, content: string, source: string = "Selected Text") {
     const adviceObject = {
-      title: newTitle.trim(),
-      content: newContent.trim(),
-      source: "Manual Entry"
+      title: title.trim(),
+      content: content.trim(),
+      source
     };
 
     try {
@@ -140,7 +136,7 @@ export const AdviceContent: React.FC = () => {
 
       if (data) {
         setAdvices(prev => [data, ...prev]);
-        toast.success(`Added advice: "${newTitle}"`);
+        toast.success(`Added advice: "${title}"`);
       }
     } catch (error) {
       console.error("Error adding advice:", error);
@@ -153,12 +149,33 @@ export const AdviceContent: React.FC = () => {
       };
       
       setAdvices(prev => [newAdviceObject, ...prev]);
-      toast.success(`Added advice: "${newTitle}"`);
-    } finally {
-      setNewTitle("");
-      setNewContent("");
-      setIsAddingAdvice(false);
+      toast.success(`Added advice: "${title}"`);
     }
+  }
+
+  // Add event listener for the addAdvice custom event
+  useEffect(() => {
+    const handleAddAdviceEvent = (e: CustomEvent) => {
+      const { title, content } = e.detail;
+      addAdvice(title, content, "Garden Advisor");
+    };
+
+    window.addEventListener('addAdvice', handleAddAdviceEvent as EventListener);
+    return () => window.removeEventListener('addAdvice', handleAddAdviceEvent as EventListener);
+  }, []);
+
+  const handleAddAdvice = async () => {
+    if (!newTitle.trim() || !newContent.trim()) {
+      toast.error("Both title and content are required.");
+      return;
+    }
+
+    await addAdvice(newTitle, newContent, "Manual Entry");
+    
+    // Reset form
+    setNewTitle("");
+    setNewContent("");
+    setIsAddingAdvice(false);
   };
 
   const handleDeleteAdvice = async () => {
