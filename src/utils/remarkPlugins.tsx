@@ -5,11 +5,8 @@ import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations
 
 const addToGlossary = (term: string) => {
   try {
-
     window.dispatchEvent( new CustomEvent('addToGlossary', { detail: { term } }));
-
     /*
-
     const storedTerms = localStorage.getItem('glossary-terms');
     const terms: GlossaryTerm[] = storedTerms ? JSON.parse(storedTerms) : [];
     
@@ -56,7 +53,6 @@ const addToGlossary = (term: string) => {
 const addToTasks = (task: string, timing: string) => {
   try {
     window.dispatchEvent( new CustomEvent('addTask', { detail: { task, timing } }));
-
   } catch (error) {
     console.error("Error adding task:", error);
   }
@@ -66,12 +62,9 @@ const addToTasks = (task: string, timing: string) => {
 function remarkGlossarySyntax() {
   return (tree: any) => {
     visit(tree, "text", (node, index, parent) => {
-      // Updated regex to handle multiline content with 's' flag (dotAll)
       const regex = /\[\[(.*?)\]\]/gs;
       const matches = [...node.value.matchAll(regex)];
       
-      // console.log("Glossary matches:", matches.length > 0 ? matches.map(m => m[1]) : "none");
-
       if (matches.length > 0 && parent && typeof index === "number") {
         const newChildren = [];
         let lastIndex = 0;
@@ -80,42 +73,33 @@ function remarkGlossarySyntax() {
           const [fullMatch, termText] = match;
           const matchIndex = node.value.indexOf(fullMatch, lastIndex);
 
-          // Keep text before match
           if (matchIndex > lastIndex) {
             newChildren.push({ type: "text", value: node.value.slice(lastIndex, matchIndex) });
           }
 
-          // Insert custom glossary term node using the element type structure
           const glossaryNode = {
-            type : "html", // a mast type
-            // beware confusing "html" and "value" caused an error about calling length on undefined in parser, no checks
-            value: `<glossary-term >`
-            // type: "element",
-            // tagName: "span",
-            // properties: {},
-            // children: [{ type: "text", value: termText.trim() }]
+            type : "html",
+            value: `<glossary-term>`
           };
           
-          // console.log("Pushing glossaryTerm node:", glossaryNode);
           newChildren.push(glossaryNode);
           newChildren.push({
-            type : "text", // a mast type
-            value: termText.trim()});
+            type : "text",
+            value: termText.trim()
+          });
           newChildren.push({
-            type : "html", // a mast type
-            value: `</glossary-term>`});
+            type : "html",
+            value: `</glossary-term>`
+          });
 
           lastIndex = matchIndex + fullMatch.length;
         });
 
-        // Keep any remaining text after the last match
         if (lastIndex < node.value.length) {
           newChildren.push({ type: "text", value: node.value.slice(lastIndex) });
         }
 
-        // Replace the original text node with new children
         parent.children.splice(index, 1, ...newChildren);
-        // console.log( "parent", parent);
       }
     });
   };
@@ -125,34 +109,26 @@ function remarkGlossarySyntax() {
 function remarkTaskSyntax() {
   return (tree: any) => {
     visit(tree, "text", (node, index, parent) => {
-      // Updated regex to handle multiline content with 's' flag (dotAll)
-      // Also handle optional timing information after a pipe character
       const regex = /\(\((.*?)(?:\|(.*?))?\)\)/gs;
       const matches = [...node.value.matchAll(regex)];
       
-      // console.log("Task matches:", matches.length > 0 ? matches.map(m => [m[1], m[2]]) : "none");
-
       if (matches.length > 0 && parent && typeof index === "number") {
         const newChildren = [];
         let lastIndex = 0;
 
         matches.forEach((match) => {
-          // console.log("Task match:", match);
           const [fullMatch, taskText, timingText] = match;
           const matchIndex = node.value.indexOf(fullMatch, lastIndex);
 
-          // Keep text before match
           if (matchIndex > lastIndex) {
             newChildren.push({ type: "text", value: node.value.slice(lastIndex, matchIndex) });
           }
 
-          // Insert custom task node using the element type structure
           const taskNode = {
             type: "html",
-            value: `<task-item ${timingText?`timing="${timingText.trim()}"`:""}>`,
+            value: `<task-item ${timingText?`timing="${timingText.trim()}"`:""}/>`
           };
           
-          // console.log("Pushing taskItem node:", taskNode);
           newChildren.push(taskNode);
           newChildren.push({ type: "text", value: taskText.trim()});
           newChildren.push({ type: "html", value: "</task-item>"});
@@ -160,12 +136,10 @@ function remarkTaskSyntax() {
           lastIndex = matchIndex + fullMatch.length;
         });
 
-        // Keep any remaining text after the last match
         if (lastIndex < node.value.length) {
           newChildren.push({ type: "text", value: node.value.slice(lastIndex) });
         }
 
-        // Replace the original text node with new children
         parent.children.splice(index, 1, ...newChildren);
       }
     });
@@ -178,9 +152,7 @@ export const plugins = [
 ];
 
 function GlossaryTerm({ node }: any) {
-  // console.log("Rendering glossaryTerm component:", node);
   const term = node.children[0].value;
-  // no setTimeout(() => addToGlossary(term), 0);
   return (
     <span 
       className="glossary-term bg-green-100 px-1 rounded cursor-pointer hover:bg-green-200 transition-colors inline-flex items-center"
@@ -197,10 +169,8 @@ function GlossaryTerm({ node }: any) {
 }
 
 function TaskItem({ node }: any) {
-  // console.log("Rendering taskItem component:", node);
   const task = node.children[0].value;
   const timing = node.properties?.timing;
-  // no setTimeout(() => addToTasks(task), 0);
   return (
     <span 
       className="task-item bg-yellow-100 px-1 rounded cursor-pointer hover:bg-yellow-200 transition-colors inline-flex items-center"
@@ -213,8 +183,7 @@ function TaskItem({ node }: any) {
   );
 }
 
-
 export const components = {
   "glossary-term": GlossaryTerm,
- "task-item": TaskItem
+  "task-item": TaskItem
 };

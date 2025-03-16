@@ -242,12 +242,10 @@ function example()
   console.log(`🌫️ LCL (Cloud Base Altitude): ${lcl.toFixed(2)}m`);
 }
 
-/* previous respnse
-import { sin, cos, tan, acos, asin, atan2, PI } from "mathjs";
-
-// Constants
-const DEG_TO_RAD = PI / 180;
-const RAD_TO_DEG = 180 / PI;
+// Existing methods from previous fix/implementation 
+function getJulianDate(date: Date): number {
+  return date.getTime() / 86400000 + 2440587.5;
+}
 
 /**
  * Calculate solar elevation and azimuth angles
@@ -255,132 +253,38 @@ const RAD_TO_DEG = 180 / PI;
  * @param {number} longitude - GPS longitude in degrees
  * @param {Date} date - Date object (UTC time assumed)
  * @returns {{ elevation: number, azimuth: number }}
- * /
+ */
 export function getSolarPosition(latitude: number, longitude: number, date: Date) {
   const daysSinceJan1 = (date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / 86400000;
-  const declination = 23.44 * cos(((360 / 365) * (daysSinceJan1 + 10)) * DEG_TO_RAD);
+  const declination = 23.44 * Math.cos(((360 / 365) * (daysSinceJan1 + 10)) * Math.PI / 180);
   const timeOffset = (date.getUTCHours() + date.getUTCMinutes() / 60) - longitude / 15;
   const hourAngle = (timeOffset - 12) * 15;
   
-  const latRad = latitude * DEG_TO_RAD;
-  const decRad = declination * DEG_TO_RAD;
-  const haRad = hourAngle * DEG_TO_RAD;
+  const latRad = latitude * Math.PI / 180;
+  const decRad = declination * Math.PI / 180;
+  const haRad = hourAngle * Math.PI / 180;
   
-  const elevation = asin(sin(latRad) * sin(decRad) + cos(latRad) * cos(decRad) * cos(haRad)) * RAD_TO_DEG;
-  const azimuth = atan2(
-      -sin(haRad),
-      cos(latRad) * tan(decRad) - sin(latRad) * cos(haRad)
-  ) * RAD_TO_DEG;
+  const elevation = Math.asin(Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(haRad)) * 180 / Math.PI;
+  const azimuth = Math.atan2(
+      -Math.sin(haRad),
+      Math.cos(latRad) * Math.tan(decRad) - Math.sin(latRad) * Math.cos(haRad)
+  ) * 180 / Math.PI;
 
   return { elevation, azimuth };
 }
 
 /**
-* Calculate frost point temperature
-* @param {number} temperature - Air temperature in Celsius
-* @param {number} humidity - Relative humidity in % (0-100)
-* @returns {number} Frost point in Celsius
-* /
+ * Calculate frost point temperature
+ * @param {number} temperature - Air temperature in Celsius
+ * @param {number} humidity - Relative humidity in % (0-100)
+ * @returns {number} Frost point in Celsius
+ */
 export function getFrostPoint(temperature: number, humidity: number) {
   const dewPoint = temperature - ((100 - humidity) / 5);
   return dewPoint - 1; // Approximate frost point (1°C below dew point)
 }
-*/
 
-// meteorology.ts
-
-// Helper functions to convert between degrees and radians.
-function toRadians3(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
-
-function toDegrees3(radians: number): number {
-  return radians * (180 / Math.PI);
-}
-
-/**
- * 1. Solar Position Calculation
- * Calculates the sun's elevation and azimuth (in degrees) for a given UTC Date, latitude, and longitude.
- */
-export function getSolarPosition(latitude: number, longitude: number, date: Date): { elevation: number; azimuth: number } {
-  // Convert latitude to radians.
-  const radLat = toRadians(latitude);
-
-  // Calculate the day of the year.
-  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
-  const diff = date.getTime() - start.getTime();
-  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  // Get fractional hour (UTC)
-  const hour = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
-
-  // Fractional year (gamma) in radians.
-  const gamma = (2 * Math.PI / 365) * (dayOfYear - 1 + (hour - 12) / 24);
-
-  // Equation of Time (in minutes)
-  const eqTime =
-    229.18 *
-    (0.000075 +
-      0.001868 * Math.cos(gamma) -
-      0.032077 * Math.sin(gamma) -
-      0.014615 * Math.cos(2 * gamma) -
-      0.040849 * Math.sin(2 * gamma));
-
-  // Solar declination (in radians)
-  const decl =
-    0.006918 -
-    0.399912 * Math.cos(gamma) +
-    0.070257 * Math.sin(gamma) -
-    0.006758 * Math.cos(2 * gamma) +
-    0.000907 * Math.sin(2 * gamma) -
-    0.002697 * Math.cos(3 * gamma) +
-    0.00148 * Math.sin(3 * gamma);
-
-  // Time offset in minutes (adjusted for longitude; here we assume UTC so no timezone correction)
-  const timeOffset = eqTime + 4 * longitude;
-
-  // True Solar Time in minutes.
-  const tst = hour * 60 + timeOffset;
-
-  // Hour angle (in degrees).
-  const ha = tst / 4 - 180;
-  const haRad = toRadians(ha);
-
-  // Solar zenith angle.
-  const zenith = Math.acos(Math.sin(radLat) * Math.sin(decl) + Math.cos(radLat) * Math.cos(decl) * Math.cos(haRad));
-
-  // Solar elevation angle (in degrees).
-  const elevation = 90 - toDegrees(zenith);
-
-  // Azimuth calculation.
-  let azimuth = toDegrees(
-    Math.acos((Math.sin(radLat) * Math.cos(zenith) - Math.sin(decl)) / (Math.cos(radLat) * Math.sin(zenith)))
-  );
-  // Adjust azimuth depending on the hour angle.
-  if (ha > 0) {
-    azimuth = 360 - azimuth;
-  }
-
-  return { elevation, azimuth };
-}
-
-/**
- * 2. Solar Radiation (Insolation)
- * A simplified model: returns the incident solar radiation (W/m²) based on the solar elevation.
- */
-export function getSolarRadiation(elevation: number): number {
-  if (elevation <= 0) {
-    return 0;
-  }
-  const solarConstant = 1361; // in W/m²
-  return solarConstant * Math.sin(toRadians(elevation));
-}
-
-/**
- * 3. Heat Index (Feels-Like Temperature)
- * Uses the NOAA formula. Input temperature is in Celsius and humidity in percent.
- * The calculation converts to Fahrenheit and back.
- */
+// Heat index calculation
 export function getHeatIndex(temperatureC: number, humidity: number): number {
   const temperatureF = temperatureC * (9 / 5) + 32;
   const hiF =
@@ -396,342 +300,3 @@ export function getHeatIndex(temperatureC: number, humidity: number): number {
   const hiC = (hiF - 32) * (5 / 9);
   return hiC;
 }
-
-/**
- * 4. Wind Chill Calculation
- * Uses the Canadian wind chill formula.
- * Temperature in Celsius and windSpeed in km/h.
- */
-export function getWindChill(temperatureC: number, windSpeedKmh: number): number {
-  // Wind chill is only significant for wind speeds above ~4.8 km/h.
-  if (windSpeedKmh < 4.8) {
-    return temperatureC;
-  }
-  return 13.12 + 0.6215 * temperatureC - 11.37 * Math.pow(windSpeedKmh, 0.16) + 0.3965 * temperatureC * Math.pow(windSpeedKmh, 0.16);
-}
-
-/**
- * 5. Dew Point Calculation using the Magnus Formula
- * Temperature is in Celsius and relative humidity in percent.
- */
-export function getDewPoint(temperatureC: number, humidity: number): number {
-  const a = 17.27;
-  const b = 237.7;
-  const alpha = Math.log(humidity / 100) + (a * temperatureC) / (b + temperatureC);
-  return (b * alpha) / (a - alpha);
-}
-
-/**
- * 6. Frost Point Estimation
- * A rough approximation, subtracting about 2°C from the dew point under conditions
- * where frost is likely to form.
- */
-export function getFrostPoint(temperatureC: number, humidity: number): number {
-  const dewPoint = getDewPoint(temperatureC, humidity);
-  return dewPoint - 2;
-}
-
-/**
- * 7. Lifting Condensation Level (LCL)
- * An approximate calculation (in meters) of the height at which air becomes saturated.
- * LCL ≈ 125 * (temperature - dewPoint)
- */
-export function getLCL(temperatureC: number, humidity: number): number {
-  const dewPoint = getDewPoint(temperatureC, humidity);
-  return 125 * (temperatureC - dewPoint);
-}
-
-/**
- * 8. Sunrise, Sunset, and Twilight Times Calculation
- * A helper that calculates sunrise and sunset times for a given solar altitude (in degrees).
- * For standard sunrise/sunset, use altitude = -0.833 (accounts for atmospheric refraction and solar disk).
- */
-function getSunriseSunsetForAltitude(
-  altitude: number,
-  date: Date,
-  latitude: number,
-  longitude: number
-): { sunrise: Date; sunset: Date } | null {
-  const altRad = toRadians(altitude);
-  const latRad = toRadians(latitude);
-
-  // Calculate day of year.
-  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
-  const diff = date.getTime() - start.getTime();
-  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  // Fractional year (gamma) in radians.
-  const gamma = (2 * Math.PI / 365) * (dayOfYear - 1);
-
-  // Solar declination (in radians)
-  const decl =
-    0.006918 -
-    0.399912 * Math.cos(gamma) +
-    0.070257 * Math.sin(gamma) -
-    0.006758 * Math.cos(2 * gamma) +
-    0.000907 * Math.sin(2 * gamma) -
-    0.002697 * Math.cos(3 * gamma) +
-    0.00148 * Math.sin(3 * gamma);
-
-  // Calculate the hour angle for the given altitude.
-  const cosH = (Math.sin(altRad) - Math.sin(latRad) * Math.sin(decl)) / (Math.cos(latRad) * Math.cos(decl));
-
-  if (cosH < -1 || cosH > 1) {
-    // The sun does not reach this altitude on this day (e.g., during polar night/day).
-    return null;
-  }
-
-  const H = Math.acos(cosH); // in radians
-
-  // Equation of Time (in minutes)
-  const eqTime =
-    229.18 *
-    (0.000075 +
-      0.001868 * Math.cos(gamma) -
-      0.032077 * Math.sin(gamma) -
-      0.014615 * Math.cos(2 * gamma) -
-      0.040849 * Math.sin(2 * gamma));
-
-  // Solar noon (in minutes from midnight UTC).
-  const solarNoonMinutes = 720 - 4 * longitude - eqTime;
-
-  // Convert hour angle to minutes (each degree corresponds to 4 minutes).
-  const deltaMinutes = toDegrees(H) * 4;
-
-  // Sunrise and sunset times in minutes from midnight UTC.
-  const sunriseMinutes = solarNoonMinutes - deltaMinutes;
-  const sunsetMinutes = solarNoonMinutes + deltaMinutes;
-
-  // Construct Date objects for sunrise and sunset.
-  const sunrise = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0));
-  sunrise.setUTCMinutes(sunriseMinutes);
-  const sunset = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0));
-  sunset.setUTCMinutes(sunsetMinutes);
-
-  return { sunrise, sunset };
-}
-
-/**
- * 9. Day Length and Twilight Times
- * Returns an object containing:
- * - Standard sunrise/sunset (altitude = -0.833°)
- * - Civil twilight (altitude = -6°)
- * - Nautical twilight (altitude = -12°)
- * - Astronomical twilight (altitude = -18°)
- */
-export function getDayLengthAndTwilight(
-  date: Date,
-  latitude: number,
-  longitude: number
-): {
-  sunrise: Date | null;
-  sunset: Date | null;
-  dayLengthMinutes: number | null;
-  civilDawn: Date | null;
-  civilDusk: Date | null;
-  nauticalDawn: Date | null;
-  nauticalDusk: Date | null;
-  astronomicalDawn: Date | null;
-  astronomicalDusk: Date | null;
-} {
-  const sunTimes = getSunriseSunsetForAltitude(-0.833, date, latitude, longitude);
-  let dayLengthMinutes: number | null = null;
-  if (sunTimes) {
-    dayLengthMinutes = (sunTimes.sunset.getTime() - sunTimes.sunrise.getTime()) / 60000;
-  }
-
-  const civil = getSunriseSunsetForAltitude(-6, date, latitude, longitude);
-  const nautical = getSunriseSunsetForAltitude(-12, date, latitude, longitude);
-  const astronomical = getSunriseSunsetForAltitude(-18, date, latitude, longitude);
-
-  return {
-    sunrise: sunTimes ? sunTimes.sunrise : null,
-    sunset: sunTimes ? sunTimes.sunset : null,
-    dayLengthMinutes,
-    civilDawn: civil ? civil.sunrise : null,
-    civilDusk: civil ? civil.sunset : null,
-    nauticalDawn: nautical ? nautical.sunrise : null,
-    nauticalDusk: nautical ? nautical.sunset : null,
-    astronomicalDawn: astronomical ? astronomical.sunrise : null,
-    astronomicalDusk: astronomical ? astronomical.sunset : null,
-  };
-}
-/*
-const now = new Date();
-const { elevation, azimuth } = getSolarPosition(40.7128, -74.0060, now);
-console.log(`Sun Elevation: ${elevation.toFixed(2)}°, Azimuth: ${azimuth.toFixed(2)}°`);
-*/
-
-// Moon
-
-/**
- * Computes the Moon's phase for a given date.
- * The phase is calculated as the age (in days) since the last New Moon,
- * along with a fractional phase, approximate illumination, and a phase name.
- * 
- * @param date - The date for which to compute the Moon phase.
- * @param latitude - Observer's latitude (unused in this calculation).
- * @param longitude - Observer's longitude (unused in this calculation).
- * @returns An object containing:
- *   - age: number (days since new moon)
- *   - phaseFraction: number (fraction of the lunar cycle, 0 to 1)
- *   - illumination: number (approximate fraction of the Moon illuminated, 0 to 1)
- *   - phaseName: string (e.g., "New Moon", "Waxing Crescent", etc.)
- */
-export function getMoonPhase(date: Date, latitude: number, longitude: number) {
-  // Convert the given date to a Julian Date (JD)
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth() + 1; // JavaScript months are 0-indexed
-  const day = date.getUTCDate();
-
-  let Y = year;
-  let M = month;
-  if (M < 3) {
-    Y -= 1;
-    M += 12;
-  }
-  const A = Math.floor(Y / 100);
-  const B = 2 - A + Math.floor(A / 4);
-  const JD = Math.floor(365.25 * (Y + 4716)) +
-             Math.floor(30.6001 * (M + 1)) +
-             day + B - 1524.5;
-
-  // Known new moon reference: January 6, 2000 18:14 UT (Julian Date ~2451550.1)
-  const knownNewMoonJD = 2451550.1;
-  const lunarCycle = 29.53058867; // Average length of the lunar cycle in days
-
-  // Calculate the moon's age in days (days since new moon)
-  let age = (JD - knownNewMoonJD) % lunarCycle;
-  if (age < 0) {
-    age += lunarCycle;
-  }
-
-  // Fractional phase (0.0 = New Moon, 0.5 = Full Moon, etc.)
-  const phaseFraction = age / lunarCycle;
-
-  // Approximate illumination of the Moon (using a cosine function)
-  const illumination = (1 - Math.cos(2 * Math.PI * phaseFraction)) / 2;
-
-  // Determine the phase name based on the age (in days)
-  let phaseName: string;
-  if (age < 1.84566) {
-    phaseName = "New Moon";
-  } else if (age < 5.53699) {
-    phaseName = "Waxing Crescent";
-  } else if (age < 9.22831) {
-    phaseName = "First Quarter";
-  } else if (age < 12.91963) {
-    phaseName = "Waxing Gibbous";
-  } else if (age < 16.61096) {
-    phaseName = "Full Moon";
-  } else if (age < 20.30228) {
-    phaseName = "Waning Gibbous";
-  } else if (age < 23.99361) {
-    phaseName = "Last Quarter";
-  } else if (age < 27.68493) {
-    phaseName = "Waning Crescent";
-  } else {
-    phaseName = "New Moon";
-  }
-
-  return {
-    age,           // Age of the Moon in days since the last New Moon
-    phaseFraction, // Fraction of the lunar cycle completed (0 to 1)
-    illumination,  // Approximate fraction of the Moon illuminated (0 to 1)
-    phaseName      // Name of the Moon phase
-  };
-}
-
-/*
-// Example usage:
-const date = new Date(); // current date and time
-const latitude = 40.7128; // Example: New York City latitude
-const longitude = -74.0060; // Example: New York City longitude
-
-const moonPhaseInfo = getMoonPhase(date, latitude, longitude);
-console.log(`Moon Age: ${moonPhaseInfo.age.toFixed(2)} days`);
-console.log(`Phase Fraction: ${(moonPhaseInfo.phaseFraction * 100).toFixed(1)}%`);
-console.log(`Illumination: ${(moonPhaseInfo.illumination * 100).toFixed(1)}%`);
-console.log(`Phase: ${moonPhaseInfo.phaseName}`);
-*/
-// moonTimes.ts
-
-// Helper functions to convert between degrees and radians.
-function toRadians4(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
-
-function toDegrees4(radians: number): number {
-  return radians * (180 / Math.PI);
-}
-
-/**
- * Compute the Julian Date for a given UTC Date.
- */
-function getJulianDate(date: Date): number {
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth() + 1; // JS months are 0-indexed.
-  const day =
-    date.getUTCDate() +
-    date.getUTCHours() / 24 +
-    date.getUTCMinutes() / 1440 +
-    date.getUTCSeconds() / 86400;
-  let Y = year;
-  let M = month;
-  if (M <= 2) {
-    Y -= 1;
-    M += 12;
-  }
-  const A = Math.floor(Y / 100);
-  const B = 2 - A + Math.floor(A / 4);
-  const JD =
-    Math.floor(365.25 * (Y + 4716)) +
-    Math.floor(30.6001 * (M + 1)) +
-    day +
-    B -
-    1524.5;
-  return JD;
-}
-
-/**
- * Compute the Moon’s altitude (in degrees) for a given date and observer location.
- * This uses a simplified lunar position algorithm.
- */
-function getMoonAltitude(date: Date, latitude: number, longitude: number): number {
-  // Days since J2000.0
-  const JD = getJulianDate(date);
-  const D = JD - 2451545.0;
-
-  // Simplified lunar position parameters (in degrees)
-  const L = (218.316 + 13.176396 * D) % 360;          // Moon's mean longitude
-  const M_moon = (134.963 + 13.064993 * D) % 360;       // Moon's mean anomaly
-  const F = (93.272 + 13.229350 * D) % 360;             // Moon's mean elongation
-
-  // Convert angles to radians.
-  const L_rad = toRadians(L);
-  const M_moon_rad = toRadians(M_moon);
-  const F_rad = toRadians(F);
-
-  // Ecliptic longitude with a simple correction (radians).
-  const lambda = L_rad + toRadians(6.289) * Math.sin(M_moon_rad);
-  // Ecliptic latitude (radians, approximate).
-  const beta = toRadians(5.128) * Math.sin(F_rad);
-
-  // Obliquity of the ecliptic (approximate).
-  const epsilon = toRadians(23.4397);
-
-  // Convert ecliptic coordinates to equatorial coordinates.
-  const sinDec = Math.sin(beta) * Math.cos(epsilon) + Math.cos(beta) * Math.sin(epsilon) * Math.sin(lambda);
-  const dec = Math.asin(sinDec);
-
-  // Right Ascension.
-  let RA = Math.atan2(
-    Math.sin(lambda) * Math.cos(epsilon) - Math.tan(beta) * Math.sin(epsilon),
-    Math.cos(lambda)
-  );
-  if (RA < 0) {
-    RA += 2 * Math.PI;
-  }
-
-  // Compute Greenwich Mean Sidereal Time (GMST) in radians.
-  const GMST =
