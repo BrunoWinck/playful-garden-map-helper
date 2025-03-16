@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
 import { GardenMap } from "./GardenMap";
 import { CareSchedule } from "./CareSchedule";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -9,45 +8,13 @@ import { WeatherWidget } from "./WeatherWidget";
 import { GardenAdvisor } from "./GardenAdvisor";
 import { GlossaryPanel } from "./GlossaryPanel";
 import { NasaSatelliteView } from "./NasaSatelliteView";
-import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
-import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
+import { GardenNavbar } from "./GardenNavbar";
 
 export const GardenDashboard = () => {
   return (
     <main className="flex-1 overflow-y-auto bg-green-50">
       <div className="max-w-7xl mx-auto p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-green-800">Your Playful Garden</h1>
-          
-          <div className="flex items-center gap-4">
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
-                    Garden Map
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
-                    Greenhouses
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="#">
-                    Schedule
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-            
-            <Link to="/settings">
-              <Button variant="outline" size="icon" className="rounded-full bg-white" title="Settings">
-                <Settings className="h-5 w-5 text-green-700" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+        <GardenNavbar />
         
         {/* Weather and Satellite View */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
