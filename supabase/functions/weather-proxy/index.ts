@@ -106,6 +106,9 @@ serve(async (req) => {
       // Add lat/lon to the response data for use in frontend calculations
       data.coordinates = { latitude: lat, longitude: lon };
       
+      // Add timestamp for client-side "last updated" calculation
+      data.timestamp = new Date().toISOString();
+      
       console.log("Received Meteomatics data with parameters:", Object.keys(data.data).length);
       
       return new Response(JSON.stringify(data), {
@@ -136,189 +139,58 @@ serve(async (req) => {
   }
 });
 
-// Helper function to get fallback climate data
+// Helper function to get fallback climate data (delegating to climate-data function)
 async function getFallbackClimateData(lat: number, lon: number, userId: string) {
-  console.log("Getting fallback climate data");
+  console.log("Getting fallback climate data from climate-data function");
+  
+  // Create a Supabase client to call the climate-data function
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase environment variables");
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
   try {
-    // Create a Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Missing Supabase environment variables");
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Get the current month
-    const currentMonth = new Date().getMonth() + 1;
-    const location = `${lat}, ${lon}`;
-    
-    // Try to get climate data from the database
-    const { data: climateData, error: dbError } = await supabase
-      .from('climate_averages')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('location', location)
-      .eq('month', currentMonth)
-      .single();
-    
-    let averageData;
-    
-    if (dbError || !climateData) {
-      console.log("No climate data found in database, generating new data");
-      // Generate climate data on the fly
-      averageData = {
-        avg_temperature: generateTemperature(lat, currentMonth),
-        avg_precipitation: generatePrecipitation(lat, currentMonth),
-        avg_uv_index: generateUVIndex(lat, currentMonth)
-      };
-      
-      // Store this data for future use
-      await supabase
-        .from('climate_averages')
-        .upsert({
-          user_id: userId,
-          location: location,
-          month: currentMonth,
-          avg_temperature: averageData.avg_temperature,
-          avg_precipitation: averageData.avg_precipitation,
-          avg_uv_index: averageData.avg_uv_index,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,location,month'
-        });
-    } 
-    else 
-    {
-      console.log("Using climate data from database:", climateData);
-      averageData = {
-        avg_temperature: climateData.avg_temperature,
-        avg_precipitation: climateData.avg_precipitation,
-        avg_uv_index: climateData.avg_uv_index
-      };
-    }
-    
-    // Create a response in a format similar to what the weather API would return
-    const mockWeatherData = {
-      data: {
-        "t_2m:C": {
-          coordinates: [{
-            dates: Array(24).fill(0).map((_, i) => ({
-              value: averageData.avg_temperature,
-              date: new Date(Date.now() + i * 3600 * 1000).toISOString()
-            }))
-          }]
-        },
-        "precip_1h:mm": {
-          coordinates: [{
-            dates: Array(24).fill(0).map((_, i) => ({
-              value: averageData.avg_precipitation / 30 / 24, // Daily average divided by 24 hours
-              date: new Date(Date.now() + i * 3600 * 1000).toISOString()
-            }))
-          }]
-        },
-        "uv:idx": {
-          coordinates: [{
-            dates: Array(24).fill(0).map((_, i) => ({
-              value: averageData.avg_uv_index,
-              date: new Date(Date.now() + i * 3600 * 1000).toISOString()
-            }))
-          }]
-        },
-        "relative_humidity_2m:p": {
-          coordinates: [{
-            dates: Array(24).fill(0).map((_, i) => ({
-              value: 70, // Default humidity value
-              date: new Date(Date.now() + i * 3600 * 1000).toISOString()
-            }))
-          }]
-        },
-        "weather_symbol_1h:idx": {
-          coordinates: [{
-            dates: Array(24).fill(0).map((_, i) => ({
-              value: 1, // Default clear weather
-              date: new Date(Date.now() + i * 3600 * 1000).toISOString()
-            }))
-          }]
-        },
-        "wind_speed_10m:ms": {
-          coordinates: [{
-            dates: Array(24).fill(0).map((_, i) => ({
-              value: 2, // Default light breeze
-              date: new Date(Date.now() + i * 3600 * 1000).toISOString()
-            }))
-          }]
-        },
+    // Call the climate-data function to get the data
+    const { data: climateData, error } = await supabase.functions.invoke('climate-data', {
+      body: { 
+        lat, 
+        lon, 
+        userId 
       },
-      coordinates: { latitude: lat, longitude: lon },
-      isClimateFallback: true
-    };
+    });
     
-    return new Response(JSON.stringify(mockWeatherData), {
+    if (error) {
+      console.error("Error calling climate-data function:", error);
+      throw error;
+    }
+    
+    if (!climateData) {
+      throw new Error("No climate data returned from climate-data function");
+    }
+    
+    // Add timestamp for client-side "last updated" calculation
+    climateData.timestamp = new Date().toISOString();
+    
+    console.log("Successfully retrieved climate data");
+    
+    return new Response(JSON.stringify(climateData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } 
-  catch (error) 
-  {
-    console.error("Error generating fallback climate data:", error);
+  } catch (error) {
+    console.error("Error getting climate data:", error);
     
-    // Return a minimal response with generated data
-    const defaultData = {
-      data: {
-        "t_2m:C": {
-          coordinates: [{
-            dates: [{ value: 15, date: new Date().toISOString() }]
-          }]
-        },
-        "precip_1h:mm": {
-          coordinates: [{
-            dates: [{ value: 0, date: new Date().toISOString() }]
-          }]
-        },
-      },
-      coordinates: { latitude: lat, longitude: lon },
+    // Return a minimal response with error information
+    return new Response(JSON.stringify({
+      status: "ERROR",
+      error: "Failed to get climate data: " + error.message,
+      timestamp: new Date().toISOString(),
       isClimateFallback: true,
-      warning: "Using emergency fallback data"
-    };
-    
-    return new Response(JSON.stringify(defaultData), {
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-}
-
-// Helper functions to generate climate data based on latitude and month
-function generateTemperature(latitude: number, month: number): number {
-  const isNorthernHemisphere = latitude > 0;
-  const adjustedMonth = isNorthernHemisphere ? month : ((month + 6 - 1) % 12) + 1;
-  
-  const baseTemp = 30 - Math.abs(latitude) * 0.5;
-  const monthFactor = Math.cos((adjustedMonth - 7) * Math.PI / 6) * (Math.abs(latitude) / 23.5);
-  const temperature = baseTemp + monthFactor * 15;
-  
-  return Math.round(temperature * 10) / 10;
-}
-
-function generatePrecipitation(latitude: number, month: number): number {
-  const isNorthernHemisphere = latitude > 0;
-  const adjustedMonth = isNorthernHemisphere ? month : ((month + 6 - 1) % 12) + 1;
-  
-  const basePrecip = 100 - Math.abs(latitude - 20) * 1.5;
-  const seasonalPrecip = Math.sin((adjustedMonth) * Math.PI / 6) * 50;
-  const precipitation = Math.max(10, basePrecip + seasonalPrecip);
-  
-  return Math.round(precipitation * 10) / 10;
-}
-
-function generateUVIndex(latitude: number, month: number): number {
-  const isNorthernHemisphere = latitude > 0;
-  const adjustedMonth = isNorthernHemisphere ? month : ((month + 6 - 1) % 12) + 1;
-  
-  const baseUV = 12 - Math.abs(latitude) * 0.1;
-  const seasonalUV = Math.cos((adjustedMonth - 7) * Math.PI / 6) * (Math.abs(latitude) / 23.5) * 5;
-  const uvIndex = Math.max(1, Math.min(12, baseUV + seasonalUV));
-  
-  return Math.round(uvIndex * 10) / 10;
 }

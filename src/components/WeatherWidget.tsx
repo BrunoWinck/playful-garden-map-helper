@@ -7,10 +7,16 @@ import { WeatherDetails } from "./WeatherComponents/WeatherDetails";
 import { SunriseSunsetInfo } from "./WeatherComponents/SunriseSunsetInfo";
 import { WeatherLoadingSkeleton } from "./WeatherComponents/WeatherLoadingSkeleton";
 import { WeatherErrorDisplay } from "./WeatherComponents/WeatherErrorDisplay";
+import { formatDistanceToNow, format } from "date-fns";
 
 export const WeatherWidget: React.FC = () => {
-  const { weather, loading, error } = useWeatherData();
+  const { weather, loading, error, lastUpdated } = useWeatherData();
   
+  // Format the last updated time
+  const lastUpdatedText = lastUpdated 
+    ? `(${formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })} - ${format(new Date(lastUpdated), 'MMM d, yyyy')})`
+    : '';
+    
   // Loading state
   if (loading) {
     return <WeatherLoadingSkeleton />;
@@ -28,7 +34,7 @@ export const WeatherWidget: React.FC = () => {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Main weather information */}
-            <WeatherMainInfo weather={weather} />
+            <WeatherMainInfo weather={weather} lastUpdatedText={lastUpdatedText} />
             
             {/* Weather details */}
             <WeatherDetails weather={weather} />

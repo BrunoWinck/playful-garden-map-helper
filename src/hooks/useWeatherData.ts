@@ -45,6 +45,7 @@ export const useWeatherData = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const { currentMonthData, loading: climateLoading } = useClimateData();
 
   useEffect(() => {
@@ -110,6 +111,9 @@ export const useWeatherData = () => {
           throw new Error(functionData.error || 'Unknown error fetching weather data');
         }
         
+        // Set the last updated timestamp
+        setLastUpdated(new Date().toISOString());
+        
         // Process the Meteomatics data
         console.log("Processing weather data...");
         const processedData = processWeatherData(functionData, latitude, longitude);
@@ -130,7 +134,7 @@ export const useWeatherData = () => {
     fetchWeatherData();
   }, []);
 
-  return { weather, loading, error };
+  return { weather, loading, error, lastUpdated };
 };
 
 // Helper function to process raw weather data

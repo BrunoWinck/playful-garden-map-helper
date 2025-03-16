@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { useNasaImagery } from "@/hooks/useNasaImagery";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Bug, Info, RefreshCw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -24,7 +24,7 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
   
-  const { imageUrl, loading, error, setError, debugInfo } = useNasaImagery({ 
+  const { imageUrl, loading, error, setError, debugInfo, lastUpdated } = useNasaImagery({ 
     lat, 
     lon, 
     date, 
@@ -46,6 +46,11 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
     e.currentTarget.style.display = 'none';
     setError('Failed to load satellite image. NASA API may be rate-limited or the image is unavailable.');
   };
+  
+  // Format the last updated time
+  const lastUpdatedText = lastUpdated 
+    ? `(${formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })} - ${format(new Date(lastUpdated), 'MMM d, yyyy')})`
+    : '';
   
   // Debug panel
   const renderDebugInfo = () => {
@@ -106,7 +111,9 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
     <Card className={`w-full bg-white overflow-hidden ${className}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg text-green-700 flex items-center justify-between">
-          <span>{formattedDate} Satellite View</span>
+          <div className="flex flex-col">
+            <span>{formattedDate} Satellite View {lastUpdatedText}</span>
+          </div>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -129,7 +136,7 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
       </CardHeader>
       <CardContent className="p-4">
         {loading ? (
-          <div className="w-full aspect-square relative">
+          <div className="w-full aspect-video relative">
             <Skeleton className="w-full h-full absolute" />
           </div>
         ) : (
@@ -139,7 +146,7 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
                 <img 
                   src={imageUrl} 
                   alt={`Satellite view from ${formattedDate}`}
-                  className="w-full rounded-md shadow-sm"
+                  className="w-full h-48 object-cover rounded-md shadow-sm"
                   onError={handleImageError}
                 />
                 <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">

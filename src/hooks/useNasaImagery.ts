@@ -35,6 +35,7 @@ export const useNasaImagery = ({ lat, lon, date, dim, key }: NasaImageryParams) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSatelliteImage = async () => {
@@ -82,6 +83,9 @@ export const useNasaImagery = ({ lat, lon, date, dim, key }: NasaImageryParams) 
           timestamp: new Date().toISOString()
         });
         
+        // Set last updated timestamp
+        setLastUpdated(data.timestamp || data.request?.timestamp || new Date().toISOString());
+        
         if (data.status === 'ERROR') {
           console.error("[NASA Imagery] API error:", data.error);
           throw new Error(data.error || 'Unknown error fetching NASA imagery');
@@ -123,5 +127,5 @@ export const useNasaImagery = ({ lat, lon, date, dim, key }: NasaImageryParams) 
     }
   }, [lat, lon, date, dim, key]);
 
-  return { imageUrl, loading, error, setError, debugInfo };
+  return { imageUrl, loading, error, setError, debugInfo, lastUpdated };
 };

@@ -84,6 +84,7 @@ serve(async (req) => {
         status: "SUCCESS",
         data,
         request: requestDetails,
+        timestamp: new Date().toISOString(),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -97,6 +98,7 @@ serve(async (req) => {
         url: url,
         contentType,
         request: requestDetails,
+        timestamp: new Date().toISOString(),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -110,6 +112,7 @@ serve(async (req) => {
         contentType,
         responseText: responseText.slice(0, 500) + (responseText.length > 500 ? '...' : ''),
         request: requestDetails,
+        timestamp: new Date().toISOString(),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
