@@ -1,14 +1,14 @@
-
 import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Save, X } from "lucide-react";
+import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { GlossaryTerm } from "./GlossaryPanel";
+import { useLongPress } from "@/utils/useLongPress";
 
 export const GlossaryContent: React.FC = () => {
   const [terms, setTerms] = useState<GlossaryTerm[]>([]);
@@ -18,13 +18,15 @@ export const GlossaryContent: React.FC = () => {
   const [isAddingTerm, setIsAddingTerm] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<GlossaryTerm | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingTerm, setEditingTerm] = useState<string | null>(null);
+  const [editedTermValue, setEditedTermValue] = useState("");
+  const [editedDefinitionValue, setEditedDefinitionValue] = useState("");
 
   // Fetch glossary terms from Supabase
   useEffect(() => {
     const fetchGlossaryTerms = async () => {
       try {
         setIsLoading(true);
-        // Get terms from Supabase
         const { data, error } = await supabase
           .from('glossary_terms')
           .select('*')
@@ -35,7 +37,6 @@ export const GlossaryContent: React.FC = () => {
         if (data && data.length > 0) {
           setTerms(data);
         } else {
-          // If no terms in DB, use default starter terms
           const defaultTerms = [
             {
               id: "1",
@@ -59,7 +60,6 @@ export const GlossaryContent: React.FC = () => {
           
           setTerms(defaultTerms);
           
-          // Store default terms in database
           for (const term of defaultTerms) {
             await supabase.from('glossary_terms').insert({
               term: term.term,
@@ -70,7 +70,6 @@ export const GlossaryContent: React.FC = () => {
         }
       } catch (error) {
         console.error("Error fetching glossary terms:", error);
-        // Fallback to localStorage if DB fetch fails
         const storedTerms = localStorage.getItem('glossary-terms');
         if (storedTerms) {
           setTerms(JSON.parse(storedTerms));
@@ -98,7 +97,6 @@ export const GlossaryContent: React.FC = () => {
     };
 
     try {
-      // Add to Supabase
       const { data, error } = await supabase
         .from('glossary_terms')
         .insert({
@@ -110,7 +108,6 @@ export const GlossaryContent: React.FC = () => {
 
       if (error) throw error;
 
-      // Add to local state
       if (data) {
         setTerms(prev => [...prev, data].sort((a, b) => a.term.localeCompare(b.term)));
         toast.success(`Added "${newTerm}" to glossary`);
@@ -118,7 +115,6 @@ export const GlossaryContent: React.FC = () => {
     } catch (error) {
       console.error("Error adding term:", error);
       
-      // Fallback to local state only
       const newTermObject: GlossaryTerm = {
         id: Date.now().toString(),
         ...termObject,
@@ -128,7 +124,6 @@ export const GlossaryContent: React.FC = () => {
       setTerms(prev => [...prev, newTermObject].sort((a, b) => a.term.localeCompare(b.term)));
       toast.success(`Added "${newTerm}" to glossary`);
     } finally {
-      // Reset form
       setNewTerm("");
       setNewDefinition("");
       setIsAddingTerm(false);
@@ -137,7 +132,6 @@ export const GlossaryContent: React.FC = () => {
 
   useEffect(() => {
     const onAddTerm = e => {
-      console.log( "addTerm", e);
       addTerm( e.detail.term, e.detail.definition);
     };
     window.addEventListener('addToGlossary', onAddTerm);
@@ -159,7 +153,6 @@ export const GlossaryContent: React.FC = () => {
     setIsDeleting(true);
     
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('glossary_terms')
         .delete()
@@ -167,18 +160,78 @@ export const GlossaryContent: React.FC = () => {
         
       if (error) throw error;
       
-      // Remove from local state
       setTerms(prev => prev.filter(term => term.id !== selectedTerm.id));
       toast.success(`Deleted "${selectedTerm.term}" from glossary`);
     } catch (error) {
       console.error("Error deleting term:", error);
       
-      // Fallback: remove from local state anyway
       setTerms(prev => prev.filter(term => term.id !== selectedTerm.id));
       toast.success(`Deleted "${selectedTerm.term}" from glossary`);
     } finally {
       setSelectedTerm(null);
       setIsDeleting(false);
+    }
+  };
+
+  const startEditingTerm = (term: GlossaryTerm) => {
+    setEditingTerm(term.id);
+    setEditedTermValue(term.term);
+    setEditedDefinitionValue(term.definition);
+  };
+
+  const cancelEditing = () => {
+    setEditingTerm(null);
+    setEditedTermValue("");
+    setEditedDefinitionValue("");
+  };
+
+  const saveEditedTerm = async (termId: string) => {
+    if (!editedTermValue.trim() || !editedDefinitionValue.trim()) {
+      toast.error("Both term and definition are required.");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('glossary_terms')
+        .update({
+          term: editedTermValue.trim(),
+          definition: editedDefinitionValue.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', termId);
+        
+      if (error) throw error;
+      
+      setTerms(prev => prev.map(term => 
+        term.id === termId 
+          ? { 
+              ...term, 
+              term: editedTermValue.trim(), 
+              definition: editedDefinitionValue.trim(),
+              updated_at: new Date().toISOString()
+            } 
+          : term
+      ).sort((a, b) => a.term.localeCompare(b.term)));
+      
+      toast.success(`Updated "${editedTermValue}"`);
+    } catch (error) {
+      console.error("Error updating term:", error);
+      
+      setTerms(prev => prev.map(term => 
+        term.id === termId 
+          ? { 
+              ...term, 
+              term: editedTermValue.trim(), 
+              definition: editedDefinitionValue.trim(),
+              updated_at: new Date().toISOString()
+            } 
+          : term
+      ).sort((a, b) => a.term.localeCompare(b.term)));
+      
+      toast.success(`Updated "${editedTermValue}"`);
+    } finally {
+      cancelEditing();
     }
   };
 
@@ -256,27 +309,88 @@ export const GlossaryContent: React.FC = () => {
               <p className="text-sm">Click the + button to add your first term.</p>
             </div>
           ) : (
-            terms.map((term) => (
-              <div 
-                key={term.id} 
-                className="border-b border-green-100 pb-3 last:border-b-0 relative group"
-              >
-                <h3 className="font-bold text-green-800">{term.term}</h3>
-                <p className="text-sm text-gray-700 mt-1">{term.definition}</p>
-                <button 
-                  className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  onClick={() => setSelectedTerm(term)}
-                  title="Delete term"
+            terms.map((term) => {
+              const longPressProps = useLongPress({
+                onLongPress: () => startEditingTerm(term)
+              });
+
+              return (
+                <div 
+                  key={term.id} 
+                  className="border-b border-green-100 pb-3 last:border-b-0 relative group"
                 >
-                  <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
-                </button>
-              </div>
-            ))
+                  {editingTerm === term.id ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={editedTermValue}
+                        onChange={(e) => setEditedTermValue(e.target.value)}
+                        className="font-bold text-green-800"
+                        autoFocus
+                      />
+                      <Textarea
+                        value={editedDefinitionValue}
+                        onChange={(e) => setEditedDefinitionValue(e.target.value)}
+                        className="text-sm text-gray-700 min-h-[100px]"
+                      />
+                      <div className="flex justify-end gap-2 pt-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={cancelEditing}
+                          className="gap-1"
+                        >
+                          <X className="h-3 w-3" />
+                          Cancel
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => saveEditedTerm(term.id)}
+                          className="gap-1 bg-green-700 hover:bg-green-800"
+                        >
+                          <Save className="h-3 w-3" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 
+                        className="font-bold text-green-800"
+                        {...longPressProps}
+                      >
+                        {term.term}
+                      </h3>
+                      <p 
+                        className="text-sm text-gray-700 mt-1"
+                        {...longPressProps}
+                      >
+                        {term.definition}
+                      </p>
+                      <div className="absolute right-1 top-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button 
+                          className="p-1 rounded hover:bg-green-100"
+                          onClick={() => startEditingTerm(term)}
+                          title="Edit term"
+                        >
+                          <Pencil className="h-3 w-3 text-green-600" />
+                        </button>
+                        <button 
+                          className="p-1 rounded hover:bg-red-100"
+                          onClick={() => setSelectedTerm(term)}
+                          title="Delete term"
+                        >
+                          <Trash2 className="h-3 w-3 text-red-500" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </ScrollArea>
       
-      {/* Confirmation dialog */}
       {selectedTerm && (
         <Drawer open={!!selectedTerm} onOpenChange={(open) => !open && setSelectedTerm(null)}>
           <DrawerContent className="p-4">

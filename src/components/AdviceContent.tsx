@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Save, X } from "lucide-react";
+import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLongPress } from "@/utils/useLongPress";
 
 interface GardenAdvice {
   id: string;
@@ -25,13 +25,15 @@ export const AdviceContent: React.FC = () => {
   const [isAddingAdvice, setIsAddingAdvice] = useState(false);
   const [selectedAdvice, setSelectedAdvice] = useState<GardenAdvice | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingAdvice, setEditingAdvice] = useState<string | null>(null);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedContent, setEditedContent] = useState("");
 
   useEffect(() => {
     const fetchAdvices = async () => {
       try {
         setIsLoading(true);
         
-        // Try to get advice from Supabase
         const { data, error } = await supabase
           .from('garden_advice')
           .select('*')
@@ -42,7 +44,6 @@ export const AdviceContent: React.FC = () => {
         if (data && data.length > 0) {
           setAdvices(data);
         } else {
-          // Default advice entries if none exist
           const defaultAdvices = [
             {
               id: "1",
@@ -62,7 +63,6 @@ export const AdviceContent: React.FC = () => {
           
           setAdvices(defaultAdvices);
           
-          // Store defaults in database
           for (const advice of defaultAdvices) {
             await supabase.from('garden_advice').insert({
               title: advice.title,
@@ -75,12 +75,10 @@ export const AdviceContent: React.FC = () => {
       } catch (error) {
         console.error("Error fetching garden advice:", error);
         
-        // Fallback to localStorage
         const storedAdvice = localStorage.getItem('garden-advice');
         if (storedAdvice) {
           setAdvices(JSON.parse(storedAdvice));
         } else {
-          // Set default if nothing in localStorage either
           setAdvices([
             {
               id: "1",
@@ -106,14 +104,12 @@ export const AdviceContent: React.FC = () => {
     fetchAdvices();
   }, []);
 
-  // Save to localStorage as backup when advices change
   useEffect(() => {
     if (advices.length > 0 && !isLoading) {
       localStorage.setItem('garden-advice', JSON.stringify(advices));
     }
   }, [advices, isLoading]);
 
-  // Add a new function to handle adding advice from selected text
   async function addAdvice(title: string, content: string, source: string = "Selected Text") {
     const adviceObject = {
       title: title.trim(),
@@ -122,7 +118,6 @@ export const AdviceContent: React.FC = () => {
     };
 
     try {
-      // Add to Supabase
       const { data, error } = await supabase
         .from('garden_advice')
         .insert({
@@ -141,7 +136,6 @@ export const AdviceContent: React.FC = () => {
     } catch (error) {
       console.error("Error adding advice:", error);
       
-      // Fallback to local state
       const newAdviceObject: GardenAdvice = {
         id: Date.now().toString(),
         ...adviceObject,
@@ -153,7 +147,6 @@ export const AdviceContent: React.FC = () => {
     }
   }
 
-  // Add event listener for the addAdvice custom event
   useEffect(() => {
     const handleAddAdviceEvent = (e: CustomEvent) => {
       const { title, content } = e.detail;
@@ -172,7 +165,6 @@ export const AdviceContent: React.FC = () => {
 
     await addAdvice(newTitle, newContent, "Manual Entry");
     
-    // Reset form
     setNewTitle("");
     setNewContent("");
     setIsAddingAdvice(false);
@@ -184,7 +176,6 @@ export const AdviceContent: React.FC = () => {
     setIsDeleting(true);
     
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('garden_advice')
         .delete()
@@ -192,18 +183,76 @@ export const AdviceContent: React.FC = () => {
         
       if (error) throw error;
       
-      // Remove from local state
       setAdvices(prev => prev.filter(advice => advice.id !== selectedAdvice.id));
       toast.success(`Deleted advice: "${selectedAdvice.title}"`);
     } catch (error) {
       console.error("Error deleting advice:", error);
       
-      // Fallback: Remove from local state anyway
       setAdvices(prev => prev.filter(advice => advice.id !== selectedAdvice.id));
       toast.success(`Deleted advice: "${selectedAdvice.title}"`);
     } finally {
       setSelectedAdvice(null);
       setIsDeleting(false);
+    }
+  };
+
+  const startEditingAdvice = (advice: GardenAdvice) => {
+    setEditingAdvice(advice.id);
+    setEditedTitle(advice.title);
+    setEditedContent(advice.content);
+  };
+
+  const cancelEditing = () => {
+    setEditingAdvice(null);
+    setEditedTitle("");
+    setEditedContent("");
+  };
+
+  const saveEditedAdvice = async (adviceId: string) => {
+    if (!editedTitle.trim() || !editedContent.trim()) {
+      toast.error("Both title and content are required.");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('garden_advice')
+        .update({
+          title: editedTitle.trim(),
+          content: editedContent.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', adviceId);
+        
+      if (error) throw error;
+      
+      setAdvices(prev => prev.map(advice => 
+        advice.id === adviceId 
+          ? { 
+              ...advice, 
+              title: editedTitle.trim(), 
+              content: editedContent.trim()
+            } 
+          : advice
+      ));
+      
+      toast.success(`Updated advice: "${editedTitle}"`);
+    } catch (error) {
+      console.error("Error updating advice:", error);
+      
+      setAdvices(prev => prev.map(advice => 
+        advice.id === adviceId 
+          ? { 
+              ...advice, 
+              title: editedTitle.trim(), 
+              content: editedContent.trim()
+            } 
+          : advice
+      ));
+      
+      toast.success(`Updated advice: "${editedTitle}"`);
+    } finally {
+      cancelEditing();
     }
   };
 
@@ -281,32 +330,93 @@ export const AdviceContent: React.FC = () => {
               <p className="text-sm">Select text from Garden Advisor responses and click + to save, or use the Save Advice button.</p>
             </div>
           ) : (
-            advices.map((advice) => (
-              <div 
-                key={advice.id} 
-                className="bg-white rounded-lg p-4 shadow-sm border border-green-100 relative group"
-              >
-                <h3 className="font-medium text-green-800 mb-2">{advice.title}</h3>
-                <p className="text-sm text-gray-700">{advice.content}</p>
-                {advice.source && (
-                  <div className="text-xs text-gray-500 mt-3">
-                    Source: {advice.source}
-                  </div>
-                )}
-                <button 
-                  className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  onClick={() => setSelectedAdvice(advice)}
-                  title="Delete advice"
+            advices.map((advice) => {
+              const longPressProps = useLongPress({
+                onLongPress: () => startEditingAdvice(advice)
+              });
+
+              return (
+                <div 
+                  key={advice.id} 
+                  className="bg-white rounded-lg p-4 shadow-sm border border-green-100 relative group"
                 >
-                  <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
-                </button>
-              </div>
-            ))
+                  {editingAdvice === advice.id ? (
+                    <div className="space-y-3">
+                      <Input
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        className="font-medium text-green-800"
+                        autoFocus
+                      />
+                      <Textarea
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="text-sm text-gray-700 min-h-[120px]"
+                      />
+                      <div className="flex justify-end gap-2 pt-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={cancelEditing}
+                          className="gap-1"
+                        >
+                          <X className="h-3 w-3" />
+                          Cancel
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => saveEditedAdvice(advice.id)}
+                          className="gap-1 bg-green-700 hover:bg-green-800"
+                        >
+                          <Save className="h-3 w-3" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 
+                        className="font-medium text-green-800 mb-2"
+                        {...longPressProps}
+                      >
+                        {advice.title}
+                      </h3>
+                      <p 
+                        className="text-sm text-gray-700"
+                        {...longPressProps}
+                      >
+                        {advice.content}
+                      </p>
+                      {advice.source && (
+                        <div className="text-xs text-gray-500 mt-3">
+                          Source: {advice.source}
+                        </div>
+                      )}
+                      <div className="absolute right-2 top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button 
+                          className="p-1 rounded hover:bg-green-100"
+                          onClick={() => startEditingAdvice(advice)}
+                          title="Edit advice"
+                        >
+                          <Pencil className="h-3 w-3 text-green-600" />
+                        </button>
+                        <button 
+                          className="p-1 rounded hover:bg-red-100"
+                          onClick={() => setSelectedAdvice(advice)}
+                          title="Delete advice"
+                        >
+                          <Trash2 className="h-3 w-3 text-red-500" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </ScrollArea>
       
-      {/* Confirmation dialog */}
       {selectedAdvice && (
         <Drawer open={!!selectedAdvice} onOpenChange={(open) => !open && setSelectedAdvice(null)}>
           <DrawerContent className="p-4">
