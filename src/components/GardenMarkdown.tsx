@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import { GlossaryTerm } from "./GlossaryPanel";
-import { remarkGlossarySyntax, remarkTaskSyntax } from "@/utils/remarkPlugins";
+import { plugins, components } from "@/utils/remarkPlugins";
+import rehypeRaw from 'rehype-raw'
 
 export const MarkdownRenderer = ({ content, isUser }: { content: string, isUser: boolean }) => {
     if (isUser) {
@@ -13,8 +14,12 @@ export const MarkdownRenderer = ({ content, isUser }: { content: string, isUser:
       );
     }
 
-    const components = {
-      p: ({children}) => <p className="mb-2">{children}</p>,
+    // Every component will receive a node. This is the original Element from hast element being turned into a React element.
+
+
+    const components1 = {
+      span: ({node, children}) => <span >{children}</span>,
+      p: ({node, children}) => <p className="mb-2">{children}</p>,
       h1: ({children}) => <h1 className="text-xl font-bold mb-2 text-green-700">{children}</h1>,
       h2: ({children}) => <h2 className="text-lg font-bold mb-2 text-green-700">{children}</h2>,
       h3: ({children}) => <h3 className="text-md font-bold mb-2 text-green-700">{children}</h3>,
@@ -32,45 +37,15 @@ export const MarkdownRenderer = ({ content, isUser }: { content: string, isUser:
       blockquote: ({children}) => <blockquote className="border-l-4 pl-4 italic my-2 border-green-300">{children}</blockquote>,
       hr: () => <hr className="my-2 border-green-200" />,
       
-      glossaryTerm: ({ node }: any) => {
-        console.log("Rendering glossaryTerm component:", node);
-        const term = node.value;
-        setTimeout(() => addToGlossary(term), 0);
-        return (
-          <span 
-            className="glossary-term bg-green-100 px-1 rounded cursor-pointer hover:bg-green-200 transition-colors inline-flex items-center"
-            title="Click to view in glossary"
-            onClick={() => {
-              document.getElementById("glossary-panel-trigger")?.click();
-            }}
-          >
-            <BookOpen className="inline-block h-3 w-3 mr-1" />
-            {term}
-          </span>
-        );
-      },
-      taskItem: ({ node }: any) => {
-        console.log("Rendering taskItem component:", node);
-        const task = node.value;
-        setTimeout(() => addToTasks(task), 0);
-        return (
-          <span 
-            className="task-item bg-yellow-100 px-1 rounded cursor-pointer hover:bg-yellow-200 transition-colors inline-flex items-center"
-            title="Click to add to tasks"
-            onClick={() => addToTasks(task)}
-          >
-            <CheckSquare className="inline-block h-3 w-3 mr-1" />
-            {task}
-          </span>
-        );
-      }
+      ...components
     };
 
     return (
         <div className="text-green-800">
           <ReactMarkdown
-            remarkPlugins={[remarkGlossarySyntax, remarkTaskSyntax]}
-            components={components}
+            remarkPlugins={[ ...plugins]}
+            rehypePlugins={[rehypeRaw /* essential to have the HTML custom-component conveyed to output as elements */]}
+            components={components1}
           >
             {content}
           </ReactMarkdown>
