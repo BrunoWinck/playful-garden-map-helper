@@ -175,6 +175,8 @@ export const PatchManager = () => {
     }
   };
   
+
+  // #TODO send event
   const handleAddTask = async (patchId: string, task: string) => {
     if (!task.trim()) return;
     
