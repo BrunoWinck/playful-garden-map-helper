@@ -21,6 +21,13 @@ interface Message {
   timestamp: Date;
 }
 
+interface HiddenMessage {
+  id: string;
+  message_id: string;
+  user_id: string;
+  created_at?: string;
+}
+
 export const GardenAdvisor = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -34,6 +41,7 @@ export const GardenAdvisor = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(new Set());
+  const [isLoadingHiddenMessages, setIsLoadingHiddenMessages] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -91,6 +99,36 @@ export const GardenAdvisor = () => {
     };
     
     fetchChatHistory();
+  }, []);
+  
+  // Fetch hidden messages from database
+  useEffect(() => {
+    const fetchHiddenMessages = async () => {
+      try {
+        setIsLoadingHiddenMessages(true);
+        const { data, error } = await supabase
+          .from('hidden_messages')
+          .select('message_id')
+          .eq('user_id', ANONYMOUS_USER_ID);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const hiddenMessageIds = new Set(data.map(item => item.message_id));
+          setHiddenMessages(hiddenMessageIds);
+          console.log("Loaded hidden messages:", hiddenMessageIds.size);
+        }
+      } catch (error) {
+        console.error("Error fetching hidden messages:", error);
+        toast.error("Couldn't load your message preferences.", {
+          duration: 10000,
+        });
+      } finally {
+        setIsLoadingHiddenMessages(false);
+      }
+    };
+    
+    fetchHiddenMessages();
   }, []);
   
   const storeMessage = async (message: Message) => {
@@ -313,23 +351,76 @@ export const GardenAdvisor = () => {
     }).format(date);
   };
   
-  const toggleMessageVisibility = (messageId: string) => {
-    setHiddenMessages(prevHiddenMessages => {
-      const newHiddenMessages = new Set(prevHiddenMessages);
-      if (newHiddenMessages.has(messageId)) {
-        newHiddenMessages.delete(messageId);
+  const toggleMessageVisibility = async (messageId: string) => {
+    try {
+      const isCurrentlyHidden = hiddenMessages.has(messageId);
+      
+      // Optimistically update UI
+      setHiddenMessages(prevHiddenMessages => {
+        const newHiddenMessages = new Set(prevHiddenMessages);
+        if (isCurrentlyHidden) {
+          newHiddenMessages.delete(messageId);
+        } else {
+          newHiddenMessages.add(messageId);
+        }
+        return newHiddenMessages;
+      });
+      
+      // Update database
+      if (isCurrentlyHidden) {
+        // Remove from hidden messages
+        const { error } = await supabase
+          .from('hidden_messages')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('user_id', ANONYMOUS_USER_ID);
+          
+        if (error) {
+          throw error;
+        }
+        
+        console.log("Message unhidden in database:", messageId);
       } else {
-        newHiddenMessages.add(messageId);
+        // Add to hidden messages
+        const { error } = await supabase
+          .from('hidden_messages')
+          .insert({
+            id: crypto.randomUUID(),
+            message_id: messageId,
+            user_id: ANONYMOUS_USER_ID
+          });
+          
+        if (error) {
+          throw error;
+        }
+        
+        console.log("Message hidden in database:", messageId);
       }
-      return newHiddenMessages;
-    });
+    } catch (error) {
+      console.error("Error toggling message visibility:", error);
+      
+      // Revert UI change if there was an error
+      setHiddenMessages(prevHiddenMessages => {
+        const newHiddenMessages = new Set(prevHiddenMessages);
+        if (hiddenMessages.has(messageId)) {
+          newHiddenMessages.add(messageId);
+        } else {
+          newHiddenMessages.delete(messageId);
+        }
+        return newHiddenMessages;
+      });
+      
+      toast.error("Failed to update message visibility", {
+        duration: 5000,
+      });
+    }
   };
   
   const isMessageHidden = (messageId: string) => {
     return hiddenMessages.has(messageId);
   };
   
-  if (isLoadingHistory) {
+  if (isLoadingHistory || isLoadingHiddenMessages) {
     return (
       <Card className="flex flex-col h-full border-green-200 bg-green-50">
         <CardHeader className="bg-green-700 text-white rounded-t-lg py-3">
