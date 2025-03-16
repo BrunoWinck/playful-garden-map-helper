@@ -5,6 +5,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Shovel, Move } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PlantItem } from "@/lib/types";
 
 // Define our item types for DnD
 const ItemTypes = {
