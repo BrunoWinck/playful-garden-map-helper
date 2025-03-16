@@ -10,7 +10,7 @@ import { WeatherErrorDisplay } from "./WeatherComponents/WeatherErrorDisplay";
 import { formatDistanceToNow, isAfter, subWeeks } from "date-fns";
 
 export const WeatherWidget: React.FC = () => {
-  const { weather, loading, error, lastUpdated } = useWeatherData();
+  const { weather, loading, error, lastUpdated, debugInfo } = useWeatherData();
   
   // Format the last updated time in a more concise way
   const formatLastUpdated = () => {
@@ -62,7 +62,11 @@ export const WeatherWidget: React.FC = () => {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Main weather information */}
-            <WeatherMainInfo weather={weather} lastUpdatedText={lastUpdatedText} />
+            <WeatherMainInfo 
+              weather={weather} 
+              lastUpdatedText={lastUpdatedText} 
+              debugInfo={debugInfo}
+            />
             
             {/* Weather details */}
             <WeatherDetails weather={weather} />

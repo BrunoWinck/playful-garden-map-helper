@@ -18,9 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Save } from "lucide-react";
+import { ArrowLeft, Bug, MapPin, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   lengthUnit: z.enum(["metric", "imperial"]),
@@ -35,6 +36,8 @@ const formSchema = z.object({
       message: "Location must be in GPS format: latitude,longitude (e.g., 45.882550, 2.905965)",
     }
   ),
+  showSatelliteDebug: z.boolean().default(false),
+  showWeatherDebug: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,6 +51,8 @@ const Settings = () => {
     temperatureUnit: "celsius",
     language: "english",
     location: "45.882550, 2.905965",
+    showSatelliteDebug: false,
+    showWeatherDebug: false,
   };
 
   const form = useForm<FormValues>({
@@ -79,6 +84,8 @@ const Settings = () => {
               temperatureUnit: userSettings.temperature_unit as "celsius" | "fahrenheit",
               language: userSettings.language as "english" | "french" | "spanish" | "german",
               location: userSettings.location,
+              showSatelliteDebug: userSettings.show_satellite_debug || false,
+              showWeatherDebug: userSettings.show_weather_debug || false,
             };
             
             form.reset(formValues);
@@ -97,6 +104,15 @@ const Settings = () => {
         if (savedSettings) {
           try {
             const parsedSettings = JSON.parse(savedSettings);
+            
+            // Ensure we have debug settings
+            if (parsedSettings.showSatelliteDebug === undefined) {
+              parsedSettings.showSatelliteDebug = false;
+            }
+            if (parsedSettings.showWeatherDebug === undefined) {
+              parsedSettings.showWeatherDebug = false;
+            }
+            
             form.reset(parsedSettings);
             console.log("Settings loaded from localStorage:", parsedSettings);
           } catch (error) {
@@ -130,6 +146,8 @@ const Settings = () => {
           temperature_unit: data.temperatureUnit,
           language: data.language,
           location: data.location,
+          show_satellite_debug: data.showSatelliteDebug,
+          show_weather_debug: data.showWeatherDebug,
           updated_at: new Date().toISOString(),
         };
         
@@ -369,6 +387,62 @@ const Settings = () => {
                         Enter coordinates as latitude,longitude (e.g., 45.882550, 2.905965) for weather forecasts and growing recommendations.
                       </FormDescription>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Developer Options</CardTitle>
+                <CardDescription>Debug settings for developers</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="showSatelliteDebug"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base flex items-center">
+                          <Bug className="h-4 w-4 mr-2" />
+                          Satellite Debug
+                        </FormLabel>
+                        <FormDescription>
+                          Show debug information on satellite imagery.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="showWeatherDebug"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base flex items-center">
+                          <Bug className="h-4 w-4 mr-2" />
+                          Weather Debug
+                        </FormLabel>
+                        <FormDescription>
+                          Show debug information on weather data.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />

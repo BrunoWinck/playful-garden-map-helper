@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useNasaImagery } from "@/hooks/useNasaImagery";
@@ -54,7 +55,23 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
     const oneWeekAgo = subWeeks(new Date(), 1);
     
     if (isAfter(lastUpdatedDate, oneWeekAgo)) {
-      return formatDistanceToNow(lastUpdatedDate, { addSuffix: true });
+      let timeText = formatDistanceToNow(lastUpdatedDate, { addSuffix: true });
+      
+      // Replace "less than a minute ago" with "1 min ago"
+      if (timeText.includes("less than a minute")) {
+        timeText = "1 min ago";
+      }
+      
+      // Make time text more concise
+      timeText = timeText.replace("about ", "")
+                         .replace(" minutes", " min")
+                         .replace(" minute", " min")
+                         .replace(" hours", " hr")
+                         .replace(" hour", " hr")
+                         .replace(" days", " d")
+                         .replace(" day", " d");
+      
+      return timeText;
     } else {
       return lastUpdatedDate.toLocaleDateString();
     }
@@ -123,14 +140,6 @@ export const NasaSatelliteView: React.FC<NasaSatelliteViewProps> = ({
             <span>Satellite View <span className="text-xs text-gray-500">({formatLastUpdated()})</span></span>
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => setShowDebug(!showDebug)}
-            >
-              <Bug className="h-4 w-4" />
-            </Button>
             <Button 
               variant="ghost" 
               size="sm" 
