@@ -20,9 +20,26 @@ export const WeatherWidget: React.FC = () => {
     const oneWeekAgo = subWeeks(new Date(), 1);
     
     if (isAfter(lastUpdatedDate, oneWeekAgo)) {
-      return `${formatDistanceToNow(lastUpdatedDate, { addSuffix: true })}`;
+      // Format to more concise version like "1 min ago" instead of "less than a minute ago"
+      let timeText = formatDistanceToNow(lastUpdatedDate, { addSuffix: true });
+      
+      // Replace "less than a minute ago" with "1 min ago"
+      if (timeText.includes("less than a minute")) {
+        timeText = "1 min ago";
+      }
+      
+      // Replace "about X hours ago" with "X hr ago"
+      timeText = timeText.replace("about ", "")
+                         .replace(" minutes", " min")
+                         .replace(" minute", " min")
+                         .replace(" hours", " hr")
+                         .replace(" hour", " hr")
+                         .replace(" days", " d")
+                         .replace(" day", " d");
+      
+      return timeText;
     } else {
-      return `${lastUpdatedDate.toLocaleDateString()}`;
+      return lastUpdatedDate.toLocaleDateString();
     }
   };
   

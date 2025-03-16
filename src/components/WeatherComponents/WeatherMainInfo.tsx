@@ -2,7 +2,6 @@
 import React from "react";
 import { WeatherData } from "@/hooks/useWeatherData";
 import { WeatherIcon } from "./WeatherIcon";
-import { formatDistanceToNow, isAfter, subWeeks } from "date-fns";
 
 interface WeatherMainInfoProps {
   weather: WeatherData;
