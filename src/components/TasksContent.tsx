@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,102 @@ interface GardenTask {
   patch_name?: string;
 }
 
-export const TasksContent: React.FC = () => {
+export const TasksContent: React.FC = ({careTasks}) => {
+
+  const addTask = (task: string, timing: string) => {
+    try {
+      const storedTasks = localStorage.getItem('garden-tasks');
+      const tasks: {id: string, text: string, completed: boolean, createdAt: string}[] = 
+        storedTasks ? JSON.parse(storedTasks) : [];
+      
+      if (tasks.some(t => t.text.toLowerCase() === task.toLowerCase())) {
+        return;
+      }
+      
+      const newTask = {
+        id: crypto.randomUUID(),
+        text: task,
+        completed: false,
+        createdAt: new Date().toISOString()
+      };
+      
+      tasks.push(newTask);
+      localStorage.setItem('garden-tasks', JSON.stringify(tasks));
+      
+      supabase
+        .from('patch_tasks')
+        .insert({
+          task: task,
+          user_id: ANONYMOUS_USER_ID,
+          patch_id: "general"
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error("Failed to save task to database:", error);
+          }
+        });
+      
+      toast.success(`Added "${task}" to your garden tasks`, {
+        action: {
+          label: "View Tasks",
+          onClick: () => {
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
+  };
+
+  useEffect(() => {
+    const onAddTask = e => {
+      console.log( "addTask", e);
+      addTask( e.detail.task, e.detail.timing);
+    };
+    window.addEventListener('addTask', onAddTask);
+    return () => window.removeEventListener('addTask',onAddTask);
+  }, []);
+
+  const handleAddTask = async () => {
+    if (!newTask.trim() || !newTiming.trim()) {
+      toast.error("Both task and timing are required.");
+      return;
+    }
+
+    addTask( newTask, newTiming);
+  };
+  
+  return <div className="space-y-3">
+    {careTasks.map((task) => (
+      <div 
+        key={task.id} 
+        className={`p-3 rounded-lg border ${
+          task.completed ? 'bg-gray-50 border-gray-200' : 'bg-white border-green-200'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <Checkbox 
+            id={`task-${task.id}`} 
+            checked={task.completed}
+          />
+          <div className="flex-1">
+            <label 
+              htmlFor={`task-${task.id}`}
+              className={`font-medium ${task.completed ? 'line-through text-gray-500' : 'text-green-800'}`}
+            >
+              {task.task}
+            </label>
+            <div className="text-sm text-gray-500 mt-1">
+              {task.plant} • Due {task.dueDate}
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+}
+
+export const TasksContentSorted: React.FC = () => {
   const [tasks, setTasks] = useState<GardenTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
@@ -74,6 +170,7 @@ export const TasksContent: React.FC = () => {
     fetchTasks();
   }, []);
 
+  
   const toggleTaskCompletion = async (taskId: string) => {
     try {
       // Find the task
