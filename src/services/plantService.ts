@@ -30,6 +30,41 @@ export const fetchPlants = async (): Promise<PlantItem[]> => {
   }
 };
 
+// Create a new plant
+export const createPlant = async (plantData: { name: string, icon: string, category: string, lifecycle?: string }): Promise<PlantItem | null> => {
+  try {
+    const newPlant = {
+      name: plantData.name,
+      icon: plantData.icon,
+      category: plantData.category,
+      lifecycle: plantData.lifecycle || 'annual'
+    };
+    
+    const { data, error } = await supabase
+      .from('plants')
+      .insert(newPlant)
+      .select()
+      .single();
+      
+    if (error) {
+      throw error;
+    }
+    
+    toast.success(`Created new plant: ${plantData.name}`);
+    return {
+      id: data.id,
+      name: data.name,
+      icon: data.icon,
+      category: data.category,
+      lifecycle: data.lifecycle
+    };
+  } catch (error) {
+    console.error("Error creating plant:", error);
+    toast.error("Failed to create plant");
+    return null;
+  }
+};
+
 // Create a new plant variety
 export const createPlantVariety = async (parentPlant: PlantItem, varietyName: string): Promise<PlantItem | null> => {
   try {

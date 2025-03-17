@@ -1,3 +1,4 @@
+
 export type CareTask = {
   id: string;
   plant: string;

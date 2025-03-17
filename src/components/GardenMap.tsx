@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -119,7 +118,6 @@ export const GardenMap = () => {
             position_x, 
             position_y, 
             patch_id,
-            stage,
             plants (*)
           `);
           
@@ -148,7 +146,7 @@ export const GardenMap = () => {
               y: item.position_y,
               patchId: patchId
             },
-            stage: item.stage || (matchingPatch ? getInitialStage(matchingPatch.type) : "young")
+            stage: matchingPatch ? getInitialStage(matchingPatch.type) : "young"
           });
         });
         
@@ -240,8 +238,7 @@ export const GardenMap = () => {
         const { error: updateError } = await supabase
           .from('planted_items')
           .update({ 
-            plant_id: item.id,
-            stage: initialStage
+            plant_id: item.id
           })
           .eq('id', existingItems[0].id);
           
@@ -254,8 +251,7 @@ export const GardenMap = () => {
             plant_id: item.id,
             patch_id: patchId,
             position_x: x,
-            position_y: y,
-            stage: initialStage
+            position_y: y
           });
           
         if (insertError) throw insertError;
@@ -314,30 +310,8 @@ export const GardenMap = () => {
       };
     });
     
-    // Update in database
-    try {
-      const { data: plantedItemData, error: findError } = await supabase
-        .from('planted_items')
-        .select('id')
-        .eq('patch_id', patchId)
-        .eq('position_x', x)
-        .eq('position_y', y)
-        .single();
-        
-      if (findError) throw findError;
-      
-      const { error: updateError } = await supabase
-        .from('planted_items')
-        .update({ stage: newStage })
-        .eq('id', plantedItemData.id);
-        
-      if (updateError) throw updateError;
-      
-      toast.success(`Plant ${direction === "up" ? "grown" : "reverted"} to ${newStage} stage`);
-    } catch (error) {
-      console.error("Error updating plant stage:", error);
-      toast.error("Failed to update plant stage");
-    }
+    // We will add database update when the stage column is added
+    toast.success(`Plant ${direction === "up" ? "grown" : "reverted"} to ${newStage} stage`);
   };
 
   // Handle deleting a plant
