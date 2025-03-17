@@ -1,13 +1,11 @@
 
 import React, { useRef, useEffect } from "react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Lightbulb, Clock } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { useGardenAdvisor } from "@/hooks/useGardenAdvisor";
 import { useHiddenMessages } from "@/hooks/useHiddenMessages";
-import { WidgetHeader } from "./WidgetHeader";
+import { Widget } from "./Widget";
 
 export const GardenAdvisor = () => {
   const { 
@@ -33,40 +31,14 @@ export const GardenAdvisor = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  if (isLoadingHistory || isLoadingHiddenMessages) {
-    return (
-      <Card className="flex flex-col h-full border-green-200 bg-green-50">
-        <CardHeader className="p-0">
-          <WidgetHeader title="Garden Advisor" icon={Lightbulb} />
-        </CardHeader>
-        <CardContent className="flex justify-center items-center flex-1 p-8">
-          <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
   return (
-    <Card className="flex flex-col h-full border-green-200 bg-green-50">
-      <CardHeader className="p-0">
-        <WidgetHeader title="Garden Advisor" icon={Lightbulb} />
-      </CardHeader>
-      <CardContent className="flex-1 p-0 overflow-hidden relative">
-        <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
-          <div className="p-4 space-y-2">
-            {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                isHidden={isMessageHidden(message.id)}
-                toggleVisibility={toggleMessageVisibility}
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-      </CardContent>
-      <CardFooter className="border-t p-3 bg-green-100">
+    <Widget
+      title="Garden Advisor"
+      icon={Lightbulb}
+      isLoading={isLoadingHistory || isLoadingHiddenMessages}
+      loadingText="Loading conversation history..."
+      contentClassName="space-y-2"
+      footer={
         <ChatInput
           input={input}
           setInput={setInput}
@@ -75,7 +47,19 @@ export const GardenAdvisor = () => {
           setIsInputFocused={setIsInputFocused}
           handleSubmit={handleSubmit}
         />
-      </CardFooter>
-    </Card>
+      }
+    >
+      <div className="space-y-2">
+        {messages.map((message) => (
+          <ChatMessage
+            key={message.id}
+            message={message}
+            isHidden={isMessageHidden(message.id)}
+            toggleVisibility={toggleMessageVisibility}
+          />
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+    </Widget>
   );
 };

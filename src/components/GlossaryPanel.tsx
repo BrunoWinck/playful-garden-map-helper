@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Book, Bookmark } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { GlossaryContent } from "./GlossaryContent";
 import { AdviceContent } from "./AdviceContent";
+import { Widget } from "./Widget";
 
 export interface GlossaryTerm {
   id: string;
@@ -43,75 +41,58 @@ export const GlossaryPanel = () => {
     };
   }, []);
 
-  // Render loading state
-  if (isLoading) {
-    return (
-      <Card className="flex flex-col h-full border-green-200 bg-green-50">
-        <CardHeader className="bg-green-700 text-white rounded-t-lg py-3">
-          <CardTitle className="flex items-center text-lg">
-            <Book className="mr-2 h-5 w-5" />
-            Garden Knowledge Base
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center flex-1 p-8">
-          <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const tabsContent = (
+    <Tabs 
+      defaultValue="glossary" 
+      value={activeTab} 
+      onValueChange={setActiveTab}
+      className="flex flex-col h-full"
+    >
+      <TabsList className="mx-0 mt-3 bg-green-100 justify-between w-full grid grid-cols-2 p-0">
+        <TabsTrigger 
+          id="glossary-tab"
+          value="glossary" 
+          className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
+        >
+          <Book className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+          Glossary
+        </TabsTrigger>
+        <TabsTrigger 
+          value="advices" 
+          className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
+        >
+          <Bookmark className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
+          Advices
+        </TabsTrigger>
+      </TabsList>
+      
+      <div className="flex-1 overflow-hidden mt-4">
+        <TabsContent value="glossary" className="h-full m-0 overflow-hidden">
+          <GlossaryContent />
+        </TabsContent>
+        
+        <TabsContent value="advices" className="h-full m-0 overflow-hidden">
+          <AdviceContent />
+        </TabsContent>
+      </div>
+    </Tabs>
+  );
 
   return (
-    <Card className="flex flex-col h-full border-green-200 bg-green-50">
-      <CardHeader className="bg-green-700 text-white rounded-t-lg py-3">
-        <CardTitle className="flex items-center text-lg">
-          <Book className="mr-2 h-5 w-5" />
-          Garden Knowledge Base
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-        <Tabs 
-          defaultValue="glossary" 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-          className="flex flex-col h-full"
-        >
-          <TabsList className="mx-0 mt-3 bg-green-100 justify-between w-full grid grid-cols-2 p-0">
-            <TabsTrigger 
-              id="glossary-tab"
-              value="glossary" 
-              className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
-            >
-              <Book className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
-              Glossary
-            </TabsTrigger>
-            <TabsTrigger 
-              value="advices" 
-              className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
-            >
-              <Bookmark className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1" />
-              Advices
-            </TabsTrigger>
-          </TabsList>
-          
-          <div className="flex-1 overflow-hidden">
-            <TabsContent value="glossary" className="h-full m-0 overflow-hidden">
-              <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
-                <GlossaryContent />
-              </ScrollArea>
-            </TabsContent>
-            
-            <TabsContent value="advices" className="h-full m-0 overflow-hidden">
-              <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
-                <AdviceContent />
-              </ScrollArea>
-            </TabsContent>
-          </div>
-        </Tabs>
-      </CardContent>
-      <CardFooter className="p-3 border-t text-xs text-gray-500 justify-center">
-        {activeTab === "glossary" && "Garden terminology reference"}
-        {activeTab === "advices" && "Saved gardening tips and advice"}
-      </CardFooter>
-    </Card>
+    <Widget
+      title="Garden Knowledge Base"
+      icon={Book}
+      isLoading={isLoading}
+      loadingText="Loading knowledge base..."
+      footer={
+        <div className="text-xs text-gray-500 justify-center w-full text-center">
+          {activeTab === "glossary" && "Garden terminology reference"}
+          {activeTab === "advices" && "Saved gardening tips and advice"}
+        </div>
+      }
+      contentClassName="p-0"
+    >
+      {tabsContent}
+    </Widget>
   );
 };
