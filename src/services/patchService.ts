@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Patch, PatchFormValues, PatchType, PlacementType } from "@/lib/types";
 import { toast } from "sonner";
@@ -175,20 +176,28 @@ export const addPatchTask = async (patchId: string, task: string) => {
   if (!task.trim()) return;
   
   try {
+    // Get the profile user rather than the auth user
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-      throw new Error("No current user found");
+      console.error("No current user found");
+      toast.error("Failed to add task: User not authenticated");
+      return;
     }
     
+    // Instead of using auth.users table, use the profiles table
     const { error } = await supabase
       .from('patch_tasks')
       .insert({
         patch_id: patchId,
         task: task,
-        user_id: currentUser.id
+        user_id: currentUser.id, // Use the profile ID which exists in the profiles table
+        completed: false
       });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error adding task:", error);
+      throw error;
+    }
     
     return task;
   } catch (error) {

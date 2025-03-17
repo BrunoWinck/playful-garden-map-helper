@@ -17,7 +17,7 @@ import { AvailablePlants } from "./AvailablePlants";
 export const GardenDashboard = () => {
   return (
     <main className="flex-1 overflow-y-auto bg-green-50">
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="max-w-7xl mx-auto p-4 pb-[200px]"> {/* Added 200px padding at the bottom */}
         <GardenNavbar />
         
         {/* Weather and Satellite View */}

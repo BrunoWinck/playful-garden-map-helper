@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Patch, PlantItem } from "@/lib/types";
 import { RegularPatch } from "./RegularPatch";
 import { SeedTray } from "./SeedTray";
@@ -19,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Pencil, ListPlus, X } from "lucide-react";
 import { PatchForm } from "./PatchForm";
-import { deletePatch, updatePatch, addPatchTask } from "@/services/patchService";
+import { deletePatch, updatePatch, addPatchTask, fetchPatchTasks } from "@/services/patchService";
 import { toast } from "sonner";
 import { eventBus, PATCH_EVENTS } from "@/lib/eventBus";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -47,6 +48,37 @@ export const GardenPatches = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newTask, setNewTask] = useState("");
   const [activeTaskPatchId, setActiveTaskPatchId] = useState<string | null>(null);
+  const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({});
+
+  // Fetch patch tasks when component mounts or patches change
+  useEffect(() => {
+    if (patches.length > 0) {
+      const fetchTasks = async () => {
+        try {
+          const tasks = await fetchPatchTasks(patches.map(p => p.id));
+          setPatchTasks(tasks);
+        } catch (error) {
+          console.error("Error fetching patch tasks:", error);
+        }
+      };
+      fetchTasks();
+    }
+  }, [patches]);
+
+  // Listen for task events from the garden advisor
+  useEffect(() => {
+    const handleAddTaskEvent = (event: CustomEvent) => {
+      if (activeTaskPatchId && event.detail && event.detail.task) {
+        handleAddTask(event.detail.task);
+      }
+    };
+
+    window.addEventListener('addTask', handleAddTaskEvent as EventListener);
+    
+    return () => {
+      window.removeEventListener('addTask', handleAddTaskEvent as EventListener);
+    };
+  }, [activeTaskPatchId]);
 
   const handleEditPatch = (patch: Patch) => {
     setEditingPatch(patch);
@@ -100,11 +132,22 @@ export const GardenPatches = ({
     }
   };
 
-  const handleAddTask = async () => {
-    if (!activeTaskPatchId || !newTask.trim()) return;
+  const handleAddTask = async (taskText?: string) => {
+    const taskToAdd = taskText || newTask;
+    if (!activeTaskPatchId || !taskToAdd.trim()) return;
     
     try {
-      await addPatchTask(activeTaskPatchId, newTask);
+      await addPatchTask(activeTaskPatchId, taskToAdd);
+      
+      // Update local state
+      setPatchTasks(prev => {
+        const currentTasks = [...(prev[activeTaskPatchId] || [])];
+        return {
+          ...prev,
+          [activeTaskPatchId]: [...currentTasks, taskToAdd]
+        };
+      });
+      
       toast.success("Task added");
       setNewTask("");
     } catch (error) {
@@ -151,11 +194,26 @@ export const GardenPatches = ({
                         />
                         <Button 
                           size="sm" 
-                          onClick={handleAddTask}
+                          onClick={() => handleAddTask()}
                           className="bg-green-600 hover:bg-green-700"
                         >
                           Add
                         </Button>
+                      </div>
+                      
+                      {/* Show existing tasks */}
+                      <div className="mt-4">
+                        <h3 className="text-sm font-medium mb-2">Current Tasks:</h3>
+                        <ul className="space-y-1">
+                          {(patchTasks[patch.id] || []).map((task, idx) => (
+                            <li key={idx} className="flex justify-between items-center py-1 px-2 bg-green-50 rounded">
+                              <span className="text-sm">{task}</span>
+                            </li>
+                          ))}
+                          {(patchTasks[patch.id] || []).length === 0 && (
+                            <li className="text-sm text-gray-500 italic">No tasks yet</li>
+                          )}
+                        </ul>
                       </div>
                     </div>
                   </SheetContent>
@@ -200,6 +258,8 @@ export const GardenPatches = ({
             </div>
           } 
           className={patchColors[index % patchColors.length]}
+          patch={patch}
+          tasks={patchTasks[patch.id] || []}
         >
           {patch.placementType === "slots" ? (
             <SeedTray 
