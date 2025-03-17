@@ -40,18 +40,16 @@ export const GardenDashboard = () => {
           </div>
         </div>
         
-        <ResizablePanelGroup direction="horizontal" className="min-h-[500px] rounded-lg border">
-          <ResizablePanel defaultSize={65}>
+        {/* Garden Map and Patch Manager - Updated to match 2/3 and 1/3 ratio with gap */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="md:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-4 h-full">
               <h2 className="text-xl font-semibold text-green-700 mb-4">Garden Map</h2>
               <p className="text-green-700 mb-4">Drag plants onto your garden patches!</p>
               <GardenMap />
             </div>
-          </ResizablePanel>
-          
-          <ResizableHandle withHandle />
-          
-          <ResizablePanel defaultSize={35}>
+          </div>
+          <div className="md:col-span-1">
             <div className="flex flex-col h-full gap-4">
               <div className="bg-white rounded-lg shadow-md p-4 flex-1">
                 <h2 className="text-xl font-semibold text-green-700 mb-4">Patch Manager</h2>
@@ -63,8 +61,8 @@ export const GardenDashboard = () => {
                 <CareSchedule />
               </div>
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       </div>
     </main>
   );
