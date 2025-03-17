@@ -24,11 +24,10 @@ export const Widget = ({
   className = "",
   contentClassName = "",
 }: WidgetProps) => {
-    <div className="md:col-span-2">
-      <div className="h-[500px]">  // Render loading state if needed
-
   return (
-          <div className="md:col-span-2">
+  <div className="md:col-span-2">
+      <div className="h-[500px]"> 
+        <div className="md:col-span-2">
             <div className="h-[500px]">
               <Card className={`flex flex-col h-full border-green-200 bg-green-50 ${className}`}>
       <CardHeader className="p-0">

@@ -32,6 +32,7 @@ export const GardenAdvisor = () => {
   }, [messages]);
 
   const loadingText = "Loading...";
+  // Render loading state if needed
   if (isLoading) {
     return 
     <Widget
