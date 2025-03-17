@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +36,12 @@ export const GardenImageCollage: React.FC<GardenImageCollageProps> = ({
   const [images, setImages] = useState<GardenImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  // Calculate current day of year
+  const currentDayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 
+    (1000 * 60 * 60 * 24)
+  );
 
   useEffect(() => {
     const fetchSimilarImages = async () => {

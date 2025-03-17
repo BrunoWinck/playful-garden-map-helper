@@ -1,16 +1,13 @@
 
 import React from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { Outlet } from "react-router-dom";
 
-type LayoutProps = {
-  children: React.ReactNode;
-};
-
-export const Layout = ({ children }: LayoutProps) => {
+export const Layout = () => {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen overflow-hidden w-full">
-        {children}
+        <Outlet />
       </div>
     </SidebarProvider>
   );

@@ -4,13 +4,16 @@ import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { GlossaryTerm } from "./GlossaryPanel";
 import { useLongPress } from "@/utils/useLongPress";
 import ReactMarkdown from "react-markdown";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export const GlossaryContent: React.FC = () => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
   const [terms, setTerms] = useState<GlossaryTerm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newTerm, setNewTerm] = useState("");
@@ -66,7 +69,7 @@ export const GlossaryContent: React.FC = () => {
             await supabase.from('glossary_terms').insert({
               term: term.term,
               definition: term.definition,
-              user_id: ANONYMOUS_USER_ID
+              user_id: userId
             });
           }
         }
@@ -82,7 +85,7 @@ export const GlossaryContent: React.FC = () => {
     };
 
     fetchGlossaryTerms();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (terms.length > 0 && !isLoading) {
@@ -125,7 +128,7 @@ export const GlossaryContent: React.FC = () => {
         .from('glossary_terms')
         .insert({
           ...termObject,
-          user_id: ANONYMOUS_USER_ID
+          user_id: userId
         })
         .select('*')
         .single();

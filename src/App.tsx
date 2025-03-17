@@ -1,10 +1,10 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Index } from './pages/Index';
-import { Settings } from './pages/Settings';
-import { NotFound } from './pages/NotFound';
+import Index from './pages/Index';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/sonner';
 import { ProfileProvider } from './contexts/ProfileContext';
 

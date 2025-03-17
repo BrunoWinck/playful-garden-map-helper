@@ -4,13 +4,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Clock, ListTodo, Trash2, Pencil } from "lucide-react";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import type { CareTask } from "@/lib/types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useProfile } from "@/contexts/ProfileContext";
 
 interface GardenTask {
   id: string;
@@ -28,6 +29,8 @@ interface TasksContentProps {
 }
 
 export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
   const [tasks, setTasks] = useState<GardenTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
@@ -49,7 +52,7 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
             *,
             patches(name)
           `)
-          .eq('user_id', ANONYMOUS_USER_ID)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -100,7 +103,7 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
       
       setTasks(prev => [...prev, ...careTasksFormatted]);
     }
-  }, [careTasks]);
+  }, [careTasks, userId]);
 
   const addTask = (task: string, timing: string) => {
     try {
@@ -110,7 +113,7 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         .from('patch_tasks')
         .insert({
           task: task,
-          user_id: ANONYMOUS_USER_ID,
+          user_id: userId,
           patch_id: patchId
         })
         .then(({ data, error }) => {
@@ -155,7 +158,7 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
           *,
           patches(name)
         `)
-        .eq('user_id', ANONYMOUS_USER_ID)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
