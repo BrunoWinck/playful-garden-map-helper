@@ -44,9 +44,9 @@ export const GardenDashboard = () => {
         
         {/* Garden Map and Patch Manager - Updated to match 2/3 and 1/3 ratio with gap */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="md:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-4 h-full">
-              <WidgetHeader title="Garden Map" icon={Map} />
+          <div className="md:col-span-2 bg-white rounded-lg shadow-md h-full">
+            <WidgetHeader title="Garden Map" icon={Map} />
+            <div className="p-4">
               <p className="text-green-700 mb-4">Drag plants onto your garden patches!</p>
               <GardenMap />
             </div>
