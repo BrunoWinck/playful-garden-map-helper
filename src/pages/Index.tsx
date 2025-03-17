@@ -2,15 +2,12 @@
 import React from "react";
 import { GardenDashboard } from "@/components/GardenDashboard";
 import { GardenSidebar } from "@/components/GardenSidebar";
-import { Layout } from "@/components/Layout";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-green-50">
-      <Layout>
-        <GardenSidebar />
-        <GardenDashboard />
-      </Layout>
+    <div className="min-h-screen bg-green-50 flex h-screen overflow-hidden w-full">
+      <GardenSidebar />
+      <GardenDashboard />
     </div>
   );
 };
