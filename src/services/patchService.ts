@@ -62,6 +62,29 @@ export const fetchPatchTasks = async (patchIds: string[]) => {
 // Create a new patch
 export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
   try {
+    // First, check if the anonymous user exists in the users table
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', ANONYMOUS_USER_ID)
+      .single();
+      
+    // If user doesn't exist, we need to create it first
+    if (userCheckError || !existingUser) {
+      const { error: createUserError } = await supabase
+        .from('users')
+        .insert({
+          id: ANONYMOUS_USER_ID,
+          name: "Anonymous User" // Using a default name
+        });
+        
+      if (createUserError) {
+        console.error("Failed to create user:", createUserError);
+        throw createUserError;
+      }
+    }
+    
+    // Now proceed with creating the patch
     const { data: newPatch, error } = await supabase
       .from('patches')
       .insert({
@@ -150,6 +173,27 @@ export const addPatchTask = async (patchId: string, task: string) => {
   if (!task.trim()) return;
   
   try {
+    // Similar check for user existence
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', ANONYMOUS_USER_ID)
+      .single();
+      
+    if (userCheckError || !existingUser) {
+      const { error: createUserError } = await supabase
+        .from('users')
+        .insert({
+          id: ANONYMOUS_USER_ID,
+          name: "Anonymous User"
+        });
+        
+      if (createUserError) {
+        console.error("Failed to create user:", createUserError);
+        throw createUserError;
+      }
+    }
+    
     const { error } = await supabase
       .from('patch_tasks')
       .insert({

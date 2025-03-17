@@ -11,6 +11,6 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// For development purposes, we're using the ID linked to "Bruno Winck"
+// For development purposes, we're using a UUID that will be created if it doesn't exist
 export const ANONYMOUS_USER_ID = "00000000-0000-0000-0000-000000000000";
-export const ANONYMOUS_USER_NAME = "Bruno Winck";
+export const ANONYMOUS_USER_NAME = "Anonymous User";
