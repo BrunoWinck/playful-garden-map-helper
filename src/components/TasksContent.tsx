@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -44,7 +43,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
       try {
         setIsLoading(true);
         
-        // Query tasks from patch_tasks table
         const { data, error } = await supabase
           .from('patch_tasks')
           .select(`
@@ -56,7 +54,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
 
         if (error) throw error;
 
-        // Transform data to include patch name
         const formattedTasks = data.map((task) => ({
           ...task,
           patch_name: task.patches?.name || 'General'
@@ -65,7 +62,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         setTasks(formattedTasks);
       } catch (error) {
         console.error("Error fetching tasks:", error);
-        // Use some mock data if fetching fails
         setTasks([
           {
             id: "1",
@@ -91,7 +87,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
 
     fetchTasks();
     
-    // Convert careTasks to GardenTask format and add to tasks
     if (careTasks.length > 0) {
       const careTasksFormatted: GardenTask[] = careTasks.map(task => ({
         id: task.id,
@@ -131,25 +126,17 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         .from('patch_tasks')
         .insert({
           task: task,
-          user_id: ANONYMOUS_USER_ID,
-          patch_id: "general"
+          user_id: ANONYMOUS_USER_ID
         })
         .then(({ error }) => {
           if (error) {
             console.error("Failed to save task to database:", error);
           } else {
-            // Refresh tasks after adding
             fetchTasks();
           }
         });
       
-      toast.success(`Added "${task}" to your garden tasks`, {
-        action: {
-          label: "View Tasks",
-          onClick: () => {
-          }
-        }
-      });
+      toast.success(`Added "${task}" to your garden tasks`);
     } catch (error) {
       console.error("Error adding task:", error);
     }
@@ -199,11 +186,9 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
   
   const toggleTaskCompletion = async (taskId: string) => {
     try {
-      // Find the task
       const taskToUpdate = tasks.find(t => t.id === taskId);
       if (!taskToUpdate) return;
 
-      // Update in local state for immediate UI feedback
       setTasks(prev => 
         prev.map(task => 
           task.id === taskId 
@@ -212,7 +197,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         )
       );
 
-      // Update in database
       const { error } = await supabase
         .from('patch_tasks')
         .update({ completed: !taskToUpdate.completed })
@@ -225,7 +209,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
       console.error("Error toggling task completion:", error);
       toast.error("Failed to update task status");
       
-      // Revert changes in case of error
       setTasks(prev => 
         prev.map(task => 
           task.id === taskId ? { ...task, completed: tasks.find(t => t.id === taskId)?.completed || false } : task
@@ -243,7 +226,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
 
   const deleteTask = async (taskId: string) => {
     try {
-      // Delete from database
       const { error } = await supabase
         .from('patch_tasks')
         .delete()
@@ -251,7 +233,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
 
       if (error) throw error;
 
-      // Remove from local state
       setTasks(prev => prev.filter(task => task.id !== taskId));
       toast.success("Task deleted");
     } catch (error) {
@@ -276,7 +257,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
 
       if (error) throw error;
 
-      // Update in local state
       setTasks(prev => 
         prev.map(task => 
           task.id === editingTask.id 
@@ -331,7 +311,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
   const groupedTasks = groupTasksByPatch();
   const patchNames = Object.keys(groupedTasks);
 
-  // If tasks are empty and we have careTasks, just render careTasks in a simpler format
   if (tasks.length === 0 && careTasks.length > 0) {
     return <div className="space-y-3">
       {careTasks.map((task) => (
@@ -454,7 +433,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         </div>
       </ScrollArea>
 
-      {/* Edit Task Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -481,7 +459,6 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

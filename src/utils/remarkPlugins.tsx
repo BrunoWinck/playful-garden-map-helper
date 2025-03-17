@@ -5,7 +5,18 @@ import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations
 
 const addToGlossary = (term: string) => {
   try {
-    window.dispatchEvent( new CustomEvent('addToGlossary', { detail: { term } }));
+    console.log("Adding to glossary:", term);
+    // Create and dispatch a custom event
+    const glossaryEvent = new CustomEvent('addToGlossary', { 
+      detail: { 
+        term: term,
+        definition: `Add your definition for "${term}" here.`
+      } 
+    });
+    
+    window.dispatchEvent(glossaryEvent);
+    
+    // Keep the comment code as a reference but don't execute it
     /*
     const storedTerms = localStorage.getItem('glossary-terms');
     const terms: GlossaryTerm[] = storedTerms ? JSON.parse(storedTerms) : [];
@@ -52,7 +63,8 @@ const addToGlossary = (term: string) => {
 
 const addToTasks = (task: string, timing: string) => {
   try {
-    window.dispatchEvent( new CustomEvent('addTask', { detail: { task, timing } }));
+    console.log("Adding task:", task, "Timing:", timing);
+    window.dispatchEvent(new CustomEvent('addTask', { detail: { task, timing } }));
   } catch (error) {
     console.error("Error adding task:", error);
   }
@@ -159,7 +171,6 @@ function GlossaryTerm({ node }: any) {
       title="Click to view in glossary"
       onClick={() => {
         addToGlossary(term);
-        // document.getElementById("glossary-panel-trigger")?.click();
       }}
     >
       <BookOpen className="inline-block h-3 w-3 mr-1" />
