@@ -328,6 +328,7 @@ export type Database = {
           created_at: string
           icon: string
           id: string
+          lifecycle: string
           name: string
           parent_id: string | null
           updated_at: string
@@ -337,6 +338,7 @@ export type Database = {
           created_at?: string
           icon: string
           id?: string
+          lifecycle?: string
           name: string
           parent_id?: string | null
           updated_at?: string
@@ -346,6 +348,7 @@ export type Database = {
           created_at?: string
           icon?: string
           id?: string
+          lifecycle?: string
           name?: string
           parent_id?: string | null
           updated_at?: string

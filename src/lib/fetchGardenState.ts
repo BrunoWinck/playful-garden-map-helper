@@ -96,6 +96,7 @@ export const fetchGardenState = async (updateAdvisor) => {
           name: plant.name,
           icon: plant.icon,
           category: plant.category,
+          lifecycle: plant.lifecycle,
           position: {
             x: item.position_x,
             y: item.position_y
@@ -119,6 +120,7 @@ export const fetchGardenState = async (updateAdvisor) => {
         name: plant.name,
         icon: plant.icon,
         category: plant.category,
+        lifecycle: plant.lifecycle,
         parent_id: plant.parent_id
       }));
     }

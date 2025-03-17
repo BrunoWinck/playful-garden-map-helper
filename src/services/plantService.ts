@@ -20,6 +20,7 @@ export const fetchPlants = async (): Promise<PlantItem[]> => {
       name: plant.name,
       icon: plant.icon,
       category: plant.category,
+      lifecycle: plant.lifecycle,
       parent_id: plant.parent_id
     }));
   } catch (error) {
@@ -36,6 +37,7 @@ export const createPlantVariety = async (parentPlant: PlantItem, varietyName: st
       name: varietyName,
       icon: parentPlant.icon,
       category: parentPlant.category,
+      lifecycle: parentPlant.lifecycle,
       parent_id: parentPlant.id
     };
     
@@ -55,6 +57,7 @@ export const createPlantVariety = async (parentPlant: PlantItem, varietyName: st
       name: data.name,
       icon: data.icon,
       category: data.category,
+      lifecycle: data.lifecycle,
       parent_id: data.parent_id
     };
   } catch (error) {

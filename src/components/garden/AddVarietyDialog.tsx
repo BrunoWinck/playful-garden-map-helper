@@ -52,9 +52,14 @@ export const AddVarietyDialog = ({
           <div className="grid gap-4 py-4">
             <div className="flex items-center gap-4">
               <div className="text-4xl">{plant?.icon}</div>
-              <div>
+              <div className="flex-1">
                 <p className="text-md font-medium">{plant?.name}</p>
-                <p className="text-sm text-muted-foreground">{plant?.category}</p>
+                <div className="flex flex-wrap gap-2">
+                  <p className="text-sm text-muted-foreground">{plant?.category}</p>
+                  {plant?.lifecycle && (
+                    <p className="text-sm text-muted-foreground">• {plant.lifecycle}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">

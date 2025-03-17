@@ -4,16 +4,16 @@ import { useDrag } from "react-dnd";
 import { PlantItem } from "@/lib/types";
 import { ItemTypes } from "./GardenCell";
 import { useLongPress } from "@/utils/useLongPress";
+import { AddVarietyDialog } from "./AddVarietyDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { AddVarietyDialog } from "./AddVarietyDialog";
-import { deletePlant, isPlantInUse } from "@/services/plantService";
+import { Trash2, Plus } from "lucide-react";
+import { deletePlant } from "@/services/plantService";
 import { toast } from "sonner";
-import { PlusCircle, Trash2 } from "lucide-react";
 
 interface DraggablePlantProps {
   plant: PlantItem;
-  onPlantUpdated?: () => void;
+  onPlantUpdated: () => void;
 }
 
 export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) => {
@@ -24,127 +24,120 @@ export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) =
       isDragging: !!monitor.isDragging(),
     }),
   }));
-  
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [isAddVarietyOpen, setIsAddVarietyOpen] = useState(false);
-  const [isDeleteDisabled, setIsDeleteDisabled] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  
-  // Long press handler to open popover
-  const longPressHandlers = useLongPress({
-    onLongPress: () => setPopoverOpen(true),
-  });
-  
+
+  const [isVarietyDialogOpen, setIsVarietyDialogOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const handleAddVariety = () => {
-    setPopoverOpen(false);
-    setIsAddVarietyOpen(true);
+    setIsMenuOpen(false);
+    setIsVarietyDialogOpen(true);
   };
-  
+
   const handleDeletePlant = async () => {
-    setPopoverOpen(false);
-    
-    // Check if plant is in use
-    const inUse = await isPlantInUse(plant.id);
-    if (inUse) {
-      setIsDeleteDisabled(true);
-      toast.error("Cannot delete a plant that is in use in your garden");
-      return;
-    }
-    
-    // Confirm deletion
-    if (window.confirm(`Are you sure you want to delete "${plant.name}"?`)) {
-      const success = await deletePlant(plant.id);
-      if (success && onPlantUpdated) {
-        onPlantUpdated();
-      }
-    }
-  };
-  
-  const handleVarietyAdded = (newVariety: PlantItem) => {
-    if (onPlantUpdated) {
+    setIsMenuOpen(false);
+    const success = await deletePlant(plant.id);
+    if (success) {
       onPlantUpdated();
     }
   };
 
+  const longPressProps = useLongPress({
+    onLongPress: () => setIsMenuOpen(true),
+    onClick: () => {},
+  });
+
+  const getBadgeColor = (lifecycle: string | undefined) => {
+    switch (lifecycle) {
+      case 'tree':
+        return 'bg-amber-100 text-amber-800';
+      case 'perennial':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'bush':
+        return 'bg-purple-100 text-purple-800';
+      case 'rhizome':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="relative">
-      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+    <>
+      <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <PopoverTrigger asChild>
           <div
             ref={drag}
-            className={`bg-white p-3 rounded-lg shadow-md cursor-move flex flex-col items-center ${
-              isDragging ? "opacity-50" : "opacity-100"
-            }`}
-            {...longPressHandlers}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            className="relative flex flex-col items-center cursor-move p-2 hover:bg-brown-300 rounded-lg transition-colors"
+            style={{
+              opacity: isDragging ? 0.5 : 1,
+            }}
+            {...longPressProps}
           >
-            <span className="text-3xl mb-2">{plant.icon}</span>
-            <span className="text-sm text-green-800">{plant.name}</span>
-            
-            {/* Add button - top right */}
-            <button
-              className={`absolute top-1 right-1 text-green-600 hover:text-green-800 transition-opacity ${
-                isHovered ? "opacity-100" : "opacity-30"
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddVariety();
-              }}
-              aria-label="Add variety"
-            >
-              <PlusCircle size={16} />
-            </button>
-            
-            {/* Delete button - bottom right */}
-            <button
-              className={`absolute bottom-1 right-1 ${
-                isDeleteDisabled ? "text-gray-300 cursor-not-allowed" : "text-red-500 hover:text-red-700"
-              } transition-opacity ${isHovered ? "opacity-100" : "opacity-30"}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isDeleteDisabled) {
-                  handleDeletePlant();
-                }
-              }}
-              disabled={isDeleteDisabled}
-              aria-label="Delete plant"
-            >
-              <Trash2 size={16} />
-            </button>
+            <div className="absolute top-0 right-0 flex space-x-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5 rounded-full bg-green-100" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddVariety();
+                }}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+              {!plant.parent_id && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-5 w-5 rounded-full bg-red-100" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePlant();
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            <div className="text-3xl mb-1">{plant.icon}</div>
+            <div className="text-xs text-center">{plant.name}</div>
+            {plant.lifecycle && (
+              <div className={`text-[10px] px-1.5 mt-1 rounded-full ${getBadgeColor(plant.lifecycle)}`}>
+                {plant.lifecycle}
+              </div>
+            )}
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-48 p-2">
-          <div className="flex flex-col gap-2">
+        <PopoverContent className="w-48">
+          <div className="grid gap-2">
             <Button 
               variant="outline" 
-              size="sm" 
-              className="justify-start" 
+              className="justify-start"
               onClick={handleAddVariety}
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Variety
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="justify-start text-red-500 hover:text-red-700 hover:bg-red-50" 
-              onClick={handleDeletePlant}
-              disabled={isDeleteDisabled}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Plant
-            </Button>
+            {!plant.parent_id && (
+              <Button 
+                variant="outline" 
+                className="justify-start text-destructive hover:text-destructive"
+                onClick={handleDeletePlant}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Plant
+              </Button>
+            )}
           </div>
         </PopoverContent>
       </Popover>
-      
-      <AddVarietyDialog 
-        isOpen={isAddVarietyOpen}
-        onClose={() => setIsAddVarietyOpen(false)}
+
+      <AddVarietyDialog
+        isOpen={isVarietyDialogOpen}
+        onClose={() => setIsVarietyDialogOpen(false)}
         plant={plant}
-        onVarietyAdded={handleVarietyAdded}
+        onVarietyAdded={onPlantUpdated}
       />
-    </div>
+    </>
   );
 };

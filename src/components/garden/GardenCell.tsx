@@ -36,6 +36,23 @@ export const GardenCell = ({
     }),
   }));
 
+  const getLifecycleBadgeColor = (lifecycle: string | undefined) => {
+    if (!lifecycle) return '';
+    
+    switch (lifecycle) {
+      case 'tree':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'perennial':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'bush':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'rhizome':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
   return (
     <div
       ref={drop}
@@ -46,7 +63,16 @@ export const GardenCell = ({
       {plantItem && (
         <div className="flex flex-col items-center">
           <span className={`${isSlot ? 'text-xl' : 'text-3xl'}`}>{plantItem.icon}</span>
-          {!isSlot && <span className="text-xs text-green-800">{plantItem.name}</span>}
+          {!isSlot && (
+            <>
+              <span className="text-xs text-green-800">{plantItem.name}</span>
+              {plantItem.lifecycle && !isSlot && (
+                <span className={`text-[8px] px-1 mt-0.5 rounded-full border ${getLifecycleBadgeColor(plantItem.lifecycle)}`}>
+                  {plantItem.lifecycle}
+                </span>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
