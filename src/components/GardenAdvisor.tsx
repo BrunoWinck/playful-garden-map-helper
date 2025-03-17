@@ -30,9 +30,24 @@ export const GardenAdvisor = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
-  return (
+
+  const loadingText = "Loading...";
+  if (isLoading) {
+    return 
     <Widget
+      title="Garden Advisor"
+      icon={Lightbulb}
+      isLoading={isLoadingHistory || isLoadingHiddenMessages}
+      loadingText="Loading conversation history..."
+      contentClassName="space-y-2"
+      }
+    >
+      <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
+      <span className="ml-3 text-green-700">{loadingText}</span>
+    </Widget>;
+  }
+
+  return <Widget
       title="Garden Advisor"
       icon={Lightbulb}
       isLoading={isLoadingHistory || isLoadingHiddenMessages}
@@ -60,6 +75,5 @@ export const GardenAdvisor = () => {
         ))}
         <div ref={messagesEndRef} />
       </div>
-    </Widget>
-  );
+    </Widget>;
 };

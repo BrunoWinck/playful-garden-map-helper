@@ -32,8 +32,7 @@ export const GardenDashboard = () => {
         
         {/* Garden Advisor and Glossary - Set a fixed height */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="md:col-span-2">
-            <div className="h-[500px]">
+
               <GardenAdvisor />
             </div>
           </div>

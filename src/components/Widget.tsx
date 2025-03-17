@@ -23,31 +23,14 @@ export const Widget = ({
   footer,
   className = "",
   contentClassName = "",
-  isLoading = false,
-  loadingText = "Loading..."
 }: WidgetProps) => {
-  // Render loading state if needed
-  if (isLoading) {
-    return (
-      <Card className={`flex flex-col h-full border-green-200 bg-green-50 ${className}`}>
-        <CardHeader className="p-0">
-          <div className="bg-green-700 text-white rounded-t-lg py-3 px-4">
-            <h2 className="flex items-center text-lg font-semibold">
-              <Icon className="mr-2 h-5 w-5" />
-              {title}
-            </h2>
-          </div>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center flex-1 p-8">
-          <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
-          <span className="ml-3 text-green-700">{loadingText}</span>
-        </CardContent>
-      </Card>
-    );
-  }
+    <div className="md:col-span-2">
+      <div className="h-[500px]">  // Render loading state if needed
 
   return (
-    <Card className={`flex flex-col h-full border-green-200 bg-green-50 ${className}`}>
+          <div className="md:col-span-2">
+            <div className="h-[500px]">
+              <Card className={`flex flex-col h-full border-green-200 bg-green-50 ${className}`}>
       <CardHeader className="p-0">
         <div className="bg-green-700 text-white rounded-t-lg py-3 px-4">
           <h2 className="flex items-center text-lg font-semibold">
@@ -69,5 +52,6 @@ export const Widget = ({
         </CardFooter>
       )}
     </Card>
+    </div></div>
   );
 };
