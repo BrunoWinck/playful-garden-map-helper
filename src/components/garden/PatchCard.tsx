@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Edit, Move } from "lucide-react";
+import { X, Edit, Move, Plus } from "lucide-react";
 import { Patch } from "@/lib/types";
 
 interface PatchCardProps {
@@ -142,7 +142,7 @@ export const PatchCard = ({
             className="ml-1 h-8 w-8 text-green-700"
             onClick={handleAddTask}
           >
-            <X className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
         
