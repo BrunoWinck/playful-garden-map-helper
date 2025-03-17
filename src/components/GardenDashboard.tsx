@@ -65,8 +65,8 @@ export const GardenDashboard = () => {
         </div>
         
         {/* Garden Map and Available Plants - Side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          <div className="md:col-span-3 bg-white rounded-lg shadow-md h-[600px] flex flex-col">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="md:col-span-2 bg-white rounded-lg shadow-md h-[600px] flex flex-col">
             <WidgetHeader title="Garden Map" icon={Map} />
             <div className="p-4 flex-1 overflow-hidden">
               <div className="h-[calc(100%-2rem)] overflow-auto" id="garden-map-container">
