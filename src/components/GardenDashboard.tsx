@@ -1,7 +1,6 @@
 
 import React from "react";
 import { GardenMap } from "./GardenMap";
-import { CareSchedule } from "./CareSchedule";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { PatchManager } from "./PatchManager";
 import { WeatherWidget } from "./WeatherWidget";
@@ -10,7 +9,9 @@ import { GlossaryPanel } from "./GlossaryPanel";
 import { NasaSatelliteView } from "./NasaSatelliteView";
 import { GardenNavbar } from "./GardenNavbar";
 import { WidgetHeader } from "./WidgetHeader";
-import { Lightbulb, Map, Leaf, Calendar } from "lucide-react";
+import { TaskList } from "./TaskList";
+import { TaskCalendar } from "./TaskCalendar";
+import { Map, Leaf, ListTodo, Calendar } from "lucide-react";
 
 export const GardenDashboard = () => {
   return (
@@ -42,7 +43,25 @@ export const GardenDashboard = () => {
           </div>
         </div>
         
-        {/* Garden Map and Patch Manager - Updated to match 2/3 and 1/3 ratio with gap */}
+        {/* Tasks List and Calendar */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="md:col-span-1">
+            <div className="bg-white rounded-lg shadow-md h-full">
+              <WidgetHeader title="Garden Tasks" icon={ListTodo} />
+              <div className="p-4">
+                <TaskList />
+              </div>
+            </div>
+          </div>
+          <div className="md:col-span-2 bg-white rounded-lg shadow-md h-full">
+            <WidgetHeader title="Care Calendar" icon={Calendar} />
+            <div className="p-4">
+              <TaskCalendar />
+            </div>
+          </div>
+        </div>
+        
+        {/* Garden Map and Patch Manager */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="md:col-span-2 bg-white rounded-lg shadow-md h-full">
             <WidgetHeader title="Garden Map" icon={Map} />
@@ -52,19 +71,10 @@ export const GardenDashboard = () => {
             </div>
           </div>
           <div className="md:col-span-1">
-            <div className="flex flex-col h-full gap-4">
-              <div className="bg-white rounded-lg shadow-md h-full">
-                <WidgetHeader title="Patch Manager" icon={Leaf} />
-                <div className="p-4">
-                  <PatchManager />
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-lg shadow-md h-full">
-                <WidgetHeader title="Care Schedule" icon={Calendar} />
-                <div className="p-4">
-                  <CareSchedule />
-                </div>
+            <div className="bg-white rounded-lg shadow-md h-full">
+              <WidgetHeader title="Patch Manager" icon={Leaf} />
+              <div className="p-4">
+                <PatchManager />
               </div>
             </div>
           </div>

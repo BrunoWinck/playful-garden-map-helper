@@ -1,34 +1,14 @@
 
 import React, { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar as CalendarIcon, List, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { TasksCalendar } from "@/components/TasksCalendar";
+import { careTasks } from "@/lib/mockdata";
 import { Sun, Moon, CloudRain, Cloud } from "lucide-react";
-
-import { TasksContent } from "@/components/TasksContent.tsx";
-import { TasksCalendar } from "@/components/TasksCalendar.tsx";
-
 
 // Mock weather data - in a real app, this would come from an API
 type WeatherForecast = {
@@ -40,8 +20,6 @@ type WeatherForecast = {
   sunset: string;
   daylightHours: number;
 };
-
-import { careTasks } from "@/lib/mockdata.ts";
 
 // Generate mock weather forecasts for the next 30 days
 const generateWeatherForecasts = (): WeatherForecast[] => {
@@ -85,8 +63,7 @@ const generateWeatherForecasts = (): WeatherForecast[] => {
 
 const weatherForecasts = generateWeatherForecasts();
 
-export const CareSchedule = () => {
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+export const TaskCalendar = () => {
   const [calendarView, setCalendarView] = useState<"week" | "twoWeeks" | "month">("week");
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState(false);
@@ -149,88 +126,61 @@ export const CareSchedule = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-green-800">Tasks</h3>
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className={viewMode === "list" ? "bg-green-100" : ""}
-            onClick={() => setViewMode("list")}
-          >
-            <List className="h-4 w-4 mr-1" />
-            List
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className={viewMode === "calendar" ? "bg-green-100" : ""}
-            onClick={() => setViewMode("calendar")}
-          >
-            <CalendarIcon className="h-4 w-4 mr-1" />
-            Calendar
-          </Button>
-          
-          {viewMode === "calendar" && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  {calendarView === "week" ? "Week" : 
-                   calendarView === "twoWeeks" ? "2 Weeks" : "Month"}
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setCalendarView("week")}>
-                  Week
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setCalendarView("twoWeeks")}>
-                  2 Weeks
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setCalendarView("month")}>
-                  Month
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <CalendarIcon className="h-4 w-4 mr-1" />
-                {format(date, "MMM dd")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(newDate) => {
-                  if (newDate) {
-                    setDate(newDate);
-                    setOpen(false);
-                  }
-                }}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              {calendarView === "week" ? "Week" : 
+               calendarView === "twoWeeks" ? "2 Weeks" : "Month"}
+              <ChevronDown className="h-4 w-4 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => setCalendarView("week")}>
+              Week
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setCalendarView("twoWeeks")}>
+              2 Weeks
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setCalendarView("month")}>
+              Month
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm">
+              <CalendarIcon className="h-4 w-4 mr-1" />
+              {format(date, "MMM dd")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={(newDate) => {
+                if (newDate) {
+                  setDate(newDate);
+                  setOpen(false);
+                }
+              }}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
       
-      {viewMode === "list" ? 
-        <TasksContent careTasks={careTasks}/> : 
-        <TasksCalendar 
-          careTasks={careTasks}
-          calendarView={calendarView}
-          setCalendarView={setCalendarView}
-          dateRange={dateRange}
-          getTasksForDate={getTasksForDate}
-          getWeatherForDate={getWeatherForDate}
-          isWithinForecastRange={isWithinForecastRange}
-          renderWeatherIcon={renderWeatherIcon}
-        />
-      }
+      <TasksCalendar 
+        careTasks={careTasks}
+        calendarView={calendarView}
+        setCalendarView={setCalendarView}
+        dateRange={dateRange}
+        getTasksForDate={getTasksForDate}
+        getWeatherForDate={getWeatherForDate}
+        isWithinForecastRange={isWithinForecastRange}
+        renderWeatherIcon={renderWeatherIcon}
+      />
     </div>
   );
 };
