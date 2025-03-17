@@ -18,17 +18,12 @@ export const initialPlants: PlantItem[] = [
   { id: crypto.randomUUID(), name: "Pumpkin", icon: "🎃", category: "vegetable" },
   { id: crypto.randomUUID(), name: "Avocado", icon: "🥑", category: "vegetable" },
   
-  // Fruits
-  { id: crypto.randomUUID(), name: "Apple", icon: "🍎", category: "fruit" },
-  { id: crypto.randomUUID(), name: "Pear", icon: "🍐", category: "fruit" },
-  { id: crypto.randomUUID(), name: "Orange", icon: "🍊", category: "fruit" },
-  { id: crypto.randomUUID(), name: "Lemon", icon: "🍋", category: "fruit" },
+  // Fruits (non-tree)
   { id: crypto.randomUUID(), name: "Banana", icon: "🍌", category: "fruit" },
   { id: crypto.randomUUID(), name: "Watermelon", icon: "🍉", category: "fruit" },
   { id: crypto.randomUUID(), name: "Grapes", icon: "🍇", category: "fruit" },
   { id: crypto.randomUUID(), name: "Strawberry", icon: "🍓", category: "fruit" },
   { id: crypto.randomUUID(), name: "Blueberry", icon: "🫐", category: "fruit" },
-  { id: crypto.randomUUID(), name: "Peach", icon: "🍑", category: "fruit" },
   
   // Herbs
   { id: crypto.randomUUID(), name: "Basil", icon: "🌿", category: "herb" },
@@ -45,4 +40,11 @@ export const initialPlants: PlantItem[] = [
   { id: crypto.randomUUID(), name: "Daisy", icon: "🌼", category: "flower" },
   { id: crypto.randomUUID(), name: "Hibiscus", icon: "🌺", category: "flower" },
   { id: crypto.randomUUID(), name: "Lotus", icon: "🪷", category: "flower" },
+  
+  // Trees (including tree fruits)
+  { id: crypto.randomUUID(), name: "Apple", icon: "🍎", category: "tree" },
+  { id: crypto.randomUUID(), name: "Pear", icon: "🍐", category: "tree" },
+  { id: crypto.randomUUID(), name: "Orange", icon: "🍊", category: "tree" },
+  { id: crypto.randomUUID(), name: "Lemon", icon: "🍋", category: "tree" },
+  { id: crypto.randomUUID(), name: "Peach", icon: "🍑", category: "tree" },
 ];

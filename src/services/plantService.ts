@@ -15,14 +15,28 @@ export const fetchPlants = async (): Promise<PlantItem[]> => {
       throw error;
     }
     
-    return data.map(plant => ({
-      id: plant.id,
-      name: plant.name,
-      icon: plant.icon,
-      category: plant.category,
-      lifecycle: plant.lifecycle,
-      parent_id: plant.parent_id
-    }));
+    // Adjust categories - move tree fruits to tree category
+    return data.map(plant => {
+      // Reclassify tree fruits as trees
+      let category = plant.category;
+      
+      // List of fruits that are actually trees
+      const treeFruits = ['apple', 'pear', 'orange', 'lemon', 'peach'];
+      
+      // Check if the plant name is in the treeFruits list
+      if (category === 'fruit' && treeFruits.some(tf => plant.name.toLowerCase().includes(tf.toLowerCase()))) {
+        category = 'tree';
+      }
+      
+      return {
+        id: plant.id,
+        name: plant.name,
+        icon: plant.icon,
+        category: category,
+        lifecycle: plant.lifecycle,
+        parent_id: plant.parent_id
+      };
+    });
   } catch (error) {
     console.error("Error fetching plants:", error);
     toast.error("Failed to load plants");
