@@ -1,6 +1,7 @@
 
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export interface Message {
   id: string;
@@ -9,7 +10,7 @@ export interface Message {
   timestamp: Date;
 }
 
-export const storeMessage = async (message: Message): Promise<boolean> => {
+export const storeMessage = async (message: Message, userId: string): Promise<boolean> => {
   try {
     console.log("Storing message:", message);
     
@@ -18,7 +19,7 @@ export const storeMessage = async (message: Message): Promise<boolean> => {
       role: message.role,
       content: message.content,
       timestamp: message.timestamp.toISOString(),
-      user_id: ANONYMOUS_USER_ID
+      user_id: userId
     });
     
     if (error) {
@@ -46,12 +47,12 @@ export const storeMessage = async (message: Message): Promise<boolean> => {
   }
 };
 
-export const fetchChatHistory = async (): Promise<Message[]> => {
+export const fetchChatHistory = async (userId: string): Promise<Message[]> => {
   try {
     const { data, error } = await supabase
       .from('advisor_chats')
       .select('*')
-      .eq('user_id', ANONYMOUS_USER_ID)
+      .eq('user_id', userId)
       .order('timestamp', { ascending: true });
       
     if (error) throw error;

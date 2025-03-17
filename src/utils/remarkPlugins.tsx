@@ -1,8 +1,8 @@
-
 import { visit } from "unist-util-visit";
 import React from "react";
 import { BookOpen, CheckSquare } from "lucide-react";
-import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/contexts/ProfileContext";
 import { toast } from "sonner";
 
 const generateDefinition = async (term: string): Promise<string> => {
@@ -25,7 +25,7 @@ const generateDefinition = async (term: string): Promise<string> => {
   }
 };
 
-const addToGlossary = async (term: string) => {
+const addToGlossary = async (term: string, userId: string) => {
   try {
     console.log("Adding to glossary:", term);
     
@@ -58,47 +58,6 @@ const addToGlossary = async (term: string) => {
         }
       }
     });
-    
-    // Keep the comment code as a reference but don't execute it
-    /*
-    const storedTerms = localStorage.getItem('glossary-terms');
-    const terms: GlossaryTerm[] = storedTerms ? JSON.parse(storedTerms) : [];
-    
-    if (terms.some(t => t.term.toLowerCase() === term.toLowerCase())) {
-      return;
-    }
-    
-    const newTerm: GlossaryTerm = {
-      id: crypto.randomUUID(),
-      term: term,
-      definition: `Add your definition for "${term}" here.`,
-      created_at: new Date().toISOString()
-    };
-    
-    terms.push(newTerm);
-    localStorage.setItem('glossary-terms', JSON.stringify(terms));
-    
-    supabase
-      .from('glossary_terms')
-      .insert({
-        term: term,
-        definition: `Add your definition for "${term}" here.`,
-        user_id: ANONYMOUS_USER_ID
-      })
-      .then(({ error }) => {
-        if (error) {
-          console.error("Failed to save glossary term to database:", error);
-        }
-      });
-    toast.success(`Added "${term}" to your gardening glossary`, {
-      action: {
-        label: "View Glossary",
-        onClick: () => {
-          document.getElementById("glossary-panel-trigger")?.click();
-        }
-      }
-    });
-    */
   } catch (error) {
     console.error("Error adding term to glossary:", error);
   }
@@ -113,7 +72,6 @@ const addToTasks = (task: string, timing: string) => {
   }
 };
 
-// Plugin to transform [[text]] into glossary term nodes
 function remarkGlossarySyntax() {
   return (tree: any) => {
     visit(tree, "text", (node, index, parent) => {
@@ -160,7 +118,6 @@ function remarkGlossarySyntax() {
   };
 }
 
-// Plugin to transform ((text)) or ((text | timing)) into task nodes
 function remarkTaskSyntax() {
   return (tree: any) => {
     visit(tree, "text", (node, index, parent) => {
@@ -207,13 +164,16 @@ export const plugins = [
 ];
 
 function GlossaryTerm({ node }: any) {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
   const term = node.children[0].value;
+  
   return (
     <span 
       className="glossary-term bg-green-100 px-1 rounded cursor-pointer hover:bg-green-200 transition-colors inline-flex items-center"
       title="Click to view in glossary"
       onClick={() => {
-        addToGlossary(term);
+        addToGlossary(term, userId);
       }}
     >
       <BookOpen className="inline-block h-3 w-3 mr-1" />
@@ -241,3 +201,4 @@ export const components = {
   "glossary-term": GlossaryTerm,
   "task-item": TaskItem
 };
+

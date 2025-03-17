@@ -1,7 +1,7 @@
-
 import React, { useEffect, useState } from "react";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProfile } from "@/contexts/ProfileContext";
 
 interface GardenImage {
   id: string;
@@ -29,6 +29,9 @@ export const GardenImageCollage: React.FC<GardenImageCollageProps> = ({
   weatherData,
   className
 }) => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
+  
   const [images, setImages] = useState<GardenImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -41,15 +44,6 @@ export const GardenImageCollage: React.FC<GardenImageCollageProps> = ({
       }
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const userId = session?.user?.id || ANONYMOUS_USER_ID;
-
-        // Calculate current day of year for seasonal similarity
-        const now = new Date();
-        const startOfYear = new Date(now.getFullYear(), 0, 0);
-        const diff = now.getTime() - startOfYear.getTime();
-        const currentDayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-        
         // Query for images with similar conditions
         const { data, error } = await supabase
           .from('garden_images')
@@ -122,8 +116,10 @@ export const GardenImageCollage: React.FC<GardenImageCollageProps> = ({
       }
     };
 
-    fetchSimilarImages();
-  }, [weatherData]);
+    if (currentUser) {
+      fetchSimilarImages();
+    }
+  }, [weatherData, userId, currentUser]);
 
   if (loading) {
     return (

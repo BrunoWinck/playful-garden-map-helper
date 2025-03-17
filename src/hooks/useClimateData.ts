@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export interface ClimateAverage {
   id: string;
@@ -15,6 +15,8 @@ export interface ClimateAverage {
 }
 
 export const useClimateData = () => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
   const [climateData, setClimateData] = useState<ClimateAverage[] | null>(null);
   const [currentMonthData, setCurrentMonthData] = useState<ClimateAverage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,8 +43,6 @@ export const useClimateData = () => {
           console.error('Error parsing settings:', parseError);
         }
       }
-      
-      const userId = ANONYMOUS_USER_ID;
       
       // Call the edge function to get or update climate data
       const { data: functionData, error: functionError } = await supabase.functions.invoke('climate-data', {
@@ -91,16 +91,20 @@ export const useClimateData = () => {
   };
 
   useEffect(() => {
-    fetchClimateData();
+    if (currentUser) {
+      fetchClimateData();
+    }
     
     // Set up a timer to check for updates every 3 months
     const checkInterval = 7 * 24 * 60 * 60 * 1000; // Check weekly, but only update if >3 months old
     const intervalId = setInterval(() => {
-      fetchClimateData();
+      if (currentUser) {
+        fetchClimateData();
+      }
     }, checkInterval);
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [userId, currentUser]);
 
   return { 
     climateData, 

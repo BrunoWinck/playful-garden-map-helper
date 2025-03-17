@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { computeSunriseSunset, utcToLocalTime } from "@/lib/solarCalculations";
 import { supabase } from "@/integrations/supabase/client";
-import { ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { useProfile } from "@/contexts/ProfileContext";
 import { useClimateData } from "./useClimateData";
 
 // Types
@@ -46,6 +46,8 @@ export interface WeatherData {
 }
 
 export const useWeatherData = () => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export const useWeatherData = () => {
           body: { 
             lat: latitude, 
             lon: longitude,
-            userId: ANONYMOUS_USER_ID  // Pass the user ID for climate data fallback
+            userId  // Pass the user ID for climate data fallback
           }
         });
         
@@ -139,8 +141,10 @@ export const useWeatherData = () => {
       }
     };
     
-    fetchWeatherData();
-  }, []);
+    if (currentUser) {
+      fetchWeatherData();
+    }
+  }, [userId, currentUser]);
 
   return { weather, loading, error, lastUpdated, debugInfo };
 };

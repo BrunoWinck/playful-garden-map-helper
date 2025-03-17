@@ -1,18 +1,22 @@
 
 import { useState, useEffect } from "react";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { GardenState, fetchGardenState } from "@/lib/fetchGardenState";
 import { Message, storeMessage, fetchChatHistory } from "@/lib/chatUtils";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export const useGardenAdvisor = () => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [gardenState, setGardenState] = useState<GardenState>({
     patches: [],
     plantedItems: {},
-    plants: [] // Added missing plants property with an empty array default
+    plants: []
   });
   const [dailyTipShown, setDailyTipShown] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -24,7 +28,7 @@ export const useGardenAdvisor = () => {
     const loadChatHistory = async () => {
       try {
         setIsLoadingHistory(true);
-        const chatHistory = await fetchChatHistory();
+        const chatHistory = await fetchChatHistory(userId);
         
         if (chatHistory.length > 0) {
           setMessages(chatHistory);
@@ -39,7 +43,7 @@ export const useGardenAdvisor = () => {
           
           setMessages([welcomeMessage]);
           
-          await storeMessage(welcomeMessage);
+          await storeMessage(welcomeMessage, userId);
           
           console.log("No chat history found, created welcome message");
         }
@@ -60,8 +64,10 @@ export const useGardenAdvisor = () => {
       }
     };
     
-    loadChatHistory();
-  }, []);
+    if (currentUser) {
+      loadChatHistory();
+    }
+  }, [userId, currentUser]);
 
   // Fetch garden state
   useEffect(() => {
@@ -69,12 +75,12 @@ export const useGardenAdvisor = () => {
       setGardenState({
         patches,
         plantedItems,
-        plants, // Include plants in the updated state
+        plants,
         weather,
         location
       });
       if (!initialized) {
-        if (!isLoadingHistory) {
+        if (!isLoadingHistory && currentUser) {
           initializeAdvisor(patches, plantedItems, weather, weatherSummary, location);
           setInitialized(true);
           
@@ -85,8 +91,8 @@ export const useGardenAdvisor = () => {
       }
     }
     
-    fetchGardenState(updateAdvisor);
-  }, [initialized, dailyTipShown, isLoadingHistory]);
+    fetchGardenState(updateAdvisor, userId, currentUser?.name);
+  }, [initialized, dailyTipShown, isLoadingHistory, userId, currentUser]);
 
   const initializeAdvisor = async (patches: any[], plantedItems: Record<string, any[]>, weather: any, weatherSummary: any, location: string) => {
     if (weather && weather.data && location) {
@@ -140,7 +146,7 @@ export const useGardenAdvisor = () => {
         
         setMessages(prev => [...prev, tipMessage]);
         
-        await storeMessage(tipMessage);
+        await storeMessage(tipMessage, userId);
         
         localStorage.setItem('last-garden-tip-timestamp', Date.now().toString());
         setDailyTipShown(true);
@@ -172,7 +178,7 @@ export const useGardenAdvisor = () => {
     setIsLoading(true);
     
     try {
-      const userMessageStored = await storeMessage(userMessage);
+      const userMessageStored = await storeMessage(userMessage, userId);
       
       if (!userMessageStored) {
         toast("Continuing without saving your message", {
@@ -201,7 +207,7 @@ export const useGardenAdvisor = () => {
         
         setMessages(prev => [...prev, assistantMessage]);
         
-        const assistantMessageStored = await storeMessage(assistantMessage);
+        const assistantMessageStored = await storeMessage(assistantMessage, userId);
         
         if (!assistantMessageStored) {
           toast("The AI response won't be saved to your history", {
@@ -227,7 +233,7 @@ export const useGardenAdvisor = () => {
       
       setMessages(prev => [...prev, errorMessage]);
       
-      await storeMessage(errorMessage);
+      await storeMessage(errorMessage, userId);
     } finally {
       setIsLoading(false);
     }

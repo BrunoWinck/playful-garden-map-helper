@@ -1,5 +1,5 @@
 
-import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface GardenState {
   patches: any[];
@@ -47,7 +47,7 @@ const summarizeWeather = (weather: any): string => {
   }
 };
 
-export const fetchGardenState = async (updateAdvisor) => {
+export const fetchGardenState = async (updateAdvisor, userId = "00000000-0000-0000-0000-000000000000", userName = "Garden User") => {
   try {
     // Fetch patches
     const { data: patchesData, error: patchesError } = await supabase

@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Camera, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/contexts/ProfileContext";
 
 interface GardenImageUploaderProps {
   onImageUploaded?: (imagePath: string) => void;
@@ -20,6 +20,8 @@ export const GardenImageUploader: React.FC<GardenImageUploaderProps> = ({
   onImageUploaded,
   weatherData
 }) => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -56,8 +58,7 @@ export const GardenImageUploader: React.FC<GardenImageUploaderProps> = ({
     try {
       // Check authentication
       const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id || ANONYMOUS_USER_ID;
-
+      
       // Create a unique file name with timestamp to avoid overwriting
       const fileExt = selectedImage.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;

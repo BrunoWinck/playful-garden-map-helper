@@ -1,43 +1,28 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Settings from "./pages/Settings";
-import { initializeCurrentUser } from "./services/profileService";
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Layout } from './components/Layout';
+import { Index } from './pages/Index';
+import { Settings } from './pages/Settings';
+import { NotFound } from './pages/NotFound';
+import { Toaster } from '@/components/ui/sonner';
+import { ProfileProvider } from './contexts/ProfileContext';
 
-const queryClient = new QueryClient();
-
-const App = () => {
-  useEffect(() => {
-    // Initialize current user on app startup
-    initializeCurrentUser().then(user => {
-      console.log("Current user initialized:", user?.name);
-    }).catch(error => {
-      console.error("Failed to initialize user:", error);
-    });
-  }, []);
-
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+    <ProfileProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Index />} />
+            <Route path="settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+          </Route>
+        </Routes>
+      </Router>
+      <Toaster position="top-right" richColors closeButton />
+    </ProfileProvider>
   );
-};
+}
 
 export default App;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -6,9 +5,10 @@ import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLongPress } from "@/utils/useLongPress";
+import { useProfile } from "@/contexts/ProfileContext";
 
 interface GardenAdvice {
   id: string;
@@ -19,6 +19,9 @@ interface GardenAdvice {
 }
 
 export const AdviceContent: React.FC = () => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
+  
   const [advices, setAdvices] = useState<GardenAdvice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
@@ -40,6 +43,7 @@ export const AdviceContent: React.FC = () => {
         const { data, error } = await supabase
           .from('garden_advice')
           .select('*')
+          .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -71,7 +75,7 @@ export const AdviceContent: React.FC = () => {
               title: advice.title,
               content: advice.content,
               source: advice.source,
-              user_id: ANONYMOUS_USER_ID
+              user_id: userId
             });
           }
         }
@@ -104,8 +108,10 @@ export const AdviceContent: React.FC = () => {
       }
     };
 
-    fetchAdvices();
-  }, []);
+    if (currentUser) {
+      fetchAdvices();
+    }
+  }, [userId, currentUser]);
 
   useEffect(() => {
     if (advices.length > 0 && !isLoading) {
@@ -125,7 +131,7 @@ export const AdviceContent: React.FC = () => {
         .from('garden_advice')
         .insert({
           ...adviceObject,
-          user_id: ANONYMOUS_USER_ID
+          user_id: userId
         })
         .select('*')
         .single();

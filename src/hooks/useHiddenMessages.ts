@@ -1,9 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export const useHiddenMessages = () => {
+  const { currentUser } = useProfile();
+  const userId = currentUser?.id || "00000000-0000-0000-0000-000000000000";
   const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
@@ -14,7 +17,7 @@ export const useHiddenMessages = () => {
         const { data, error } = await supabase
           .from('hidden_messages')
           .select('message_id')
-          .eq('user_id', ANONYMOUS_USER_ID);
+          .eq('user_id', userId);
           
         if (error) throw error;
         
@@ -33,8 +36,10 @@ export const useHiddenMessages = () => {
       }
     };
     
-    fetchHiddenMessages();
-  }, []);
+    if (currentUser) {
+      fetchHiddenMessages();
+    }
+  }, [userId, currentUser]);
 
   const toggleMessageVisibility = async (messageId: string) => {
     try {
@@ -58,7 +63,7 @@ export const useHiddenMessages = () => {
           .from('hidden_messages')
           .delete()
           .eq('message_id', messageId)
-          .eq('user_id', ANONYMOUS_USER_ID);
+          .eq('user_id', userId);
           
         if (error) {
           throw error;
@@ -72,7 +77,7 @@ export const useHiddenMessages = () => {
           .insert({
             id: crypto.randomUUID(),
             message_id: messageId,
-            user_id: ANONYMOUS_USER_ID
+            user_id: userId
           });
           
         if (error) {
