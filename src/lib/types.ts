@@ -21,11 +21,29 @@ export type Patch = {
   name: string;
   width: number;
   height: number;
-  type?: string;
-  placementType?: "free" | "slots";
-  slotsLength?: number;
-  slotsWidth?: number;
-  heated?: boolean;
-  artificialLight?: boolean;
-  naturalLightPercentage?: number;
+  length: number; // For backward compatibility
+  type: string;
+  placementType: "free" | "slots";
+  slotsLength: number;
+  slotsWidth: number;
+  heated: boolean;
+  artificialLight: boolean;
+  naturalLightPercentage: number;
+};
+
+export type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
+export type PlacementType = "free" | "slots";
+
+export type PatchFormValues = {
+  name: string;
+  length: number;
+  width: number;
+  type: PatchType;
+  heated: boolean;
+  artificialLight: boolean;
+  naturalLightPercentage: number;
+  placementType: PlacementType;
+  slotsLength: number;
+  slotsWidth: number;
+  task?: string;
 };
