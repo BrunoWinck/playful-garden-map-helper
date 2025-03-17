@@ -1,16 +1,24 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PlantItem, Patch, PlantGrowthStage } from "@/lib/types";
+import { PlantItem, Patch, PlantGrowthStage, PatchFormValues } from "@/lib/types";
 import { GardenPatches } from "./garden/GardenPatches";
 import { PlantCatalog } from "./garden/PlantCatalog";
 import { Skeleton } from "./ui/skeleton";
 import { fetchPatches } from "@/services/patchService";
 import { eventBus, PATCH_EVENTS } from "@/lib/eventBus";
 import { ScrollArea } from "./ui/scroll-area";
+import { Button } from "./ui/button";
+import { Plus } from "lucide-react";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "./ui/popover";
+import { PatchForm } from "./garden/PatchForm";
+import { createPatch } from "@/services/patchService";
 
 // Colors for different patches
 const patchColors = [
@@ -48,6 +56,7 @@ export const GardenMap = () => {
   const [plantedItems, setPlantedItems] = useState<Record<string, PlantItem[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [isAddPatchOpen, setIsAddPatchOpen] = useState(false);
   
   // Ref for the container to auto-scroll
   const containerRef = useRef<HTMLDivElement>(null);
@@ -597,6 +606,25 @@ export const GardenMap = () => {
     }
   };
 
+  // Handle adding a new patch
+  const handleAddPatch = async (data: PatchFormValues) => {
+    try {
+      const newPatch = await createPatch(data);
+      setPatches(prev => [...prev, newPatch]);
+      toast.success(`Added new patch: ${newPatch.name}`);
+      
+      // Emit event for new patch
+      console.log("GardenMap: Emitting PATCH_ADDED event");
+      eventBus.emit(PATCH_EVENTS.PATCH_ADDED, newPatch);
+      
+      // Close the popover
+      setIsAddPatchOpen(false);
+    } catch (error) {
+      console.error("Error adding patch:", error);
+      toast.error("Failed to add patch");
+    }
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -609,6 +637,26 @@ export const GardenMap = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col gap-6" ref={containerRef}>
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-green-700">Drag plants onto your garden patches!</p>
+          <Popover open={isAddPatchOpen} onOpenChange={setIsAddPatchOpen}>
+            <PopoverTrigger asChild>
+              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                <Plus className="mr-1 h-4 w-4" /> Add Patch
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="p-2">
+                <h3 className="text-lg font-semibold mb-3">Create New Patch</h3>
+                <PatchForm 
+                  onSubmit={handleAddPatch}
+                  isEditing={false}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        
         <GardenPatches 
           patches={patches} 
           plantedItems={plantedItems} 
