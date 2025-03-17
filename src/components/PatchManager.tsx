@@ -62,6 +62,7 @@ export const PatchManager = () => {
   
   const handleAddPatch = async (data: PatchFormValues) => {
     try {
+      // Create a new patch using the patchService which will now use crypto.randomUUID()
       const newPatch = await createPatch(data);
       setPatches(prev => [...prev, newPatch]);
       toast.success(`Added new patch: ${newPatch.name}`);

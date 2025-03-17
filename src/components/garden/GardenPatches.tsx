@@ -168,6 +168,12 @@ export const GardenPatches = ({
     }
     return acc;
   }, []);
+  
+  // Log if we found any duplicates
+  if (uniquePatches.length !== patches.length) {
+    console.error(`Found ${patches.length - uniquePatches.length} duplicate patch IDs: `, 
+      patches.map(p => p.id).filter((id, index, self) => self.indexOf(id) !== index));
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

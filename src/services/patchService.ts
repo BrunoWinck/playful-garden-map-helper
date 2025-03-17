@@ -77,10 +77,14 @@ export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
     
     console.log("Creating patch with data:", data);
     
+    // Generate a client-side UUID for the patch to ensure uniqueness
+    const patchId = crypto.randomUUID();
+    
     // Now proceed with creating the patch
     const { data: newPatch, error } = await supabase
       .from('patches')
       .insert({
+        id: patchId, // Explicitly set the ID using crypto.randomUUID()
         name: data.name,
         width: parseFloat(data.length as any) || 2, // Store length as width (for backward compatibility)
         height: parseFloat(data.width as any) || 2, // Store width as height (for backward compatibility)
