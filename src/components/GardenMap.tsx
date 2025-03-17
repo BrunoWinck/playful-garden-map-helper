@@ -120,9 +120,10 @@ export const GardenMap = () => {
           width: Number(patch.width),
           height: Number(patch.height),
           type: patch.type,
-          placementType: patch.placement_type,
-          slotsLength: patch.slots_length,
-          slotsWidth: patch.slots_width,
+          // Map database column names to our front-end property names
+          placementType: patch.placement_type || "free",
+          slotsLength: patch.slots_length || 4,
+          slotsWidth: patch.slots_width || 6,
           heated: patch.heated,
           artificialLight: patch.artificial_light,
           naturalLightPercentage: patch.natural_light_percentage
