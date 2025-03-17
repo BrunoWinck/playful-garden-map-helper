@@ -40,11 +40,11 @@ export const initialPlants: PlantItem[] = [
   { id: crypto.randomUUID(), name: "Lotus", icon: "🪷", category: "flower" },
   
   // Trees (including tree fruits)
-  { id: crypto.randomUUID(), name: "Apple", icon: "🍎", category: "tree" },
-  { id: crypto.randomUUID(), name: "Pear", icon: "🍐", category: "tree" },
-  { id: crypto.randomUUID(), name: "Orange", icon: "🍊", category: "tree" },
-  { id: crypto.randomUUID(), name: "Lemon", icon: "🍋", category: "tree" },
-  { id: crypto.randomUUID(), name: "Peach", icon: "🍑", category: "tree" },
-  { id: crypto.randomUUID(), name: "Banana", icon: "🍌", category: "tree" },
-  { id: crypto.randomUUID(), name: "Avocado", icon: "🥑", category: "tree" },
+  { id: crypto.randomUUID(), name: "Apple Tree", icon: "🍎", category: "tree" },
+  { id: crypto.randomUUID(), name: "Pear Tree", icon: "🍐", category: "tree" },
+  { id: crypto.randomUUID(), name: "Orange Tree", icon: "🍊", category: "tree" },
+  { id: crypto.randomUUID(), name: "Lemon Tree", icon: "🍋", category: "tree" },
+  { id: crypto.randomUUID(), name: "Peach Tree", icon: "🍑", category: "tree" },
+  { id: crypto.randomUUID(), name: "Banana Plant", icon: "🍌", category: "tree" },
+  { id: crypto.randomUUID(), name: "Avocado Tree", icon: "🥑", category: "tree" },
 ];

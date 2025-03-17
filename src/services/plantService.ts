@@ -1,4 +1,3 @@
-
 import { PlantItem } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,24 +14,34 @@ export const fetchPlants = async (): Promise<PlantItem[]> => {
       throw error;
     }
     
-    // Adjust categories - move tree fruits to tree category
+    // Adjust categories - ensure proper classification
     return data.map(plant => {
-      // Reclassify tree fruits as trees
-      let category = plant.category;
-      
-      // List of fruits that are actually trees
+      // List of fruits that should be trees
       const treeFruits = ['apple', 'pear', 'orange', 'lemon', 'peach', 'banana', 'avocado'];
       
-      // Check if the plant name is in the treeFruits list
-      if (category === 'fruit' && treeFruits.some(tf => plant.name.toLowerCase().includes(tf.toLowerCase()))) {
-        category = 'tree';
+      // Check if we need to reclassify this plant as a tree
+      if (plant.category === 'fruit' && treeFruits.some(tf => plant.name.toLowerCase().includes(tf.toLowerCase()))) {
+        // Also update the name to reflect it's a tree/plant
+        let updatedName = plant.name;
+        
+        if (plant.name.toLowerCase().includes('banana')) {
+          updatedName = updatedName.endsWith(' Plant') ? updatedName : `${updatedName} Plant`;
+        } else {
+          updatedName = updatedName.endsWith(' Tree') ? updatedName : `${updatedName} Tree`;
+        }
+        
+        return {
+          ...plant,
+          name: updatedName,
+          category: 'tree'
+        };
       }
       
       return {
         id: plant.id,
         name: plant.name,
         icon: plant.icon,
-        category: category,
+        category: plant.category,
         lifecycle: plant.lifecycle,
         parent_id: plant.parent_id
       };
