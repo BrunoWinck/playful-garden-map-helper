@@ -54,7 +54,11 @@ export function useLongPress({
 
   const handleTouchEnd = useCallback(() => {
     clear();
-    if (!isLongPress.current && onClick) {
+    
+    // Add early return if onClick is not provided
+    if (!onClick) return;
+    
+    if (!isLongPress.current) {
       onClick();
     }
   }, [clear, onClick]);
