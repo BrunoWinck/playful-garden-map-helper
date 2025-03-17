@@ -38,7 +38,11 @@ export const GardenSidebar = () => {
   const { state, toggleSidebar } = useSidebar();
   
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
+    <Sidebar 
+      variant="sidebar" 
+      collapsible="icon"
+      className="shadow-[4px_0px_8px_0px_rgba(0,0,0,0.15)]"
+    >
       <SidebarHeader className="flex items-center gap-2 px-4 py-3 border-b border-green-700 bg-green-800">
         <TreeDeciduous className="h-6 w-6 text-green-100" />
         {state === "expanded" && (
