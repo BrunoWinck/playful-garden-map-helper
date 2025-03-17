@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -8,6 +7,7 @@ import { PlantItem, Patch, PatchType, PlacementType } from "@/lib/types";
 import { GardenPatches } from "./garden/GardenPatches";
 import { PlantCatalog } from "./garden/PlantCatalog";
 import { Skeleton } from "./ui/skeleton";
+import { fetchPatches } from "@/services/patchService";
 
 // Colors for different patches
 const patchColors = [
@@ -27,36 +27,16 @@ export const GardenMap = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load patches from Supabase
+  // Load patches directly using the service
   useEffect(() => {
-    const fetchPatches = async () => {
+    const loadPatches = async () => {
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('patches')
-          .select('*');
-          
-        if (error) throw error;
-        
-        // Format patches for our component
-        const formattedPatches: Patch[] = data.map(patch => ({
-          id: patch.id,
-          name: patch.name,
-          width: Number(patch.width),
-          height: Number(patch.height),
-          length: Number(patch.width), // Map width to length for backward compatibility
-          type: patch.type as PatchType,
-          placementType: (patch.placement_type as PlacementType) || "free",
-          slotsLength: patch.slots_length || 4,
-          slotsWidth: patch.slots_width || 6,
-          heated: patch.heated || false,
-          artificialLight: patch.artificial_light || false,
-          naturalLightPercentage: patch.natural_light_percentage || 100
-        }));
-        
-        setPatches(formattedPatches);
+        const patchesData = await fetchPatches();
+        setPatches(patchesData);
         
         // Also store in localStorage for other components that might rely on it
-        localStorage.setItem('garden-patches', JSON.stringify(formattedPatches));
+        localStorage.setItem('garden-patches', JSON.stringify(patchesData));
       } catch (error) {
         console.error("Error fetching patches:", error);
         toast.error("Failed to load garden patches");
@@ -138,7 +118,25 @@ export const GardenMap = () => {
       }
     };
     
-    fetchPatches();
+    loadPatches();
+
+    // Set up a listener for local storage updates from PatchManager
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'garden-patches' && e.newValue) {
+        try {
+          const updatedPatches = JSON.parse(e.newValue);
+          setPatches(updatedPatches);
+        } catch (error) {
+          console.error("Error parsing patches from localStorage:", error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
   
   // Load planted items

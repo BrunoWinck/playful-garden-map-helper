@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Patch, PatchFormValues, PatchType, PlacementType } from "@/lib/types";
@@ -14,7 +13,11 @@ import {
 import { PatchForm } from "./garden/PatchForm";
 import { PatchCard } from "./garden/PatchCard";
 
-export const PatchManager = () => {
+interface PatchManagerProps {
+  onPatchesChanged?: () => void;
+}
+
+export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
   const [patches, setPatches] = useState<Patch[]>([]);
   const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({});
   const [editingPatchId, setEditingPatchId] = useState<string | null>(null);
@@ -44,8 +47,11 @@ export const PatchManager = () => {
   useEffect(() => {
     if (patches.length > 0 && !isLoading) {
       localStorage.setItem('garden-patches', JSON.stringify(patches));
+      if (onPatchesChanged) {
+        onPatchesChanged();
+      }
     }
-  }, [patches, isLoading]);
+  }, [patches, isLoading, onPatchesChanged]);
   
   useEffect(() => {
     if (Object.keys(patchTasks).length > 0 && !isLoading) {
@@ -58,6 +64,12 @@ export const PatchManager = () => {
       const newPatch = await createPatch(data);
       setPatches([...patches, newPatch]);
       toast.success(`Added new patch: ${newPatch.name}`);
+      
+      localStorage.setItem('garden-patches', JSON.stringify([...patches, newPatch]));
+      
+      if (onPatchesChanged) {
+        onPatchesChanged();
+      }
     } catch (error) {
       console.error("Error adding patch:", error);
       toast.error("Failed to add patch");
@@ -67,13 +79,19 @@ export const PatchManager = () => {
   const handleDeletePatch = async (patchId: string) => {
     try {
       await deletePatch(patchId);
-      setPatches(patches.filter(patch => patch.id !== patchId));
+      const updatedPatches = patches.filter(patch => patch.id !== patchId);
+      setPatches(updatedPatches);
       
       const newPatchTasks = { ...patchTasks };
       delete newPatchTasks[patchId];
       setPatchTasks(newPatchTasks);
       
       toast.success("Patch removed");
+      
+      localStorage.setItem('garden-patches', JSON.stringify(updatedPatches));
+      if (onPatchesChanged) {
+        onPatchesChanged();
+      }
     } catch (error) {
       console.error("Error deleting patch:", error);
       toast.error("Failed to delete patch");
@@ -132,7 +150,7 @@ export const PatchManager = () => {
     try {
       await updatePatch(editingPatchId, data);
       
-      setPatches(patches.map(patch => 
+      const updatedPatches = patches.map(patch => 
         patch.id === editingPatchId 
           ? { 
               ...patch, 
@@ -149,10 +167,17 @@ export const PatchManager = () => {
               slotsWidth: data.slotsWidth || 6
             } 
           : patch
-      ));
+      );
+      
+      setPatches(updatedPatches);
       
       setEditingPatchId(null);
       toast.success("Patch updated");
+      
+      localStorage.setItem('garden-patches', JSON.stringify(updatedPatches));
+      if (onPatchesChanged) {
+        onPatchesChanged();
+      }
     } catch (error) {
       console.error("Error updating patch:", error);
       toast.error("Failed to update patch");
