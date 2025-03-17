@@ -9,6 +9,8 @@ import { GardenAdvisor } from "./GardenAdvisor";
 import { GlossaryPanel } from "./GlossaryPanel";
 import { NasaSatelliteView } from "./NasaSatelliteView";
 import { GardenNavbar } from "./GardenNavbar";
+import { WidgetHeader } from "./WidgetHeader";
+import { Lightbulb, Map, Seedling, Calendar } from "lucide-react";
 
 export const GardenDashboard = () => {
   return (
@@ -44,9 +46,7 @@ export const GardenDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="md:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-4 h-full">
-              <div className="bg-green-700 text-white rounded-lg py-3 px-4 mb-4">
-                <h2 className="text-xl font-semibold">Garden Map</h2>
-              </div>
+              <WidgetHeader title="Garden Map" icon={Map} />
               <p className="text-green-700 mb-4">Drag plants onto your garden patches!</p>
               <GardenMap />
             </div>
@@ -54,16 +54,12 @@ export const GardenDashboard = () => {
           <div className="md:col-span-1">
             <div className="flex flex-col h-full gap-4">
               <div className="bg-white rounded-lg shadow-md p-4 flex-1">
-                <div className="bg-green-700 text-white rounded-lg py-3 px-4 mb-4">
-                  <h2 className="text-xl font-semibold">Patch Manager</h2>
-                </div>
+                <WidgetHeader title="Patch Manager" icon={Seedling} />
                 <PatchManager />
               </div>
               
               <div className="bg-white rounded-lg shadow-md p-4 flex-1">
-                <div className="bg-green-700 text-white rounded-lg py-3 px-4 mb-4">
-                  <h2 className="text-xl font-semibold">Care Schedule</h2>
-                </div>
+                <WidgetHeader title="Care Schedule" icon={Calendar} />
                 <CareSchedule />
               </div>
             </div>
