@@ -7,12 +7,12 @@ import { GardenAdvisor } from "./GardenAdvisor";
 import { GlossaryPanel } from "./GlossaryPanel";
 import { NasaSatelliteView } from "./NasaSatelliteView";
 import { GardenNavbar } from "./GardenNavbar";
-import { WidgetHeader } from "@/components/WidgetHeader";
 import { TaskList } from "./TaskList";
 import { TaskCalendar } from "./TaskCalendar";
 import { ScrollArea } from "./ui/scroll-area";
 import { Map, Leaf, ListTodo, Calendar } from "lucide-react";
 import { AvailablePlants } from "./AvailablePlants";
+import { Widget } from "./Widget";
 
 export const GardenDashboard = () => {
   return (
@@ -32,7 +32,6 @@ export const GardenDashboard = () => {
         
         {/* Garden Advisor and Glossary - Set a fixed height */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-
           <GardenAdvisor />
           <div className="md:col-span-1">
             <div className="h-[500px]">
@@ -43,39 +42,63 @@ export const GardenDashboard = () => {
         
         {/* Tasks List and Calendar - Restore TaskList to the left of Calendar */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="md:col-span-1 bg-white rounded-lg shadow-md h-[500px] flex flex-col">
-            <WidgetHeader title="Task List" icon={ListTodo} />
-            <div className="p-4 flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
-                <TaskList />
-              </ScrollArea>
-            </div>
+          <div className="md:col-span-1">
+            <Widget
+              title="Task List"
+              icon={ListTodo}
+              col="md:col-span-1"
+              height="h-[500px]"
+            >
+              <div className="p-4 flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <TaskList />
+                </ScrollArea>
+              </div>
+            </Widget>
           </div>
-          <div className="md:col-span-2 bg-white rounded-lg shadow-md h-[500px] flex flex-col">
-            <WidgetHeader title="Care Calendar" icon={Calendar} />
-            <div className="p-4 flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
-                <TaskCalendar />
-              </ScrollArea>
-            </div>
+          <div className="md:col-span-2">
+            <Widget
+              title="Care Calendar"
+              icon={Calendar}
+              col="md:col-span-2"
+              height="h-[500px]"
+            >
+              <div className="p-4 flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <TaskCalendar />
+                </ScrollArea>
+              </div>
+            </Widget>
           </div>
         </div>
         
         {/* Garden Map and Available Plants - Side by side */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="md:col-span-2 bg-white rounded-lg shadow-md h-[600px] flex flex-col">
-            <WidgetHeader title="Garden Map" icon={Map} />
-            <div className="p-4 flex-1 overflow-hidden">
-              <div className="h-[calc(100%-2rem)] overflow-auto" id="garden-map-container">
-                <GardenMap />
+          <div className="md:col-span-2">
+            <Widget
+              title="Garden Map"
+              icon={Map}
+              col="md:col-span-2"
+              height="h-[600px]"
+            >
+              <div className="p-4 flex-1 overflow-hidden">
+                <div className="h-[calc(100%-2rem)] overflow-auto" id="garden-map-container">
+                  <GardenMap />
+                </div>
               </div>
-            </div>
+            </Widget>
           </div>
-          <div className="md:col-span-1 bg-white rounded-lg shadow-md h-[600px] flex flex-col">
-            <WidgetHeader title="Available Plants" icon={Leaf} />
-            <div className="p-4 flex-1 overflow-auto">
-              <AvailablePlants />
-            </div>
+          <div className="md:col-span-1">
+            <Widget
+              title="Available Plants"
+              icon={Leaf}
+              col="md:col-span-1"
+              height="h-[600px]"
+            >
+              <div className="p-4 flex-1 overflow-auto">
+                <AvailablePlants />
+              </div>
+            </Widget>
           </div>
         </div>
       </div>

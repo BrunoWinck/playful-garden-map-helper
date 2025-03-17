@@ -3,7 +3,6 @@ import React, { ReactNode } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LucideIcon } from "lucide-react";
-import { WidgetHeader } from "@/components/WidgetHeader";
 
 interface WidgetProps {
   title: string;
@@ -14,17 +13,21 @@ interface WidgetProps {
   contentClassName?: string;
   isLoading?: boolean;
   loadingText?: string;
+  col?: string;
+  height?: string;
 }
 
 export const Widget = ({
   title,
   icon: Icon,
   children,
-  col,
-  height,
+  col = "",
+  height = "",
   footer = null,
   className = "",
   contentClassName = "",
+  isLoading = false,
+  loadingText = "Loading...",
 }: WidgetProps) => {
   return (
   <div className={col}>
@@ -41,7 +44,14 @@ export const Widget = ({
         <CardContent className={`flex-1 p-0 overflow-hidden ${contentClassName}`}>
           <ScrollArea className="h-full max-h-[calc(100vh-300px)]">
             <div className="p-4">
-              {children}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
+                  <span className="ml-3 text-green-700">{loadingText}</span>
+                </div>
+              ) : (
+                children
+              )}
             </div>
           </ScrollArea>
         </CardContent>
