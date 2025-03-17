@@ -296,6 +296,7 @@ export type Database = {
           plant_id: string
           position_x: number
           position_y: number
+          stage: string | null
         }
         Insert: {
           created_at?: string
@@ -304,6 +305,7 @@ export type Database = {
           plant_id: string
           position_x: number
           position_y: number
+          stage?: string | null
         }
         Update: {
           created_at?: string
@@ -312,6 +314,7 @@ export type Database = {
           plant_id?: string
           position_x?: number
           position_y?: number
+          stage?: string | null
         }
         Relationships: [
           {

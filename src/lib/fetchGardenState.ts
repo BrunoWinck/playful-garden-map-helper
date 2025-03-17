@@ -64,7 +64,10 @@ export const fetchGardenState = async (updateAdvisor, userId = "00000000-0000-00
         type: patch.type,
         heated: patch.heated,
         artificialLight: patch.artificial_light,
-        naturalLightPercentage: patch.natural_light_percentage
+        naturalLightPercentage: patch.natural_light_percentage,
+        placementType: patch.placement_type,
+        slotsLength: patch.slots_length,
+        slotsWidth: patch.slots_width
       }));
     } else {
       const storedPatches = localStorage.getItem('garden-patches');
@@ -79,6 +82,7 @@ export const fetchGardenState = async (updateAdvisor, userId = "00000000-0000-00
         position_x, 
         position_y, 
         patch_id,
+        stage,
         plants (*)
       `);
       
@@ -97,10 +101,13 @@ export const fetchGardenState = async (updateAdvisor, userId = "00000000-0000-00
           icon: plant.icon,
           category: plant.category,
           lifecycle: plant.lifecycle,
+          parent_id: plant.parent_id,
           position: {
             x: item.position_x,
-            y: item.position_y
-          }
+            y: item.position_y,
+            patchId
+          },
+          stage: item.stage || 'young'
         });
       });
     } else {

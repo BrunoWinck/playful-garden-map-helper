@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -238,7 +239,8 @@ export const GardenMap = () => {
         const { error: updateError } = await supabase
           .from('planted_items')
           .update({ 
-            plant_id: item.id
+            plant_id: item.id,
+            stage: initialStage
           })
           .eq('id', existingItems[0].id);
           
@@ -251,7 +253,8 @@ export const GardenMap = () => {
             plant_id: item.id,
             patch_id: patchId,
             position_x: x,
-            position_y: y
+            position_y: y,
+            stage: initialStage
           });
           
         if (insertError) throw insertError;
@@ -310,8 +313,24 @@ export const GardenMap = () => {
       };
     });
     
-    // We will add database update when the stage column is added
-    toast.success(`Plant ${direction === "up" ? "grown" : "reverted"} to ${newStage} stage`);
+    // Update the stage in the database
+    try {
+      const { error } = await supabase
+        .from('planted_items')
+        .update({
+          stage: newStage
+        })
+        .eq('patch_id', patchId)
+        .eq('position_x', x)
+        .eq('position_y', y);
+        
+      if (error) throw error;
+      
+      toast.success(`Plant ${direction === "up" ? "grown" : "reverted"} to ${newStage} stage`);
+    } catch (error) {
+      console.error("Error updating plant stage:", error);
+      toast.error("Failed to update plant stage");
+    }
   };
 
   // Handle deleting a plant
@@ -426,7 +445,7 @@ export const GardenMap = () => {
             patch_id: patchId,
             position_x: copy.position!.x,
             position_y: copy.position!.y,
-            stage: copy.stage
+            stage: copy.stage || plantItem.stage || 'young'
           }));
           
           const { error } = await supabase
@@ -489,7 +508,7 @@ export const GardenMap = () => {
             patch_id: patchId,
             position_x: copy.position!.x,
             position_y: copy.position!.y,
-            stage: copy.stage
+            stage: copy.stage || plantItem.stage || 'young'
           }));
           
           const { error } = await supabase
