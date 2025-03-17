@@ -45,9 +45,9 @@ export const RegularPatch = ({
       
       <div className="grid gap-0.5" style={{ 
         gridTemplateColumns: `repeat(${patch.width}, 1fr)`,
-        gridTemplateRows: `repeat(${patch.height}, 1fr)`
+        gridTemplateRows: `repeat(${patch.length}, 1fr)`
       }}>
-        {Array.from({ length: patch.height }).map((_, y) =>
+        {Array.from({ length: patch.length }).map((_, y) =>
           Array.from({ length: patch.width }).map((_, x) => {
             // Find if there's a plant at this position
             const patchPlants = plantedItems[patch.id] || [];
