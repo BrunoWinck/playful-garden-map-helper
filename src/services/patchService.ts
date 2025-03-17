@@ -1,14 +1,21 @@
-
-import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Patch, PatchFormValues, PatchType, PlacementType } from "@/lib/types";
 import { toast } from "sonner";
+import { getCurrentUser } from "./profileService";
 
 // Fetch all patches for the current user
 export const fetchPatches = async (): Promise<Patch[]> => {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      console.error("No current user found");
+      return [];
+    }
+    
     const { data: patchesData, error: patchesError } = await supabase
       .from('patches')
-      .select('*');
+      .select('*')
+      .eq('user_id', currentUser.id);
     
     if (patchesError) throw patchesError;
     
@@ -62,26 +69,9 @@ export const fetchPatchTasks = async (patchIds: string[]) => {
 // Create a new patch
 export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
   try {
-    // First, check if the anonymous user exists in the users table
-    const { data: existingUser, error: userCheckError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', ANONYMOUS_USER_ID)
-      .single();
-      
-    // If user doesn't exist, we need to create it first
-    if (userCheckError || !existingUser) {
-      const { error: createUserError } = await supabase
-        .from('users')
-        .insert({
-          id: ANONYMOUS_USER_ID,
-          name: "Anonymous User" // Using a default name
-        });
-        
-      if (createUserError) {
-        console.error("Failed to create user:", createUserError);
-        throw createUserError;
-      }
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error("No current user found");
     }
     
     // Now proceed with creating the patch
@@ -98,7 +88,7 @@ export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
         placement_type: data.placementType || "free",
         slots_length: data.slotsLength || 4,
         slots_width: data.slotsWidth || 6,
-        user_id: ANONYMOUS_USER_ID
+        user_id: currentUser.id
       })
       .select()
       .single();
@@ -173,25 +163,9 @@ export const addPatchTask = async (patchId: string, task: string) => {
   if (!task.trim()) return;
   
   try {
-    // Similar check for user existence
-    const { data: existingUser, error: userCheckError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', ANONYMOUS_USER_ID)
-      .single();
-      
-    if (userCheckError || !existingUser) {
-      const { error: createUserError } = await supabase
-        .from('users')
-        .insert({
-          id: ANONYMOUS_USER_ID,
-          name: "Anonymous User"
-        });
-        
-      if (createUserError) {
-        console.error("Failed to create user:", createUserError);
-        throw createUserError;
-      }
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error("No current user found");
     }
     
     const { error } = await supabase
@@ -199,7 +173,7 @@ export const addPatchTask = async (patchId: string, task: string) => {
       .insert({
         patch_id: patchId,
         task: task,
-        user_id: ANONYMOUS_USER_ID
+        user_id: currentUser.id
       });
     
     if (error) throw error;
