@@ -10,7 +10,7 @@ import { GlossaryPanel } from "./GlossaryPanel";
 import { NasaSatelliteView } from "./NasaSatelliteView";
 import { GardenNavbar } from "./GardenNavbar";
 import { WidgetHeader } from "./WidgetHeader";
-import { Lightbulb, Map, Seedling, Calendar } from "lucide-react";
+import { Lightbulb, Map, Leaf, Calendar } from "lucide-react";
 
 export const GardenDashboard = () => {
   return (
@@ -54,7 +54,7 @@ export const GardenDashboard = () => {
           <div className="md:col-span-1">
             <div className="flex flex-col h-full gap-4">
               <div className="bg-white rounded-lg shadow-md p-4 flex-1">
-                <WidgetHeader title="Patch Manager" icon={Seedling} />
+                <WidgetHeader title="Patch Manager" icon={Leaf} />
                 <PatchManager />
               </div>
               
