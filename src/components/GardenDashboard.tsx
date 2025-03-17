@@ -44,11 +44,14 @@ export const GardenDashboard = () => {
           </div>
         </div>
         
-        {/* Tasks List and Calendar - Match the height of Garden Advisor */}
+        {/* Tasks List and Calendar - Restore TaskList to the left of Calendar */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="md:col-span-1">
-            <div className="h-[500px]">
-              <AvailablePlants />
+          <div className="md:col-span-1 bg-white rounded-lg shadow-md h-[500px] flex flex-col">
+            <WidgetHeader title="Task List" icon={ListTodo} />
+            <div className="p-4 flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <TaskList />
+              </ScrollArea>
             </div>
           </div>
           <div className="md:col-span-2 bg-white rounded-lg shadow-md h-[500px] flex flex-col">
@@ -61,14 +64,20 @@ export const GardenDashboard = () => {
           </div>
         </div>
         
-        {/* Garden Map - Set same fixed height */}
-        <div className="grid grid-cols-1 gap-4 mb-4">
-          <div className="bg-white rounded-lg shadow-md h-[600px] flex flex-col">
+        {/* Garden Map and Available Plants - Side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="md:col-span-3 bg-white rounded-lg shadow-md h-[600px] flex flex-col">
             <WidgetHeader title="Garden Map" icon={Map} />
             <div className="p-4 flex-1 overflow-hidden">
               <div className="h-[calc(100%-2rem)] overflow-auto" id="garden-map-container">
                 <GardenMap />
               </div>
+            </div>
+          </div>
+          <div className="md:col-span-1 bg-white rounded-lg shadow-md h-[600px] flex flex-col">
+            <WidgetHeader title="Available Plants" icon={Leaf} />
+            <div className="p-4 flex-1 overflow-auto">
+              <AvailablePlants />
             </div>
           </div>
         </div>

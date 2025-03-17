@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { PlantItem } from "@/lib/types";
@@ -28,16 +27,13 @@ export const PlantCatalog = ({
   const [plants, setPlants] = useState<PlantItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // New plant dialog state
   const [newPlantDialogOpen, setNewPlantDialogOpen] = useState(false);
   const [newPlantName, setNewPlantName] = useState("");
   const [newPlantIcon, setNewPlantIcon] = useState("🌱");
   const [newPlantCategory, setNewPlantCategory] = useState("vegetable");
   
-  // Common plant icons for selection
   const plantIcons = ["🌱", "🌿", "🍀", "🌵", "🌲", "🌳", "🌴", "🍂", "🍃", "🍄", "🍅", "🍆", "🥑", "🥕", "🥔", "🍇", "🍈", "🍉", "🍊", "🍋", "🍌", "🍍", "🍎", "🍏", "🍐", "🍑", "🍒", "🍓", "🥝", "🌷", "🌸", "🌹", "🌺", "🌻", "🌼", "🪷"];
   
-  // Load plants from database
   const loadPlants = async () => {
     setIsLoading(true);
     try {
@@ -45,7 +41,6 @@ export const PlantCatalog = ({
       if (dbPlants && dbPlants.length > 0) {
         setPlants(dbPlants);
       } else {
-        // Fallback to initial plants if database fetch fails
         setPlants(initialPlants);
       }
     } catch (error) {
@@ -60,7 +55,6 @@ export const PlantCatalog = ({
     loadPlants();
   }, []);
 
-  // Handle creating a new plant
   const handleCreatePlant = async () => {
     if (!newPlantName.trim()) {
       return;
@@ -85,21 +79,17 @@ export const PlantCatalog = ({
     }
   };
   
-  // Filter plants based on category and search term
   const filteredPlants = plants.filter(plant => {
-    // Filter by category (if applied)
     const matchesCategory = !categoryFilter || plant.category === categoryFilter;
-    
-    // Filter by search term
     const matchesSearch = plant.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesCategory && matchesSearch;
   });
 
   return (
-    <div className="border-2 border-brown-300 bg-brown-100 rounded-lg p-4">
+    <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-semibold text-green-800">Available Plants</h3>
+        <h3 className="text-lg font-semibold text-green-800">Plants</h3>
         <Button 
           variant="outline" 
           size="sm" 
@@ -117,7 +107,7 @@ export const PlantCatalog = ({
         setSearchTerm={setSearchTerm}
       />
       
-      <div className="flex flex-wrap gap-4 justify-center bg-brown-200 p-3 rounded-lg max-h-80 overflow-y-auto">
+      <div className="flex flex-wrap gap-4 justify-center bg-brown-200 p-3 rounded-lg max-h-[calc(100%-6rem)] overflow-y-auto mt-2">
         {isLoading ? (
           Array(8).fill(0).map((_, index) => (
             <div key={index} className="flex flex-col items-center w-20">
@@ -138,7 +128,6 @@ export const PlantCatalog = ({
         )}
       </div>
       
-      {/* New Plant Dialog */}
       <Dialog open={newPlantDialogOpen} onOpenChange={setNewPlantDialogOpen}>
         <DialogContent>
           <DialogHeader>
