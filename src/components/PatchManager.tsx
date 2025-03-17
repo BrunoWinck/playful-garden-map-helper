@@ -122,7 +122,7 @@ export const PatchManager = () => {
   
   useEffect(() => {
     if (Object.keys(patchTasks).length > 0 && !isLoading) {
-      localStorage.setItem('garden-planted-items', JSON.stringify(patchTasks));
+      localStorage.setItem('garden-patch-tasks', JSON.stringify(patchTasks));
     }
   }, [patchTasks, isLoading]);
   

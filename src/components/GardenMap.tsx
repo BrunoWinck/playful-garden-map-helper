@@ -23,6 +23,9 @@ type Patch = {
   placementType?: "free" | "slots";
   slotsLength?: number;
   slotsWidth?: number;
+  heated?: boolean;
+  artificialLight?: boolean;
+  naturalLightPercentage?: number;
 };
 
 // Define a Garden Grid cell
@@ -119,7 +122,10 @@ export const GardenMap = () => {
           type: patch.type,
           placementType: patch.placement_type,
           slotsLength: patch.slots_length,
-          slotsWidth: patch.slots_width
+          slotsWidth: patch.slots_width,
+          heated: patch.heated,
+          artificialLight: patch.artificial_light,
+          naturalLightPercentage: patch.natural_light_percentage
         }));
         
         setPatches(formattedPatches);
@@ -139,15 +145,15 @@ export const GardenMap = () => {
             console.error("Error parsing stored patches:", e);
             // Set default patches if all else fails
             setPatches([
-              { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2 },
-              { id: "patch-2", name: "Herb Garden", width: 2, height: 2 }
+              { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2, placementType: "free" },
+              { id: "patch-2", name: "Herb Garden", width: 2, height: 2, placementType: "free" }
             ]);
           }
         } else {
           // Set default patches if nothing available
           setPatches([
-            { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2 },
-            { id: "patch-2", name: "Herb Garden", width: 2, height: 2 }
+            { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2, placementType: "free" },
+            { id: "patch-2", name: "Herb Garden", width: 2, height: 2, placementType: "free" }
           ]);
         }
       } finally {
