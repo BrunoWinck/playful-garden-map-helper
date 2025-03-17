@@ -207,8 +207,10 @@ export const GardenPatches = ({
           {patch.placementType === "slots" ? (
             <SeedTray 
               patch={patch} 
-              plantedItems={plantedItems[patch.id] || []} 
+              patchIndex={index}
+              plantedItems={plantedItems} 
               handleDrop={handleDrop} 
+              patchColors={patchColors}
               onGrowPlant={onGrowPlant}
               onDeletePlant={onDeletePlant}
               onCopyPlant={onCopyPlant}
@@ -216,8 +218,10 @@ export const GardenPatches = ({
           ) : (
             <RegularPatch 
               patch={patch} 
-              plantedItems={plantedItems[patch.id] || []} 
+              patchIndex={index}
+              plantedItems={plantedItems} 
               handleDrop={handleDrop} 
+              patchColors={patchColors}
               onGrowPlant={onGrowPlant}
               onDeletePlant={onDeletePlant}
               onCopyPlant={onCopyPlant}
