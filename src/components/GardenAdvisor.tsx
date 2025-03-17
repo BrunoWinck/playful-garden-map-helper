@@ -33,7 +33,7 @@ export const GardenAdvisor = () => {
 
   // Render loading state if needed
   if (isLoadingHistory || isLoadingHiddenMessages) {
-    return 
+    return (
     <Widget
       title="Garden Advisor"
       icon={Lightbulb}
@@ -44,10 +44,10 @@ export const GardenAdvisor = () => {
     >
       <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
       <span className="ml-3 text-green-700">Loading conversation history...</span>
-    </Widget>;
+    </Widget>);
   }
 
-  return <Widget
+  return (<Widget
       title="Garden Advisor"
       icon={Lightbulb}
       col="md:col-span-2" 
@@ -75,5 +75,5 @@ export const GardenAdvisor = () => {
         ))}
         <div ref={messagesEndRef} />
       </div>
-    </Widget>;
+    </Widget>);
 };
