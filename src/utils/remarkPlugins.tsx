@@ -2,19 +2,62 @@ import { visit } from "unist-util-visit";
 import React from "react";
 import { BookOpen, CheckSquare } from "lucide-react";
 import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const addToGlossary = (term: string) => {
+const generateDefinition = async (term: string): Promise<string> => {
+  try {
+    // Make a request to the garden-advisor edge function with a specialized prompt
+    const { data, error } = await supabase.functions.invoke('garden-advisor', {
+      body: {
+        message: `Please provide a concise definition (1-2 sentences) for the gardening term: "${term}"`,
+        user_id: ANONYMOUS_USER_ID,
+        user_name: ANONYMOUS_USER_NAME,
+        system_message: "You are a gardening expert. Provide accurate, concise definitions for gardening terms. Keep your response under 100 words and focused only on the definition."
+      }
+    });
+
+    if (error) throw error;
+    
+    return data.message.trim() || `Add your definition for "${term}" here.`;
+  } catch (error) {
+    console.error("Error generating definition:", error);
+    return `Add your definition for "${term}" here.`;
+  }
+};
+
+const addToGlossary = async (term: string) => {
   try {
     console.log("Adding to glossary:", term);
-    // Create and dispatch a custom event
+    
+    // Generate a definition using AI
+    const definition = await generateDefinition(term);
+    
+    // Create and dispatch a custom event with the term and the AI-generated definition
     const glossaryEvent = new CustomEvent('addToGlossary', { 
       detail: { 
         term: term,
-        definition: `Add your definition for "${term}" here.`
+        definition: definition
       } 
     });
     
     window.dispatchEvent(glossaryEvent);
+    
+    // Activate glossary tab
+    const glossaryTabEvent = new CustomEvent('activateGlossaryTab', {
+      detail: { term }
+    });
+    
+    window.dispatchEvent(glossaryTabEvent);
+    
+    // Show toast
+    toast.success(`Added "${term}" to your gardening glossary`, {
+      action: {
+        label: "View Glossary",
+        onClick: () => {
+          document.getElementById("glossary-panel-trigger")?.click();
+        }
+      }
+    });
     
     // Keep the comment code as a reference but don't execute it
     /*

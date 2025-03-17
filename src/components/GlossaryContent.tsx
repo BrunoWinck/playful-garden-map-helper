@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Save, X, Pencil } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerClose } from "@/components/ui/drawer";
@@ -8,6 +8,7 @@ import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { GlossaryTerm } from "./GlossaryPanel";
 import { useLongPress } from "@/utils/useLongPress";
+import ReactMarkdown from "react-markdown";
 
 export const GlossaryContent: React.FC = () => {
   const [terms, setTerms] = useState<GlossaryTerm[]>([]);
@@ -20,6 +21,9 @@ export const GlossaryContent: React.FC = () => {
   const [editingTerm, setEditingTerm] = useState<string | null>(null);
   const [editedTermValue, setEditedTermValue] = useState("");
   const [editedDefinitionValue, setEditedDefinitionValue] = useState("");
+  const termRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [newlyAddedTerm, setNewlyAddedTerm] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchGlossaryTerms = async () => {
@@ -86,8 +90,31 @@ export const GlossaryContent: React.FC = () => {
     }
   }, [terms, isLoading]);
 
-  async function addTerm( newTerm, newDefinition = "" )
-  {
+  useEffect(() => {
+    if (newlyAddedTerm && termRefs.current[newlyAddedTerm] && containerRef.current) {
+      setTimeout(() => {
+        const termElement = termRefs.current[newlyAddedTerm];
+        const container = containerRef.current;
+        
+        if (termElement && container) {
+          const termRect = termElement.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          
+          const scrollTo = termElement.offsetTop - (container.clientHeight / 2) + (termRect.height / 2);
+          container.scrollTop = scrollTo;
+          
+          termElement.classList.add('bg-green-50');
+          setTimeout(() => {
+            termElement.classList.remove('bg-green-50');
+          }, 2000);
+        }
+        
+        setNewlyAddedTerm(null);
+      }, 100);
+    }
+  }, [newlyAddedTerm, terms]);
+
+  async function addTerm(newTerm, newDefinition = "") {
     const termObject: Omit<GlossaryTerm, "id" | "created_at"> = {
       term: newTerm.trim(),
       definition: newDefinition.trim()
@@ -107,7 +134,7 @@ export const GlossaryContent: React.FC = () => {
 
       if (data) {
         setTerms(prev => [...prev, data].sort((a, b) => a.term.localeCompare(b.term)));
-        toast.success(`Added "${newTerm}" to glossary`);
+        setNewlyAddedTerm(data.term);
       }
     } catch (error) {
       console.error("Error adding term:", error);
@@ -119,20 +146,35 @@ export const GlossaryContent: React.FC = () => {
       };
       
       setTerms(prev => [...prev, newTermObject].sort((a, b) => a.term.localeCompare(b.term)));
-      toast.success(`Added "${newTerm}" to glossary`);
+      setNewlyAddedTerm(newTermObject.term);
     } finally {
       setNewTerm("");
       setNewDefinition("");
       setIsAddingTerm(false);
     }
-  };
+  }
 
   useEffect(() => {
-    const onAddTerm = e => {
-      addTerm( e.detail.term, e.detail.definition);
+    const onAddTerm = (e: CustomEvent) => {
+      console.log("addToGlossary event received:", e.detail);
+      addTerm(e.detail.term, e.detail.definition);
     };
-    window.addEventListener('addToGlossary', onAddTerm);
-    return () => window.removeEventListener('addToGlossary',onAddTerm);
+    
+    const onActivateGlossaryTab = (e: CustomEvent) => {
+      console.log("activateGlossaryTab event received:", e.detail);
+      const event = new CustomEvent('activateTab', {
+        detail: { tab: 'glossary', term: e.detail.term }
+      });
+      window.dispatchEvent(event);
+    };
+    
+    window.addEventListener('addToGlossary', onAddTerm as EventListener);
+    window.addEventListener('activateGlossaryTab', onActivateGlossaryTab as EventListener);
+    
+    return () => {
+      window.removeEventListener('addToGlossary', onAddTerm as EventListener);
+      window.removeEventListener('activateGlossaryTab', onActivateGlossaryTab as EventListener);
+    };
   }, []);
 
   const handleAddTerm = async () => {
@@ -141,7 +183,7 @@ export const GlossaryContent: React.FC = () => {
       return;
     }
 
-    addTerm( newTerm, newDefinition);
+    addTerm(newTerm, newDefinition);
   };
 
   const handleDeleteTerm = async () => {
@@ -241,7 +283,7 @@ export const GlossaryContent: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" ref={containerRef}>
       <div className="flex justify-end p-3">
         <Drawer open={isAddingTerm} onOpenChange={setIsAddingTerm}>
           <DrawerTrigger asChild>
@@ -313,7 +355,8 @@ export const GlossaryContent: React.FC = () => {
             return (
               <div 
                 key={term.id} 
-                className="border-b border-green-100 pb-3 last:border-b-0 relative group"
+                className="border-b border-green-100 pb-3 last:border-b-0 relative group transition-colors duration-300"
+                ref={el => termRefs.current[term.term] = el}
               >
                 {editingTerm === term.id ? (
                   <div className="space-y-2">
@@ -356,12 +399,12 @@ export const GlossaryContent: React.FC = () => {
                     >
                       {term.term}
                     </h3>
-                    <p 
-                      className="text-sm text-gray-700 mt-1"
+                    <div 
+                      className="prose prose-sm max-w-none text-sm text-gray-700 mt-1"
                       {...longPressProps}
                     >
-                      {term.definition}
-                    </p>
+                      <ReactMarkdown>{term.definition}</ReactMarkdown>
+                    </div>
                     <div className="absolute right-1 top-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button 
                         className="p-1 rounded hover:bg-green-100"
@@ -418,3 +461,4 @@ export const GlossaryContent: React.FC = () => {
     </div>
   );
 };
+

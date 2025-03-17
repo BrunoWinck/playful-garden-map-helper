@@ -126,7 +126,8 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         .from('patch_tasks')
         .insert({
           task: task,
-          user_id: ANONYMOUS_USER_ID
+          user_id: ANONYMOUS_USER_ID,
+          patch_id: crypto.randomUUID()
         })
         .then(({ error }) => {
           if (error) {
@@ -136,7 +137,13 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
           }
         });
       
-      toast.success(`Added "${task}" to your garden tasks`);
+      toast.success(`Added "${task}" to your garden tasks`, {
+        action: {
+          label: "View Tasks",
+          onClick: () => {
+          }
+        }
+      });
     } catch (error) {
       console.error("Error adding task:", error);
     }

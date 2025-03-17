@@ -40,6 +40,20 @@ export const GlossaryPanel = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    // Listen for tab activation events
+    const onActivateTab = (e: CustomEvent) => {
+      console.log("Activating tab:", e.detail.tab);
+      setActiveTab(e.detail.tab);
+    };
+    
+    window.addEventListener('activateTab', onActivateTab as EventListener);
+    
+    return () => {
+      window.removeEventListener('activateTab', onActivateTab as EventListener);
+    };
+  }, []);
+
   const handleAddTask = () => {
     if (!newTask.trim()) {
       toast.error("Task cannot be empty");
@@ -98,6 +112,7 @@ export const GlossaryPanel = () => {
         >
           <TabsList className="mx-0 mt-3 bg-green-100 justify-between w-full grid grid-cols-3 p-0">
             <TabsTrigger 
+              id="glossary-tab"
               value="glossary" 
               className="data-[state=active]:bg-white data-[state=active]:text-green-800 px-1 py-1.5 text-xs sm:text-sm"
             >
