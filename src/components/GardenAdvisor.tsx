@@ -5,7 +5,7 @@ import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { useGardenAdvisor } from "@/hooks/useGardenAdvisor";
 import { useHiddenMessages } from "@/hooks/useHiddenMessages";
-import { Widget } from "./Widget";
+import { Widget } from "@/components/Widget";
 
 export const GardenAdvisor = () => {
   const { 
@@ -47,7 +47,8 @@ export const GardenAdvisor = () => {
     </Widget>);
   }
 
-  return (<Widget
+  return (
+    <Widget
       title="Garden Advisor"
       icon={Lightbulb}
       col="md:col-span-2" 
@@ -75,5 +76,6 @@ export const GardenAdvisor = () => {
         ))}
         <div ref={messagesEndRef} />
       </div>
-    </Widget>);
+    </Widget>
+  );
 };
