@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from "react";
-import { Plus, Tree, Flower } from "lucide-react";
+import { Plus, Trees, Flower } from "lucide-react";
 import { PlantItem } from "@/lib/types";
 import { DraggablePlant } from "./DraggablePlant";
 import { PlantFilter } from "./PlantFilter";
@@ -130,7 +129,7 @@ export const PlantCatalog = ({
         <TabsList className="mb-3 bg-brown-200 w-full grid grid-cols-3">
           <TabsTrigger value="standard">Standard</TabsTrigger>
           <TabsTrigger value="trees" className="flex items-center">
-            <Tree className="h-4 w-4 mr-1" /> Trees
+            <Trees className="h-4 w-4 mr-1" /> Trees
           </TabsTrigger>
           <TabsTrigger value="shrubs" className="flex items-center">
             <Flower className="h-4 w-4 mr-1" /> Shrubs

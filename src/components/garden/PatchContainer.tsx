@@ -1,15 +1,18 @@
 
 import React from "react";
-import { Patch } from "@/lib/types";
+import { Patch, PlantItem } from "@/lib/types";
 import { RegularPatch } from "./RegularPatch";
 import { SeedTray } from "./SeedTray";
 
 interface PatchContainerProps {
   patch: Patch;
   patchIndex: number;
-  plantedItems: Record<string, any[]>;
-  handleDrop: (item: any, x: number, y: number, patchId: string) => void;
+  plantedItems: Record<string, PlantItem[]>;
+  handleDrop: (item: PlantItem, x: number, y: number, patchId: string) => void;
   patchColors: string[];
+  onGrowPlant: (plantItem: PlantItem, direction: "up" | "down") => void;
+  onDeletePlant: (plantItem: PlantItem) => void;
+  onCopyPlant: (plantItem: PlantItem, count: number) => void;
 }
 
 export const PatchContainer = ({ 
@@ -17,7 +20,10 @@ export const PatchContainer = ({
   patchIndex, 
   plantedItems, 
   handleDrop, 
-  patchColors 
+  patchColors,
+  onGrowPlant,
+  onDeletePlant,
+  onCopyPlant
 }: PatchContainerProps) => {
   return (
     <div key={patch.id}>
@@ -27,14 +33,20 @@ export const PatchContainer = ({
             patchIndex={patchIndex} 
             plantedItems={plantedItems} 
             handleDrop={handleDrop} 
-            patchColors={patchColors} 
+            patchColors={patchColors}
+            onGrowPlant={onGrowPlant}
+            onDeletePlant={onDeletePlant}
+            onCopyPlant={onCopyPlant}
           />
         : <RegularPatch 
             patch={patch} 
             patchIndex={patchIndex} 
             plantedItems={plantedItems} 
             handleDrop={handleDrop} 
-            patchColors={patchColors} 
+            patchColors={patchColors}
+            onGrowPlant={onGrowPlant}
+            onDeletePlant={onDeletePlant}
+            onCopyPlant={onCopyPlant}
           />
       }
     </div>
