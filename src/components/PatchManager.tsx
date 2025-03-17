@@ -24,6 +24,7 @@ export const PatchManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [taskInput, setTaskInput] = useState("");
   const [selectedPatchId, setSelectedPatchId] = useState<string | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   const loadPatchData = async () => {
     try {
@@ -43,6 +44,7 @@ export const PatchManager = () => {
       toast.error("Failed to load your garden patches");
     } finally {
       setIsLoading(false);
+      setInitialLoadComplete(true);
     }
   };
   
@@ -50,20 +52,22 @@ export const PatchManager = () => {
     loadPatchData();
   }, []);
   
-  // Emit event when patches change
+  // Only emit event when patches change AFTER initial load
   useEffect(() => {
-    if (patches.length > 0 && !isLoading) {
+    if (patches.length > 0 && !isLoading && initialLoadComplete) {
+      console.log("Emitting PATCHES_UPDATED event");
       eventBus.emit(PATCH_EVENTS.PATCHES_UPDATED, patches);
     }
-  }, [patches, isLoading]);
+  }, [patches, isLoading, initialLoadComplete]);
   
   const handleAddPatch = async (data: PatchFormValues) => {
     try {
       const newPatch = await createPatch(data);
-      setPatches([...patches, newPatch]);
+      setPatches(prev => [...prev, newPatch]);
       toast.success(`Added new patch: ${newPatch.name}`);
       
       // Emit event for new patch
+      console.log("Emitting PATCH_ADDED event");
       eventBus.emit(PATCH_EVENTS.PATCH_ADDED, newPatch);
       setSelectedPatchId(newPatch.id);
     } catch (error) {
@@ -85,6 +89,7 @@ export const PatchManager = () => {
       toast.success("Patch removed");
       
       // Emit event for deleted patch
+      console.log("Emitting PATCH_DELETED event");
       eventBus.emit(PATCH_EVENTS.PATCH_DELETED, patchId);
       
       if (selectedPatchId === patchId) {
@@ -175,6 +180,7 @@ export const PatchManager = () => {
       // Emit event for edited patch
       const editedPatch = updatedPatches.find(p => p.id === editingPatchId);
       if (editedPatch) {
+        console.log("Emitting PATCH_EDITED event");
         eventBus.emit(PATCH_EVENTS.PATCH_EDITED, editedPatch);
       }
       

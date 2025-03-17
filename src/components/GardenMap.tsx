@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -28,11 +29,12 @@ export const GardenMap = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load patches directly using the service
+  // Load patches once at component init
   useEffect(() => {
     const loadPatches = async () => {
       setIsLoading(true);
       try {
+        console.log("GardenMap: Fetching patches from service");
         const patchesData = await fetchPatches();
         setPatches(patchesData);
       } catch (error) {
@@ -47,18 +49,22 @@ export const GardenMap = () => {
     
     // Set up event listeners for patch changes
     const handlePatchesUpdated = (updatedPatches: Patch[]) => {
+      console.log("GardenMap: Received PATCHES_UPDATED event", updatedPatches.length);
       setPatches(updatedPatches);
     };
     
     const handlePatchAdded = (newPatch: Patch) => {
+      console.log("GardenMap: Received PATCH_ADDED event", newPatch.name);
       setPatches(prev => [...prev, newPatch]);
     };
     
     const handlePatchDeleted = (patchId: string) => {
+      console.log("GardenMap: Received PATCH_DELETED event", patchId);
       setPatches(prev => prev.filter(patch => patch.id !== patchId));
     };
     
     const handlePatchEdited = (editedPatch: Patch) => {
+      console.log("GardenMap: Received PATCH_EDITED event", editedPatch.name);
       setPatches(prev => prev.map(patch => 
         patch.id === editedPatch.id ? editedPatch : patch
       ));
