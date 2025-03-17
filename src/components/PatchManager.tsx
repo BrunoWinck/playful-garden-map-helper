@@ -54,7 +54,6 @@ export const PatchManager = () => {
   const watchPlacementType = form.watch("placementType");
   
   useEffect(() => {
-    // Reset heated and artificial light when outdoor-soil is selected
     if (watchType === "outdoor-soil") {
       form.setValue("heated", false);
       form.setValue("artificialLight", false);
@@ -734,4 +733,3 @@ export const PatchManager = () => {
     </div>
   );
 };
-

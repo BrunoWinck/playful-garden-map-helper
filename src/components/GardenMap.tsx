@@ -46,7 +46,7 @@ export const GardenMap = () => {
           height: Number(patch.height),
           type: patch.type,
           // Map database column names to our front-end property names
-          placementType: patch.placement_type as "free" | "slots" || "free", // Ensure correct type
+          placementType: patch.placement_type as "free" | "slots" || "free", 
           slotsLength: patch.slots_length || 4,
           slotsWidth: patch.slots_width || 6,
           heated: patch.heated,

@@ -238,6 +238,9 @@ export type Database = {
           id: string
           name: string
           natural_light_percentage: number
+          placement_type: string | null
+          slots_length: number | null
+          slots_width: number | null
           type: string
           updated_at: string
           user_id: string
@@ -251,6 +254,9 @@ export type Database = {
           id?: string
           name: string
           natural_light_percentage?: number
+          placement_type?: string | null
+          slots_length?: number | null
+          slots_width?: number | null
           type: string
           updated_at?: string
           user_id: string
@@ -264,6 +270,9 @@ export type Database = {
           id?: string
           name?: string
           natural_light_percentage?: number
+          placement_type?: string | null
+          slots_length?: number | null
+          slots_width?: number | null
           type?: string
           updated_at?: string
           user_id?: string
