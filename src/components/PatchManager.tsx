@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +78,7 @@ export const PatchManager = () => {
         heated: patch.heated,
         artificialLight: patch.artificial_light,
         naturalLightPercentage: patch.natural_light_percentage,
-        placementType: patch.placement_type as PlacementType || "free",
+        placementType: (patch.placement_type as PlacementType) || "free",
         slotsLength: patch.slots_length || 4,
         slotsWidth: patch.slots_width || 6
       }));
@@ -157,7 +156,7 @@ export const PatchManager = () => {
         heated: newPatch.heated,
         artificialLight: newPatch.artificial_light,
         naturalLightPercentage: newPatch.natural_light_percentage,
-        placementType: newPatch.placement_type as PlacementType || "free",
+        placementType: (newPatch.placement_type as PlacementType) || "free",
         slotsLength: newPatch.slots_length || 4,
         slotsWidth: newPatch.slots_width || 6
       };
@@ -735,3 +734,4 @@ export const PatchManager = () => {
     </div>
   );
 };
+

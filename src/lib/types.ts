@@ -29,4 +29,3 @@ export type Patch = {
   artificialLight?: boolean;
   naturalLightPercentage?: number;
 };
-

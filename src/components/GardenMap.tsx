@@ -46,9 +46,9 @@ export const GardenMap = () => {
           height: Number(patch.height),
           type: patch.type,
           // Map database column names to our front-end property names
-          placementType: "free", // Default value since placement_type doesn't exist in DB
-          slotsLength: 4,        // Default value since slots_length doesn't exist in DB
-          slotsWidth: 6,         // Default value since slots_width doesn't exist in DB
+          placementType: patch.placement_type as "free" | "slots" || "free", // Ensure correct type
+          slotsLength: patch.slots_length || 4,
+          slotsWidth: patch.slots_width || 6,
           heated: patch.heated,
           artificialLight: patch.artificial_light,
           naturalLightPercentage: patch.natural_light_percentage
