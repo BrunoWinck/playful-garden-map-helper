@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
-import { useDrag } from "react-dnd";
+import { useDrag, DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { PlantItem } from "@/lib/types";
 import { ItemTypes } from "./GardenCell";
 import { useLongPress } from "@/utils/useLongPress";
@@ -16,7 +17,35 @@ interface DraggablePlantProps {
   onPlantUpdated: () => void;
 }
 
-export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) => {
+// Wrapper component that ensures DragDrop context
+const DraggablePlantWithDndProvider = (props: DraggablePlantProps) => {
+  // Check if we're already inside a DndProvider
+  try {
+    // If this doesn't throw, we're inside a DndProvider
+    const [{ isDragging }] = useDrag(() => ({
+      type: ItemTypes.PLANT,
+      item: props.plant,
+      collect: (monitor) => ({
+        isDragging: !!monitor.isDragging(),
+      }),
+    }));
+    
+    // If we got here, we're in a DndProvider, so just render the inner component
+    return <DraggablePlantInner {...props} />;
+  } catch (e) {
+    // If it throws, we need to provide our own DndProvider
+    // This is a fallback for cases where the component is rendered outside a DndProvider
+    console.log("DraggablePlant: Adding missing DndProvider");
+    return (
+      <DndProvider backend={HTML5Backend}>
+        <DraggablePlantInner {...props} />
+      </DndProvider>
+    );
+  }
+};
+
+// The actual component implementation
+const DraggablePlantInner = ({ plant, onPlantUpdated }: DraggablePlantProps) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.PLANT,
     item: () => {
@@ -165,3 +194,6 @@ export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) =
     </>
   );
 };
+
+// Export the wrapper component as the default
+export const DraggablePlant = DraggablePlantWithDndProvider;
