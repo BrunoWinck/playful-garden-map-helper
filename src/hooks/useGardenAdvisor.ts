@@ -11,7 +11,8 @@ export const useGardenAdvisor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [gardenState, setGardenState] = useState<GardenState>({
     patches: [],
-    plantedItems: {}
+    plantedItems: {},
+    plants: [] // Added missing plants property with an empty array default
   });
   const [dailyTipShown, setDailyTipShown] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -64,10 +65,11 @@ export const useGardenAdvisor = () => {
 
   // Fetch garden state
   useEffect(() => {
-    function updateAdvisor(patches: any[], plantedItems: any, weather: any, location: any, weatherSummary: any, shouldShowTip: boolean) {
+    function updateAdvisor(patches: any[], plantedItems: any, plants: any[], weather: any, location: any, weatherSummary: any, shouldShowTip: boolean) {
       setGardenState({
         patches,
         plantedItems,
+        plants, // Include plants in the updated state
         weather,
         location
       });
