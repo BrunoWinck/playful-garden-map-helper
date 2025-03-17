@@ -20,6 +20,9 @@ type Patch = {
   width: number;
   height: number;
   type?: string;
+  placementType?: "free" | "slots";
+  slotsLength?: number;
+  slotsWidth?: number;
 };
 
 // Define a Garden Grid cell
@@ -30,10 +33,11 @@ interface CellProps {
   onDrop: (item: PlantItem, x: number, y: number, patchId: string) => void;
   plantItem?: PlantItem;
   color?: string;
+  isSlot?: boolean;
 }
 
 // Garden Grid Cell component
-const Cell = ({ x, y, onDrop, plantItem, patchId, color = "bg-brown-100" }: CellProps) => {
+const Cell = ({ x, y, onDrop, plantItem, patchId, color = "bg-brown-100", isSlot = false }: CellProps) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.PLANT,
     drop: (item: PlantItem) => onDrop(item, x, y, patchId),
@@ -45,14 +49,14 @@ const Cell = ({ x, y, onDrop, plantItem, patchId, color = "bg-brown-100" }: Cell
   return (
     <div
       ref={drop}
-      className={`w-16 h-16 border border-brown-400 ${
+      className={`${isSlot ? 'w-10 h-10' : 'w-16 h-16'} border ${isSlot ? 'border-gray-400' : 'border-brown-400'} ${
         isOver ? "bg-green-200" : color
-      } rounded-md flex items-center justify-center transition-colors`}
+      } ${isSlot ? 'rounded' : 'rounded-md'} flex items-center justify-center transition-colors`}
     >
       {plantItem && (
         <div className="flex flex-col items-center">
-          <span className="text-3xl">{plantItem.icon}</span>
-          <span className="text-xs text-green-800">{plantItem.name}</span>
+          <span className={`${isSlot ? 'text-xl' : 'text-3xl'}`}>{plantItem.icon}</span>
+          {!isSlot && <span className="text-xs text-green-800">{plantItem.name}</span>}
         </div>
       )}
     </div>
@@ -81,8 +85,6 @@ const DraggablePlant = ({ plant }: { plant: PlantItem }) => {
     </div>
   );
 };
-
-
 
 // Colors for different patches
 const patchColors = [
@@ -114,7 +116,10 @@ export const GardenMap = () => {
           name: patch.name,
           width: Number(patch.width),
           height: Number(patch.height),
-          type: patch.type
+          type: patch.type,
+          placementType: patch.placement_type,
+          slotsLength: patch.slots_length,
+          slotsWidth: patch.slots_width
         }));
         
         setPatches(formattedPatches);
@@ -227,6 +232,110 @@ export const GardenMap = () => {
     );
   }
 
+  // Render a seed tray with slots
+  const renderSeedTray = (patch: Patch, patchIndex: number) => {
+    const slotsLength = patch.slotsLength || 4;
+    const slotsWidth = patch.slotsWidth || 6;
+    const color = patchColors[patchIndex % patchColors.length];
+    
+    return (
+      <div className="bg-brown-200 p-3 rounded-lg">
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="font-medium text-green-800 flex items-center">
+            <Move className="h-4 w-4 mr-1 text-green-600" />
+            {patch.name} (Seed Tray)
+          </h4>
+          <span className="text-xs text-green-700">
+            {slotsLength}×{slotsWidth} slots
+          </span>
+        </div>
+        
+        <div className="flex justify-center">
+          <div 
+            className="grid gap-1 bg-gray-100 p-2 rounded-md border-2 border-gray-300" 
+            style={{ 
+              gridTemplateColumns: `repeat(${slotsWidth}, 1fr)`,
+              gridTemplateRows: `repeat(${slotsLength}, 1fr)`
+            }}
+          >
+            {Array.from({ length: slotsLength }).map((_, y) =>
+              Array.from({ length: slotsWidth }).map((_, x) => {
+                // Find if there's a plant at this position
+                const patchPlants = plantedItems[patch.id] || [];
+                const plantItem = patchPlants.find(
+                  plant => 
+                    plant.position?.x === x && 
+                    plant.position?.y === y && 
+                    plant.position?.patchId === patch.id
+                );
+                
+                return (
+                  <Cell
+                    key={`${patch.id}-${x}-${y}`}
+                    x={x}
+                    y={y}
+                    patchId={patch.id}
+                    onDrop={handleDrop}
+                    plantItem={plantItem}
+                    color={color}
+                    isSlot={true}
+                  />
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render a regular patch
+  const renderRegularPatch = (patch: Patch, patchIndex: number) => {
+    return (
+      <div className="bg-brown-200 p-3 rounded-lg">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-medium text-green-800 flex items-center">
+            <Move className="h-4 w-4 mr-1 text-green-600" />
+            {patch.name}
+          </h4>
+          <span className="text-xs text-green-700">
+            {patch.width}×{patch.height}
+          </span>
+        </div>
+        
+        <div className="grid gap-1" style={{ 
+          gridTemplateColumns: `repeat(${patch.width}, 1fr)`,
+          gridTemplateRows: `repeat(${patch.height}, 1fr)`
+        }}>
+          {Array.from({ length: patch.height }).map((_, y) =>
+            Array.from({ length: patch.width }).map((_, x) => {
+              // Find if there's a plant at this position
+              const patchPlants = plantedItems[patch.id] || [];
+              const plantItem = patchPlants.find(
+                plant => 
+                  plant.position?.x === x && 
+                  plant.position?.y === y && 
+                  plant.position?.patchId === patch.id
+              );
+              
+              return (
+                <Cell
+                  key={`${patch.id}-${x}-${y}`}
+                  x={x}
+                  y={y}
+                  patchId={patch.id}
+                  onDrop={handleDrop}
+                  plantItem={plantItem}
+                  color={patchColors[patchIndex % patchColors.length]}
+                />
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col gap-6">
@@ -238,46 +347,11 @@ export const GardenMap = () => {
           
           <div className="space-y-6">
             {patches.map((patch, patchIndex) => (
-              <div key={patch.id} className="bg-brown-200 p-3 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-green-800 flex items-center">
-                    <Move className="h-4 w-4 mr-1 text-green-600" />
-                    {patch.name}
-                  </h4>
-                  <span className="text-xs text-green-700">
-                    {patch.width}×{patch.height}
-                  </span>
-                </div>
-                
-                <div className="grid gap-1" style={{ 
-                  gridTemplateColumns: `repeat(${patch.width}, 1fr)`,
-                  gridTemplateRows: `repeat(${patch.height}, 1fr)`
-                }}>
-                  {Array.from({ length: patch.height }).map((_, y) =>
-                    Array.from({ length: patch.width }).map((_, x) => {
-                      // Find if there's a plant at this position
-                      const patchPlants = plantedItems[patch.id] || [];
-                      const plantItem = patchPlants.find(
-                        plant => 
-                          plant.position?.x === x && 
-                          plant.position?.y === y && 
-                          plant.position?.patchId === patch.id
-                      );
-                      
-                      return (
-                        <Cell
-                          key={`${patch.id}-${x}-${y}`}
-                          x={x}
-                          y={y}
-                          patchId={patch.id}
-                          onDrop={handleDrop}
-                          plantItem={plantItem}
-                          color={patchColors[patchIndex % patchColors.length]}
-                        />
-                      );
-                    })
-                  )}
-                </div>
+              <div key={patch.id}>
+                {patch.placementType === 'slots' 
+                  ? renderSeedTray(patch, patchIndex)
+                  : renderRegularPatch(patch, patchIndex)
+                }
               </div>
             ))}
             
