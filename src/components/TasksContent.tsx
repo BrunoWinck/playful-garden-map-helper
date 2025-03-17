@@ -384,7 +384,7 @@ export const TasksContentSorted: React.FC = () => {
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center opacity-0 group-hover:opacity-100">
+                            <div className="flex items-center opacity-100 group-hover:opacity-100">
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -463,4 +463,3 @@ export const TasksContentSorted: React.FC = () => {
     </div>
   );
 };
-
