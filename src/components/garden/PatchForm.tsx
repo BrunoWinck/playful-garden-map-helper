@@ -44,9 +44,22 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
     }
   }, [watchType, form]);
 
+  const handleFormSubmit = async (data: PatchFormValues) => {
+    console.log("PatchForm submit with data:", data);
+    try {
+      await onSubmit(data);
+      // Reset form after successful submission if not editing
+      if (!isEditing) {
+        form.reset();
+      }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
         <div className="grid grid-cols-1 gap-2">
           <FormField
             control={form.control}
@@ -69,7 +82,14 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
                 <FormItem>
                   <FormLabel className="text-green-700">Length (m)</FormLabel>
                   <FormControl>
-                    <Input type="number" min="0.5" max="10" step="0.5" {...field} />
+                    <Input 
+                      type="number" 
+                      min="0.5" 
+                      max="10" 
+                      step="0.5" 
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -82,7 +102,14 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
                 <FormItem>
                   <FormLabel className="text-green-700">Width (m)</FormLabel>
                   <FormControl>
-                    <Input type="number" min="0.5" max="10" step="0.5" {...field} />
+                    <Input 
+                      type="number" 
+                      min="0.5" 
+                      max="10" 
+                      step="0.5" 
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -127,6 +154,7 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     className="flex flex-row space-x-1"
+                    value={field.value}
                   >
                     <div className="flex items-center space-x-2 border rounded-l-md px-3 py-2">
                       <RadioGroupItem value="free" id="free" />
@@ -158,6 +186,7 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
                         step="1" 
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value))} 
+                        value={field.value}
                       />
                     </FormControl>
                   </FormItem>
@@ -177,6 +206,7 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
                         step="1" 
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value))} 
+                        value={field.value}
                       />
                     </FormControl>
                   </FormItem>

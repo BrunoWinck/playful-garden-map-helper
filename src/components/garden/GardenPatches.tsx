@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Patch, PlantItem } from "@/lib/types";
 import { RegularPatch } from "./RegularPatch";
@@ -75,7 +74,6 @@ export const GardenPatches = ({
         slotsWidth: data.slotsWidth || 6
       };
       
-      // Emit event for edited patch
       console.log("GardenPatches: Emitting PATCH_EDITED event");
       eventBus.emit(PATCH_EVENTS.PATCH_EDITED, updatedPatch);
       
@@ -92,7 +90,6 @@ export const GardenPatches = ({
     try {
       await deletePatch(patchId);
       
-      // Emit event for deleted patch
       console.log("GardenPatches: Emitting PATCH_DELETED event");
       eventBus.emit(PATCH_EVENTS.PATCH_DELETED, patchId);
       
@@ -230,7 +227,6 @@ export const GardenPatches = ({
         </PatchCard>
       ))}
 
-      {/* Edit Patch Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

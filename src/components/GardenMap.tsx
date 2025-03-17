@@ -609,7 +609,10 @@ export const GardenMap = () => {
   // Handle adding a new patch
   const handleAddPatch = async (data: PatchFormValues) => {
     try {
+      console.log("Creating new patch with data:", data);
       const newPatch = await createPatch(data);
+      console.log("New patch created:", newPatch);
+      
       setPatches(prev => [...prev, newPatch]);
       toast.success(`Added new patch: ${newPatch.name}`);
       

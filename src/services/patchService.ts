@@ -74,6 +74,8 @@ export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
       throw new Error("No current user found");
     }
     
+    console.log("Creating patch with data:", data);
+    
     // Now proceed with creating the patch
     const { data: newPatch, error } = await supabase
       .from('patches')
@@ -93,7 +95,17 @@ export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Database error creating patch:", error);
+      throw error;
+    }
+    
+    if (!newPatch) {
+      console.error("No data returned from patch creation");
+      throw new Error("Failed to create patch: No data returned");
+    }
+    
+    console.log("Patch created successfully:", newPatch);
     
     const formattedPatch: Patch = {
       id: newPatch.id,
