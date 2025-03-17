@@ -667,12 +667,6 @@ export const GardenMap = () => {
           onCopyPlant={handleCopyPlant}
         />
         
-        <PlantCatalog 
-          categoryFilter={categoryFilter} 
-          setCategoryFilter={setCategoryFilter} 
-          searchTerm={searchTerm} 
-          setSearchTerm={setSearchTerm} 
-        />
       </div>
     </DndProvider>
   );
