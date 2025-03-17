@@ -40,11 +40,11 @@ export const GardenAdvisor = () => {
       col="md:col-span-2" 
       height="h-[500px]"
       contentClassName="space-y-2"
-      }
     >
       <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
       <span className="ml-3 text-green-700">Loading conversation history...</span>
-    </Widget>);
+    </Widget>
+    );
   }
 
   return (
