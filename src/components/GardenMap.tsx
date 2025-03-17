@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { PlantCatalog } from "./garden/PlantCatalog";
 import { Skeleton } from "./ui/skeleton";
 import { fetchPatches } from "@/services/patchService";
 import { eventBus, PATCH_EVENTS } from "@/lib/eventBus";
+import { ScrollArea } from "./ui/scroll-area";
 
 // Colors for different patches
 const patchColors = [
@@ -46,6 +47,11 @@ export const GardenMap = () => {
   const [patches, setPatches] = useState<Patch[]>([]);
   const [plantedItems, setPlantedItems] = useState<Record<string, PlantItem[]>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Ref for the container to auto-scroll
+  const containerRef = useRef<HTMLDivElement>(null);
+  const autoScrollIntervalRef = useRef<number | null>(null);
 
   // Filter state for plants
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -107,6 +113,71 @@ export const GardenMap = () => {
       eventBus.off(PATCH_EVENTS.PATCH_EDITED, handlePatchEdited);
     };
   }, []);
+
+  // Set up auto-scroll functionality during drag operations
+  useEffect(() => {
+    const handleDragStart = () => {
+      setIsDragging(true);
+    };
+
+    const handleDragEnd = () => {
+      setIsDragging(false);
+      if (autoScrollIntervalRef.current !== null) {
+        window.clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+    };
+
+    // Handle mouse move during drag to determine auto-scroll direction and speed
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !containerRef.current) return;
+      
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+      
+      // Define scroll zones at the top and bottom of the container
+      const topScrollZone = 50; // pixels from top
+      const bottomScrollZone = 50; // pixels from bottom
+      
+      // Calculate mouse position relative to container
+      const mouseY = e.clientY;
+      
+      // Clear any existing interval first
+      if (autoScrollIntervalRef.current !== null) {
+        window.clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+      
+      // Determine if we need to scroll and in which direction
+      if (mouseY < containerRect.top + topScrollZone) {
+        // Scroll up when mouse is near the top
+        autoScrollIntervalRef.current = window.setInterval(() => {
+          container.scrollBy({ top: -10, behavior: 'auto' });
+        }, 16); // ~60fps
+      } else if (mouseY > containerRect.bottom - bottomScrollZone) {
+        // Scroll down when mouse is near the bottom
+        autoScrollIntervalRef.current = window.setInterval(() => {
+          container.scrollBy({ top: 10, behavior: 'auto' });
+        }, 16); // ~60fps
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('plantDragStart', handleDragStart);
+    document.addEventListener('plantDragEnd', handleDragEnd);
+    document.addEventListener('mousemove', handleMouseMove);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('plantDragStart', handleDragStart);
+      document.removeEventListener('plantDragEnd', handleDragEnd);
+      document.removeEventListener('mousemove', handleMouseMove);
+      
+      if (autoScrollIntervalRef.current !== null) {
+        window.clearInterval(autoScrollIntervalRef.current);
+      }
+    };
+  }, [isDragging]);
   
   // Load planted items
   useEffect(() => {
@@ -537,7 +608,7 @@ export const GardenMap = () => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6" ref={containerRef}>
         <GardenPatches 
           patches={patches} 
           plantedItems={plantedItems} 

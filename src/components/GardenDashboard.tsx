@@ -70,7 +70,7 @@ export const GardenDashboard = () => {
             <WidgetHeader title="Garden Map" icon={Map} />
             <div className="p-4 flex-1 overflow-hidden">
               <p className="text-green-700 mb-4">Drag plants onto your garden patches!</p>
-              <div className="h-[calc(100%-2rem)] overflow-auto">
+              <div className="h-[calc(100%-2rem)] overflow-auto" id="garden-map-container">
                 <GardenMap />
               </div>
             </div>

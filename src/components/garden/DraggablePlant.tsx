@@ -19,7 +19,15 @@ interface DraggablePlantProps {
 export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.PLANT,
-    item: plant,
+    item: () => {
+      // Notify the parent container that dragging has started
+      document.dispatchEvent(new CustomEvent('plantDragStart'));
+      return plant;
+    },
+    end: () => {
+      // Notify the parent container that dragging has ended
+      document.dispatchEvent(new CustomEvent('plantDragEnd'));
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
