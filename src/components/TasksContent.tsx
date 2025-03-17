@@ -104,46 +104,44 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
 
   const addTask = (task: string, timing: string) => {
     try {
-      const storedTasks = localStorage.getItem('garden-tasks');
-      const tasks: {id: string, text: string, completed: boolean, createdAt: string}[] = 
-        storedTasks ? JSON.parse(storedTasks) : [];
-      
-      if (tasks.some(t => t.text.toLowerCase() === task.toLowerCase())) {
-        return;
-      }
-      
-      const newTask = {
-        id: crypto.randomUUID(),
-        text: task,
-        completed: false,
-        createdAt: new Date().toISOString()
-      };
-      
-      tasks.push(newTask);
-      localStorage.setItem('garden-tasks', JSON.stringify(tasks));
+      const patchId = crypto.randomUUID();
       
       supabase
         .from('patch_tasks')
         .insert({
           task: task,
           user_id: ANONYMOUS_USER_ID,
-          patch_id: crypto.randomUUID()
+          patch_id: patchId
         })
-        .then(({ error }) => {
+        .then(({ data, error }) => {
           if (error) {
             console.error("Failed to save task to database:", error);
+            
+            const newTask: GardenTask = {
+              id: crypto.randomUUID(),
+              task: task,
+              completed: false,
+              created_at: new Date().toISOString(),
+              patch_name: 'General'
+            };
+            
+            setTasks(prev => [newTask, ...prev]);
           } else {
             fetchTasks();
           }
+          
+          toast.success(`Added "${task}" to your garden tasks`, {
+            action: {
+              label: "View Tasks",
+              onClick: () => {
+                const event = new CustomEvent('activateTab', {
+                  detail: { tab: 'tasks' }
+                });
+                window.dispatchEvent(event);
+              }
+            }
+          });
         });
-      
-      toast.success(`Added "${task}" to your garden tasks`, {
-        action: {
-          label: "View Tasks",
-          onClick: () => {
-          }
-        }
-      });
     } catch (error) {
       console.error("Error adding task:", error);
     }

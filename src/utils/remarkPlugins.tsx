@@ -1,3 +1,4 @@
+
 import { visit } from "unist-util-visit";
 import React from "react";
 import { BookOpen, CheckSquare } from "lucide-react";
@@ -6,19 +7,18 @@ import { toast } from "sonner";
 
 const generateDefinition = async (term: string): Promise<string> => {
   try {
-    // Make a request to the garden-advisor edge function with a specialized prompt
-    const { data, error } = await supabase.functions.invoke('garden-advisor', {
-      body: {
-        message: `Please provide a concise definition (1-2 sentences) for the gardening term: "${term}"`,
-        user_id: ANONYMOUS_USER_ID,
-        user_name: ANONYMOUS_USER_NAME,
-        system_message: "You are a gardening expert. Provide accurate, concise definitions for gardening terms. Keep your response under 100 words and focused only on the definition."
-      }
+    // Make a request to the glossary-definition edge function
+    const { data, error } = await supabase.functions.invoke('glossary-definition', {
+      body: { term }
     });
 
     if (error) throw error;
     
-    return data.message.trim() || `Add your definition for "${term}" here.`;
+    if (data && data.success && data.definition) {
+      return data.definition;
+    }
+    
+    return `Add your definition for "${term}" here.`;
   } catch (error) {
     console.error("Error generating definition:", error);
     return `Add your definition for "${term}" here.`;
