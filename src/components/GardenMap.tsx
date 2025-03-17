@@ -36,6 +36,7 @@ export const GardenMap = () => {
       try {
         console.log("GardenMap: Fetching patches from service");
         const patchesData = await fetchPatches();
+        console.log("GardenMap: Fetched patches:", patchesData.length);
         setPatches(patchesData);
       } catch (error) {
         console.error("Error fetching patches:", error);
