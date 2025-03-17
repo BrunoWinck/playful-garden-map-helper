@@ -158,11 +158,22 @@ export const GardenPatches = ({
     }
   };
 
+  // Make sure each patch has a unique ID and we don't have duplicates
+  const uniquePatches = patches.reduce((acc: Patch[], current) => {
+    const exists = acc.find(p => p.id === current.id);
+    if (!exists) {
+      acc.push(current);
+    } else {
+      console.warn(`Duplicate patch ID found: ${current.id}`);
+    }
+    return acc;
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {patches.map((patch, index) => (
+      {uniquePatches.map((patch, index) => (
         <PatchCard 
-          key={patch.id} 
+          key={`patch-${patch.id}`} 
           title={
             <div className="flex justify-between items-center w-full">
               <span>{patch.name}</span>
@@ -208,7 +219,7 @@ export const GardenPatches = ({
                         <h3 className="text-sm font-medium mb-2">Current Tasks:</h3>
                         <ul className="space-y-1">
                           {(patchTasks[patch.id] || []).map((task, idx) => (
-                            <li key={idx} className="flex justify-between items-center py-1 px-2 bg-green-50 rounded">
+                            <li key={`task-${patch.id}-${idx}`} className="flex justify-between items-center py-1 px-2 bg-green-50 rounded">
                               <span className="text-sm">{task}</span>
                             </li>
                           ))}
