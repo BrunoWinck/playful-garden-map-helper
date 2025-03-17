@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -10,7 +9,6 @@ import { TasksCalendar } from "@/components/TasksCalendar";
 import { careTasks } from "@/lib/mockdata";
 import { Sun, Moon, CloudRain, Cloud } from "lucide-react";
 
-// Mock weather data - in a real app, this would come from an API
 type WeatherForecast = {
   date: Date;
   temperature: number;
@@ -21,7 +19,6 @@ type WeatherForecast = {
   daylightHours: number;
 };
 
-// Generate mock weather forecasts for the next 30 days
 const generateWeatherForecasts = (): WeatherForecast[] => {
   const forecasts: WeatherForecast[] = [];
   const currentDate = new Date();
@@ -31,19 +28,14 @@ const generateWeatherForecasts = (): WeatherForecast[] => {
     const isRainy = Math.random() > 0.7;
     const isCloudy = Math.random() > 0.5;
     
-    // Summer-like conditions if within 7 days (actual forecast),
-    // climate averages beyond that
     const isWithinWeek = i < 7;
-    const baseTempVariation = isWithinWeek ? Math.random() * 8 - 4 : 0; // +/- 4 degrees for actual forecast
+    const baseTempVariation = isWithinWeek ? Math.random() * 8 - 4 : 0;
     const tempDay = Math.floor(isWithinWeek ? 24 + baseTempVariation : 22 + Math.sin(i/14 * Math.PI) * 3);
     
-    // Calculate daylight hours (longer in summer, shorter in winter)
-    // This is simplified - real calculations would be more complex and location-based
-    const baseHours = 12; // average daylight hours
+    const baseHours = 12;
     const seasonalVariation = Math.sin((date.getMonth() + date.getDate()/30) / 12 * 2 * Math.PI) * 3;
     const daylightHours = baseHours + seasonalVariation;
     
-    // Set sunrise and sunset based on daylight hours
     const sunriseHour = Math.floor((24 - daylightHours) / 2);
     const sunsetHour = Math.floor(sunriseHour + daylightHours);
     
@@ -68,20 +60,18 @@ export const TaskCalendar = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [open, setOpen] = useState(false);
 
-  // Helper function to get the date range based on the current view
   const getDateRange = () => {
     const today = new Date();
     
     switch(calendarView) {
       case "week":
-        const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+        const weekStart = startOfWeek(today, { weekStartsOn: 1 });
         return eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
       case "twoWeeks":
         const twoWeekStart = startOfWeek(today, { weekStartsOn: 1 });
         return eachDayOfInterval({ start: twoWeekStart, end: addDays(twoWeekStart, 13) });
       case "month":
       default:
-        // Get roughly 4 weeks (28 days)
         const monthStart = startOfWeek(today, { weekStartsOn: 1 });
         return eachDayOfInterval({ start: monthStart, end: addDays(monthStart, 27) });
     }
@@ -89,21 +79,18 @@ export const TaskCalendar = () => {
 
   const dateRange = getDateRange();
   
-  // Filter tasks for the current date range
   const getTasksForDate = (date: Date) => {
     return careTasks.filter(task => 
       task.date && isSameDay(task.date, date)
     );
   };
   
-  // Get weather for a specific date
   const getWeatherForDate = (date: Date) => {
     return weatherForecasts.find(forecast => 
       isSameDay(forecast.date, date)
     );
   };
   
-  // Render the weather icon based on condition
   const renderWeatherIcon = (condition: string) => {
     switch(condition.toLowerCase()) {
       case "sunny":
@@ -116,7 +103,6 @@ export const TaskCalendar = () => {
     }
   };
   
-  // Function to determine if a date is within the next 7 days (actual forecast)
   const isWithinForecastRange = (date: Date) => {
     const today = new Date();
     const forecastLimit = addDays(today, 7);
