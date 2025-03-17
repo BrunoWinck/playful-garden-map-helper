@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDrag } from "react-dnd";
 import { PlantItem } from "@/lib/types";
 import { ItemTypes } from "./GardenCell";
@@ -8,7 +8,7 @@ import { AddVarietyDialog } from "./AddVarietyDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
-import { deletePlant } from "@/services/plantService";
+import { deletePlant, hasVarieties } from "@/services/plantService";
 import { toast } from "sonner";
 
 interface DraggablePlantProps {
@@ -27,6 +27,18 @@ export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) =
 
   const [isVarietyDialogOpen, setIsVarietyDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hasChildVarieties, setHasChildVarieties] = useState(false);
+
+  // Check if the plant has varieties when component mounts
+  useEffect(() => {
+    if (!plant.parent_id) { // Only check for parent plants
+      const checkVarieties = async () => {
+        const hasChildVarieties = await hasVarieties(plant.id);
+        setHasChildVarieties(hasChildVarieties);
+      };
+      checkVarieties();
+    }
+  }, [plant.id, plant.parent_id]);
 
   const handleAddVariety = () => {
     setIsMenuOpen(false);
@@ -61,6 +73,10 @@ export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) =
     }
   };
 
+  // A parent plant can be deleted only if it has no varieties
+  // A variety (plant with parent_id) can always be deleted
+  const canDelete = plant.parent_id || (!hasChildVarieties);
+
   return (
     <>
       <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -85,7 +101,7 @@ export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) =
               >
                 <Plus className="h-3 w-3" />
               </Button>
-              {!plant.parent_id && (
+              {canDelete && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -118,7 +134,7 @@ export const DraggablePlant = ({ plant, onPlantUpdated }: DraggablePlantProps) =
               <Plus className="mr-2 h-4 w-4" />
               Add Variety
             </Button>
-            {!plant.parent_id && (
+            {canDelete && (
               <Button 
                 variant="outline" 
                 className="justify-start text-destructive hover:text-destructive"

@@ -125,6 +125,25 @@ export const createPlantVariety = async (parentPlant: PlantItem, varietyName: st
   }
 };
 
+// Check if a plant has varieties (child plants)
+export const hasVarieties = async (plantId: string): Promise<boolean> => {
+  try {
+    const { count, error } = await supabase
+      .from('plants')
+      .select('*', { count: 'exact', head: true })
+      .eq('parent_id', plantId);
+      
+    if (error) {
+      throw error;
+    }
+    
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error("Error checking if plant has varieties:", error);
+    return false; // Default to false if we can't determine
+  }
+};
+
 // Check if a plant is in use in any patch
 export const isPlantInUse = async (plantId: string): Promise<boolean> => {
   try {
@@ -154,7 +173,7 @@ export const deletePlant = async (plantId: string): Promise<boolean> => {
       return false;
     }
     
-    // Check if plant has varieties
+    // For parent plants, we need to check if it has varieties
     const { data: varieties, error: varietiesError } = await supabase
       .from('plants')
       .select('id')
