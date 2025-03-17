@@ -7,7 +7,7 @@ import { GardenAdvisor } from "./GardenAdvisor";
 import { GlossaryPanel } from "./GlossaryPanel";
 import { NasaSatelliteView } from "./NasaSatelliteView";
 import { GardenNavbar } from "./GardenNavbar";
-import { WidgetHeader } from "@/components/WidgetHeader";
+import { WidgetHeader } from "./WidgetHeader";
 import { TaskList } from "./TaskList";
 import { TaskCalendar } from "./TaskCalendar";
 import { ScrollArea } from "./ui/scroll-area";
