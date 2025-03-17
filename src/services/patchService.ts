@@ -188,10 +188,14 @@ export const addPatchTask = async (patchId: string, task: string) => {
       return;
     }
     
+    // Generate a client-side UUID for the task
+    const taskId = crypto.randomUUID();
+    
     // Instead of using auth.users table, use the profiles table
     const { error } = await supabase
       .from('patch_tasks')
       .insert({
+        id: taskId, // Explicitly set the ID using crypto.randomUUID()
         patch_id: patchId,
         task: task,
         user_id: currentUser.id, // Use the profile ID which exists in the profiles table

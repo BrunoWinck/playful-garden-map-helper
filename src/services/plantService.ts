@@ -1,3 +1,4 @@
+
 import { PlantItem } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,7 +57,11 @@ export const fetchPlants = async (): Promise<PlantItem[]> => {
 // Create a new plant
 export const createPlant = async (plantData: { name: string, icon: string, category: string, lifecycle?: string }): Promise<PlantItem | null> => {
   try {
+    // Generate a client-side UUID for the plant
+    const plantId = crypto.randomUUID();
+    
     const newPlant = {
+      id: plantId, // Explicitly set the ID using crypto.randomUUID()
       name: plantData.name,
       icon: plantData.icon,
       category: plantData.category,
@@ -91,7 +96,11 @@ export const createPlant = async (plantData: { name: string, icon: string, categ
 // Create a new plant variety
 export const createPlantVariety = async (parentPlant: PlantItem, varietyName: string): Promise<PlantItem | null> => {
   try {
+    // Generate a client-side UUID for the plant variety
+    const varietyId = crypto.randomUUID();
+    
     const newPlant = {
+      id: varietyId, // Explicitly set the ID using crypto.randomUUID()
       name: varietyName,
       icon: parentPlant.icon,
       category: parentPlant.category,

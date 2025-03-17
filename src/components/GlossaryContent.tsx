@@ -44,19 +44,19 @@ export const GlossaryContent: React.FC = () => {
         } else {
           const defaultTerms = [
             {
-              id: "1",
+              id: crypto.randomUUID(),
               term: "Annual",
               definition: "A plant that completes its life cycle in one growing season and must be replanted each year.",
               created_at: new Date().toISOString()
             },
             {
-              id: "2",
+              id: crypto.randomUUID(),
               term: "Perennial",
               definition: "A plant that lives for more than two years, often flowering and fruiting repeatedly.",
               created_at: new Date().toISOString()
             },
             {
-              id: "3",
+              id: crypto.randomUUID(),
               term: "Deadheading",
               definition: "Removing faded or dead flowers from plants to encourage further flowering.",
               created_at: new Date().toISOString()
@@ -67,6 +67,7 @@ export const GlossaryContent: React.FC = () => {
           
           for (const term of defaultTerms) {
             await supabase.from('glossary_terms').insert({
+              id: term.id,
               term: term.term,
               definition: term.definition,
               user_id: userId
@@ -118,16 +119,20 @@ export const GlossaryContent: React.FC = () => {
   }, [newlyAddedTerm, terms]);
 
   async function addTerm(newTerm, newDefinition = "") {
-    const termObject: Omit<GlossaryTerm, "id" | "created_at"> = {
+    const termObject = {
+      id: crypto.randomUUID(),
       term: newTerm.trim(),
-      definition: newDefinition.trim()
+      definition: newDefinition.trim(),
+      created_at: new Date().toISOString()
     };
 
     try {
       const { data, error } = await supabase
         .from('glossary_terms')
         .insert({
-          ...termObject,
+          id: termObject.id,
+          term: termObject.term,
+          definition: termObject.definition,
           user_id: userId
         })
         .select('*')
@@ -142,14 +147,8 @@ export const GlossaryContent: React.FC = () => {
     } catch (error) {
       console.error("Error adding term:", error);
       
-      const newTermObject: GlossaryTerm = {
-        id: Date.now().toString(),
-        ...termObject,
-        created_at: new Date().toISOString()
-      };
-      
-      setTerms(prev => [...prev, newTermObject].sort((a, b) => a.term.localeCompare(b.term)));
-      setNewlyAddedTerm(newTermObject.term);
+      setTerms(prev => [...prev, termObject].sort((a, b) => a.term.localeCompare(b.term)));
+      setNewlyAddedTerm(termObject.term);
     } finally {
       setNewTerm("");
       setNewDefinition("");
@@ -464,3 +463,4 @@ export const GlossaryContent: React.FC = () => {
     </div>
   );
 };
+

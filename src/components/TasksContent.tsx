@@ -67,7 +67,7 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
         console.error("Error fetching tasks:", error);
         setTasks([
           {
-            id: "1",
+            id: crypto.randomUUID(),
             task: "Water the tomatoes",
             completed: false,
             created_at: new Date().toISOString(),
@@ -75,7 +75,7 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
             patch_name: "Vegetable Garden"
           },
           {
-            id: "2",
+            id: crypto.randomUUID(),
             task: "Apply compost to flower beds",
             completed: true,
             created_at: new Date(Date.now() - 86400000).toISOString(),
@@ -107,11 +107,13 @@ export const TasksContent: React.FC<TasksContentProps> = ({ careTasks = [] }) =>
 
   const addTask = (task: string, timing: string) => {
     try {
+      const taskId = crypto.randomUUID();
       const patchId = crypto.randomUUID();
       
       supabase
         .from('patch_tasks')
         .insert({
+          id: taskId,
           task: task,
           user_id: userId,
           patch_id: patchId
