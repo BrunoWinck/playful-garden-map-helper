@@ -31,28 +31,27 @@ export const GardenAdvisor = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const loadingText = "Loading...";
   // Render loading state if needed
-  if (isLoading) {
+  if (isLoadingHistory || isLoadingHiddenMessages) {
     return 
     <Widget
       title="Garden Advisor"
       icon={Lightbulb}
-      isLoading={isLoadingHistory || isLoadingHiddenMessages}
-      loadingText="Loading conversation history..."
+      col="md:col-span-2" 
+      height="h-[500px]"
       contentClassName="space-y-2"
       }
     >
       <div className="animate-spin h-8 w-8 border-4 border-green-500 rounded-full border-t-transparent"></div>
-      <span className="ml-3 text-green-700">{loadingText}</span>
+      <span className="ml-3 text-green-700">Loading conversation history...</span>
     </Widget>;
   }
 
   return <Widget
       title="Garden Advisor"
       icon={Lightbulb}
-      isLoading={isLoadingHistory || isLoadingHiddenMessages}
-      loadingText="Loading conversation history..."
+      col="md:col-span-2" 
+      height="h-[500px]"
       contentClassName="space-y-2"
       footer={
         <ChatInput
