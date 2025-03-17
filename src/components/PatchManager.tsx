@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Patch, PatchFormValues } from "@/lib/types";
+import { Patch, PatchFormValues, PatchType, PlacementType } from "@/lib/types";
 import { 
   fetchPatches, 
   fetchPatchTasks,
@@ -139,6 +139,7 @@ export const PatchManager = () => {
               name: data.name, 
               length: parseFloat(data.length as any) || 2,
               width: parseFloat(data.width as any) || 2,
+              height: parseFloat(data.width as any) || 2,
               type: data.type,
               heated: data.heated,
               artificialLight: data.artificialLight,
@@ -170,7 +171,20 @@ export const PatchManager = () => {
     <div className="space-y-4">
       <PatchForm 
         onSubmit={editingPatchId ? handleSaveEdit : handleAddPatch}
-        initialValues={editingPatchId ? patches.find(p => p.id === editingPatchId) : undefined} 
+        initialValues={editingPatchId 
+          ? {
+              name: patches.find(p => p.id === editingPatchId)?.name || "",
+              length: patches.find(p => p.id === editingPatchId)?.length || 2,
+              width: patches.find(p => p.id === editingPatchId)?.width || 2,
+              type: patches.find(p => p.id === editingPatchId)?.type || "outdoor-soil",
+              heated: patches.find(p => p.id === editingPatchId)?.heated || false,
+              artificialLight: patches.find(p => p.id === editingPatchId)?.artificialLight || false,
+              naturalLightPercentage: patches.find(p => p.id === editingPatchId)?.naturalLightPercentage || 100,
+              placementType: patches.find(p => p.id === editingPatchId)?.placementType || "free",
+              slotsLength: patches.find(p => p.id === editingPatchId)?.slotsLength || 4,
+              slotsWidth: patches.find(p => p.id === editingPatchId)?.slotsWidth || 6
+            } 
+          : undefined} 
         isEditing={!!editingPatchId}
       />
       

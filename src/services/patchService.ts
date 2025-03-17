@@ -1,10 +1,10 @@
 
 import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
-import { Patch, PatchFormValues } from "@/lib/types";
+import { Patch, PatchFormValues, PatchType, PlacementType } from "@/lib/types";
 import { toast } from "sonner";
 
 // Fetch all patches for the current user
-export const fetchPatches = async () => {
+export const fetchPatches = async (): Promise<Patch[]> => {
   try {
     const { data: patchesData, error: patchesError } = await supabase
       .from('patches')
@@ -12,16 +12,17 @@ export const fetchPatches = async () => {
     
     if (patchesError) throw patchesError;
     
-    const formattedPatches = patchesData.map(patch => ({
+    const formattedPatches: Patch[] = patchesData.map(patch => ({
       id: patch.id,
       name: patch.name,
       length: Number(patch.width), // Map from width to length (for backward compatibility)
       width: Number(patch.height), // Map from height to width (for backward compatibility)
-      type: patch.type,
-      heated: patch.heated,
-      artificialLight: patch.artificial_light,
-      naturalLightPercentage: patch.natural_light_percentage,
-      placementType: (patch.placement_type as "free" | "slots") || "free",
+      height: Number(patch.height), // Set height explicitly
+      type: (patch.type as PatchType) || "outdoor-soil",
+      heated: patch.heated || false,
+      artificialLight: patch.artificial_light || false,
+      naturalLightPercentage: patch.natural_light_percentage || 100,
+      placementType: (patch.placement_type as PlacementType) || "free",
       slotsLength: patch.slots_length || 4,
       slotsWidth: patch.slots_width || 6
     }));
@@ -59,7 +60,7 @@ export const fetchPatchTasks = async (patchIds: string[]) => {
 };
 
 // Create a new patch
-export const createPatch = async (data: PatchFormValues) => {
+export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
   try {
     const { data: newPatch, error } = await supabase
       .from('patches')
@@ -86,11 +87,12 @@ export const createPatch = async (data: PatchFormValues) => {
       name: newPatch.name,
       length: Number(newPatch.width), // Map from width to length (for backward compatibility)
       width: Number(newPatch.height), // Map from height to width (for backward compatibility)
-      type: newPatch.type,
-      heated: newPatch.heated,
-      artificialLight: newPatch.artificial_light,
-      naturalLightPercentage: newPatch.natural_light_percentage,
-      placementType: (newPatch.placement_type as "free" | "slots") || "free",
+      height: Number(newPatch.height), // Set height explicitly
+      type: newPatch.type as PatchType,
+      heated: newPatch.heated || false,
+      artificialLight: newPatch.artificial_light || false,
+      naturalLightPercentage: newPatch.natural_light_percentage || 100,
+      placementType: (newPatch.placement_type as PlacementType) || "free",
       slotsLength: newPatch.slots_length || 4,
       slotsWidth: newPatch.slots_width || 6
     };

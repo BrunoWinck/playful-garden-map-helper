@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PlantItem, Patch } from "@/lib/types";
+import { PlantItem, Patch, PatchType, PlacementType } from "@/lib/types";
 import { initialPlants } from "@/lib/data";
 import { GardenPatches } from "./garden/GardenPatches";
 import { PlantCatalog } from "./garden/PlantCatalog";
@@ -39,19 +38,19 @@ export const GardenMap = () => {
         if (error) throw error;
         
         // Format patches for our component
-        const formattedPatches = data.map(patch => ({
+        const formattedPatches: Patch[] = data.map(patch => ({
           id: patch.id,
           name: patch.name,
           width: Number(patch.width),
           height: Number(patch.height),
-          type: patch.type,
-          // Map database column names to our front-end property names
-          placementType: patch.placement_type as "free" | "slots" || "free", 
+          length: Number(patch.width), // Map width to length for backward compatibility
+          type: patch.type as PatchType,
+          placementType: (patch.placement_type as PlacementType) || "free",
           slotsLength: patch.slots_length || 4,
           slotsWidth: patch.slots_width || 6,
-          heated: patch.heated,
-          artificialLight: patch.artificial_light,
-          naturalLightPercentage: patch.natural_light_percentage
+          heated: patch.heated || false,
+          artificialLight: patch.artificial_light || false,
+          naturalLightPercentage: patch.natural_light_percentage || 100
         }));
         
         setPatches(formattedPatches);
@@ -71,15 +70,67 @@ export const GardenMap = () => {
             console.error("Error parsing stored patches:", e);
             // Set default patches if all else fails
             setPatches([
-              { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2, placementType: "free" },
-              { id: "patch-2", name: "Herb Garden", width: 2, height: 2, placementType: "free" }
+              { 
+                id: "patch-1", 
+                name: "Vegetable Patch", 
+                width: 3, 
+                height: 2, 
+                length: 3,
+                type: "outdoor-soil", 
+                placementType: "free",
+                slotsLength: 4,
+                slotsWidth: 6,
+                heated: false,
+                artificialLight: false,
+                naturalLightPercentage: 100
+              },
+              { 
+                id: "patch-2", 
+                name: "Herb Garden", 
+                width: 2, 
+                height: 2, 
+                length: 2,
+                type: "outdoor-soil", 
+                placementType: "free",
+                slotsLength: 4,
+                slotsWidth: 6,
+                heated: false,
+                artificialLight: false,
+                naturalLightPercentage: 100
+              }
             ]);
           }
         } else {
           // Set default patches if nothing available
           setPatches([
-            { id: "patch-1", name: "Vegetable Patch", width: 3, height: 2, placementType: "free" },
-            { id: "patch-2", name: "Herb Garden", width: 2, height: 2, placementType: "free" }
+            { 
+              id: "patch-1", 
+              name: "Vegetable Patch", 
+              width: 3, 
+              height: 2, 
+              length: 3,
+              type: "outdoor-soil", 
+              placementType: "free",
+              slotsLength: 4,
+              slotsWidth: 6,
+              heated: false,
+              artificialLight: false,
+              naturalLightPercentage: 100
+            },
+            { 
+              id: "patch-2", 
+              name: "Herb Garden", 
+              width: 2, 
+              height: 2, 
+              length: 2,
+              type: "outdoor-soil", 
+              placementType: "free",
+              slotsLength: 4,
+              slotsWidth: 6,
+              heated: false,
+              artificialLight: false,
+              naturalLightPercentage: 100
+            }
           ]);
         }
       } finally {

@@ -16,23 +16,23 @@ export type PlantItem = {
   position?: { x: number; y: number; patchId?: string };
 };
 
+export type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
+export type PlacementType = "free" | "slots";
+
 export type Patch = {
   id: string;
   name: string;
   width: number;
   height: number;
   length: number; // For backward compatibility
-  type: string;
-  placementType: "free" | "slots";
+  type: PatchType;
+  placementType: PlacementType;
   slotsLength: number;
   slotsWidth: number;
   heated: boolean;
   artificialLight: boolean;
   naturalLightPercentage: number;
 };
-
-export type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
-export type PlacementType = "free" | "slots";
 
 export type PatchFormValues = {
   name: string;
