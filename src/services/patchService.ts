@@ -45,6 +45,8 @@ export const fetchPatches = async (): Promise<Patch[]> => {
 // Fetch all tasks for patches
 export const fetchPatchTasks = async (patchIds: string[]) => {
   try {
+    if (!patchIds.length) return {};
+    
     const { data: tasksData, error: tasksError } = await supabase
       .from('patch_tasks')
       .select('*')
@@ -80,11 +82,29 @@ export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
     // Generate a client-side UUID for the patch to ensure uniqueness
     const patchId = crypto.randomUUID();
     
+    // First check if a patch with this ID already exists to prevent duplicates
+    const { data: existingPatch, error: checkError } = await supabase
+      .from('patches')
+      .select('id')
+      .eq('id', patchId)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error("Error checking for existing patch:", checkError);
+      throw checkError;
+    }
+    
+    if (existingPatch) {
+      console.error("Generated UUID already exists in database, regenerating...");
+      // If by extremely rare chance we generated a duplicate ID, try again
+      return createPatch(data);
+    }
+    
     // Now proceed with creating the patch
     const { data: newPatch, error } = await supabase
       .from('patches')
       .insert({
-        id: patchId, // Explicitly set the ID using crypto.randomUUID()
+        id: patchId, 
         name: data.name,
         width: parseFloat(data.length as any) || 2, // Store length as width (for backward compatibility)
         height: parseFloat(data.width as any) || 2, // Store width as height (for backward compatibility)
@@ -191,14 +211,32 @@ export const addPatchTask = async (patchId: string, task: string) => {
     // Generate a client-side UUID for the task
     const taskId = crypto.randomUUID();
     
-    // Instead of using auth.users table, use the profiles table
+    // First check if a task with this ID already exists
+    const { data: existingTask, error: checkError } = await supabase
+      .from('patch_tasks')
+      .select('id')
+      .eq('id', taskId)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error("Error checking for existing task:", checkError);
+      throw checkError;
+    }
+    
+    if (existingTask) {
+      console.error("Generated task UUID already exists, regenerating...");
+      // If by extremely rare chance we generated a duplicate ID, try again
+      return addPatchTask(patchId, task);
+    }
+    
+    // Insert the new task
     const { error } = await supabase
       .from('patch_tasks')
       .insert({
-        id: taskId, // Explicitly set the ID using crypto.randomUUID()
+        id: taskId,
         patch_id: patchId,
         task: task,
-        user_id: currentUser.id, // Use the profile ID which exists in the profiles table
+        user_id: currentUser.id,
         completed: false
       });
     

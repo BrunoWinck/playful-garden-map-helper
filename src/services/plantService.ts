@@ -60,8 +60,26 @@ export const createPlant = async (plantData: { name: string, icon: string, categ
     // Generate a client-side UUID for the plant
     const plantId = crypto.randomUUID();
     
+    // Check if a plant with this ID already exists
+    const { data: existingPlant, error: checkError } = await supabase
+      .from('plants')
+      .select('id')
+      .eq('id', plantId)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error("Error checking for existing plant:", checkError);
+      throw checkError;
+    }
+    
+    if (existingPlant) {
+      console.error("Generated plant UUID already exists, regenerating...");
+      // If by extremely rare chance we generated a duplicate ID, try again
+      return createPlant(plantData);
+    }
+    
     const newPlant = {
-      id: plantId, // Explicitly set the ID using crypto.randomUUID()
+      id: plantId,
       name: plantData.name,
       icon: plantData.icon,
       category: plantData.category,
@@ -99,8 +117,26 @@ export const createPlantVariety = async (parentPlant: PlantItem, varietyName: st
     // Generate a client-side UUID for the plant variety
     const varietyId = crypto.randomUUID();
     
+    // Check if a variety with this ID already exists
+    const { data: existingVariety, error: checkError } = await supabase
+      .from('plants')
+      .select('id')
+      .eq('id', varietyId)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error("Error checking for existing variety:", checkError);
+      throw checkError;
+    }
+    
+    if (existingVariety) {
+      console.error("Generated variety UUID already exists, regenerating...");
+      // If by extremely rare chance we generated a duplicate ID, try again
+      return createPlantVariety(parentPlant, varietyName);
+    }
+    
     const newPlant = {
-      id: varietyId, // Explicitly set the ID using crypto.randomUUID()
+      id: varietyId,
       name: varietyName,
       icon: parentPlant.icon,
       category: parentPlant.category,

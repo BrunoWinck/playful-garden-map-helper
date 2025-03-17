@@ -22,6 +22,7 @@ export const PatchManager = () => {
   const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({});
   const [editingPatchId, setEditingPatchId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [taskInput, setTaskInput] = useState("");
   const [selectedPatchId, setSelectedPatchId] = useState<string | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -30,13 +31,35 @@ export const PatchManager = () => {
     try {
       setIsLoading(true);
       const patchesData = await fetchPatches();
-      setPatches(patchesData);
       
-      if (patchesData.length > 0) {
-        const tasksByPatch = await fetchPatchTasks(patchesData.map(p => p.id));
+      // Check for duplicate IDs
+      const uniqueIds = new Set<string>();
+      const duplicateIds: string[] = [];
+      
+      patchesData.forEach(patch => {
+        if (uniqueIds.has(patch.id)) {
+          duplicateIds.push(patch.id);
+        } else {
+          uniqueIds.add(patch.id);
+        }
+      });
+      
+      if (duplicateIds.length > 0) {
+        console.error("Detected duplicate patch IDs in database:", duplicateIds);
+      }
+      
+      // Use only unique patches
+      const uniquePatches = patchesData.filter((patch, index) => {
+        return patchesData.findIndex(p => p.id === patch.id) === index;
+      });
+      
+      setPatches(uniquePatches);
+      
+      if (uniquePatches.length > 0) {
+        const tasksByPatch = await fetchPatchTasks(uniquePatches.map(p => p.id));
         setPatchTasks(tasksByPatch);
-        if (!selectedPatchId && patchesData.length > 0) {
-          setSelectedPatchId(patchesData[0].id);
+        if (!selectedPatchId && uniquePatches.length > 0) {
+          setSelectedPatchId(uniquePatches[0].id);
         }
       }
     } catch (error) {
@@ -58,13 +81,28 @@ export const PatchManager = () => {
       console.log("PatchManager: Initial load completed, emitting PATCHES_UPDATED event");
       eventBus.emit(PATCH_EVENTS.PATCHES_UPDATED, patches);
     }
-  }, [initialLoadComplete]);
+  }, [initialLoadComplete, patches, isLoading]);
   
   const handleAddPatch = async (data: PatchFormValues) => {
+    if (isProcessing) return;
+    
     try {
-      // Create a new patch using the patchService which will now use crypto.randomUUID()
+      setIsProcessing(true);
+      
+      // Create a new patch using the patchService which now uses crypto.randomUUID()
       const newPatch = await createPatch(data);
-      setPatches(prev => [...prev, newPatch]);
+      
+      // First update the state
+      setPatches(prev => {
+        // Make sure we don't add a duplicate
+        if (prev.some(p => p.id === newPatch.id)) {
+          console.warn("Prevented adding duplicate patch with ID:", newPatch.id);
+          return prev;
+        }
+        return [...prev, newPatch];
+      });
+      
+      // Only show toast after successful database operation
       toast.success(`Added new patch: ${newPatch.name}`);
       
       // Emit event for new patch
@@ -74,12 +112,18 @@ export const PatchManager = () => {
     } catch (error) {
       console.error("Error adding patch:", error);
       toast.error("Failed to add patch");
+    } finally {
+      setIsProcessing(false);
     }
   };
   
   const handleDeletePatch = async (patchId: string) => {
+    if (isProcessing) return;
+    
     try {
+      setIsProcessing(true);
       await deletePatch(patchId);
+      
       const updatedPatches = patches.filter(patch => patch.id !== patchId);
       setPatches(updatedPatches);
       
@@ -99,13 +143,16 @@ export const PatchManager = () => {
     } catch (error) {
       console.error("Error deleting patch:", error);
       toast.error("Failed to delete patch");
+    } finally {
+      setIsProcessing(false);
     }
   };
   
   const handleAddTask = async () => {
-    if (!selectedPatchId || !taskInput.trim()) return;
+    if (isProcessing || !selectedPatchId || !taskInput.trim()) return;
     
     try {
+      setIsProcessing(true);
       await addPatchTask(selectedPatchId, taskInput);
       
       setPatchTasks(prev => {
@@ -121,13 +168,16 @@ export const PatchManager = () => {
     } catch (error) {
       console.error("Error adding task:", error);
       toast.error("Failed to add task");
+    } finally {
+      setIsProcessing(false);
     }
   };
   
   const handleDeleteTask = async (taskIndex: number) => {
-    if (!selectedPatchId) return;
+    if (isProcessing || !selectedPatchId) return;
     
     try {
+      setIsProcessing(true);
       const tasks = patchTasks[selectedPatchId] || [];
       await deletePatchTask(selectedPatchId, taskIndex, tasks);
       
@@ -144,6 +194,8 @@ export const PatchManager = () => {
     } catch (error) {
       console.error("Error deleting task:", error);
       toast.error("Failed to delete task");
+    } finally {
+      setIsProcessing(false);
     }
   };
   
@@ -152,9 +204,10 @@ export const PatchManager = () => {
   };
   
   const handleSaveEdit = async (data: PatchFormValues) => {
-    if (!editingPatchId) return;
+    if (isProcessing || !editingPatchId) return;
     
     try {
+      setIsProcessing(true);
       await updatePatch(editingPatchId, data);
       
       const updatedPatches = patches.map(patch => 
@@ -190,6 +243,8 @@ export const PatchManager = () => {
     } catch (error) {
       console.error("Error updating patch:", error);
       toast.error("Failed to update patch");
+    } finally {
+      setIsProcessing(false);
     }
   };
   
@@ -226,12 +281,13 @@ export const PatchManager = () => {
         <div className="space-y-3 mt-4">
           <h3 className="font-medium text-green-800">Select a Patch:</h3>
           <div className="flex flex-wrap gap-2">
-            {patches.map(patch => (
-              <div key={patch.id} className="relative">
+            {patches.map((patch, index) => (
+              <div key={`${patch.id}-${index}`} className="relative">
                 <Button
                   variant={selectedPatchId === patch.id ? "default" : "outline"}
                   className="mr-6"
                   onClick={() => setSelectedPatchId(patch.id)}
+                  disabled={isProcessing}
                 >
                   {patch.name}
                 </Button>
@@ -240,6 +296,7 @@ export const PatchManager = () => {
                   size="icon" 
                   className="absolute right-0 top-0 h-6 w-6 -mr-2 -mt-2 bg-white rounded-full text-red-500 border border-red-300 shadow-sm"
                   onClick={() => handleDeletePatch(patch.id)}
+                  disabled={isProcessing}
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -254,6 +311,7 @@ export const PatchManager = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => handleEditPatch(patches.find(p => p.id === selectedPatchId)!)}
+                  disabled={isProcessing}
                 >
                   <Edit className="h-4 w-4 mr-1" /> Edit Patch Details
                 </Button>
@@ -267,8 +325,9 @@ export const PatchManager = () => {
                     className="text-sm h-8"
                     value={taskInput}
                     onChange={(e) => setTaskInput(e.target.value)}
+                    disabled={isProcessing}
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === 'Enter' && !isProcessing) {
                         handleAddTask();
                       }
                     }}
@@ -278,6 +337,7 @@ export const PatchManager = () => {
                     size="icon" 
                     className="ml-1 h-8 w-8 text-green-700"
                     onClick={handleAddTask}
+                    disabled={isProcessing}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -285,13 +345,14 @@ export const PatchManager = () => {
                 
                 <ul className="space-y-1 text-sm">
                   {(patchTasks[selectedPatchId] || []).map((task, index) => (
-                    <li key={index} className="flex items-center justify-between py-1 px-2 rounded bg-white">
+                    <li key={`task-${selectedPatchId}-${index}`} className="flex items-center justify-between py-1 px-2 rounded bg-white">
                       <span>{task}</span>
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="h-6 w-6 text-red-500"
                         onClick={() => handleDeleteTask(index)}
+                        disabled={isProcessing}
                       >
                         <X className="h-3 w-3" />
                       </Button>
