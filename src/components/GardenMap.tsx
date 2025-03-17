@@ -3,11 +3,12 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PlantItem, Patch, PatchType, PlacementType } from "@/lib/types";
+import { PlantItem, Patch } from "@/lib/types";
 import { GardenPatches } from "./garden/GardenPatches";
 import { PlantCatalog } from "./garden/PlantCatalog";
 import { Skeleton } from "./ui/skeleton";
 import { fetchPatches } from "@/services/patchService";
+import { eventBus, PATCH_EVENTS } from "@/lib/eventBus";
 
 // Colors for different patches
 const patchColors = [
@@ -34,108 +35,47 @@ export const GardenMap = () => {
       try {
         const patchesData = await fetchPatches();
         setPatches(patchesData);
-        
-        // Also store in localStorage for other components that might rely on it
-        localStorage.setItem('garden-patches', JSON.stringify(patchesData));
       } catch (error) {
         console.error("Error fetching patches:", error);
         toast.error("Failed to load garden patches");
-        
-        // Fallback to localStorage if available
-        const storedPatches = localStorage.getItem('garden-patches');
-        if (storedPatches) {
-          try {
-            setPatches(JSON.parse(storedPatches));
-          } catch (e) {
-            console.error("Error parsing stored patches:", e);
-            // Set default patches if all else fails
-            setPatches([
-              { 
-                id: "patch-1", 
-                name: "Vegetable Patch", 
-                width: 3, 
-                height: 2, 
-                length: 3,
-                type: "outdoor-soil", 
-                placementType: "free",
-                slotsLength: 4,
-                slotsWidth: 6,
-                heated: false,
-                artificialLight: false,
-                naturalLightPercentage: 100
-              },
-              { 
-                id: "patch-2", 
-                name: "Herb Garden", 
-                width: 2, 
-                height: 2, 
-                length: 2,
-                type: "outdoor-soil", 
-                placementType: "free",
-                slotsLength: 4,
-                slotsWidth: 6,
-                heated: false,
-                artificialLight: false,
-                naturalLightPercentage: 100
-              }
-            ]);
-          }
-        } else {
-          // Set default patches if nothing available
-          setPatches([
-            { 
-              id: "patch-1", 
-              name: "Vegetable Patch", 
-              width: 3, 
-              height: 2, 
-              length: 3,
-              type: "outdoor-soil", 
-              placementType: "free",
-              slotsLength: 4,
-              slotsWidth: 6,
-              heated: false,
-              artificialLight: false,
-              naturalLightPercentage: 100
-            },
-            { 
-              id: "patch-2", 
-              name: "Herb Garden", 
-              width: 2, 
-              height: 2, 
-              length: 2,
-              type: "outdoor-soil", 
-              placementType: "free",
-              slotsLength: 4,
-              slotsWidth: 6,
-              heated: false,
-              artificialLight: false,
-              naturalLightPercentage: 100
-            }
-          ]);
-        }
       } finally {
         setIsLoading(false);
       }
     };
     
     loadPatches();
-
-    // Set up a listener for local storage updates from PatchManager
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'garden-patches' && e.newValue) {
-        try {
-          const updatedPatches = JSON.parse(e.newValue);
-          setPatches(updatedPatches);
-        } catch (error) {
-          console.error("Error parsing patches from localStorage:", error);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
     
+    // Set up event listeners for patch changes
+    const handlePatchesUpdated = (updatedPatches: Patch[]) => {
+      setPatches(updatedPatches);
+    };
+    
+    const handlePatchAdded = (newPatch: Patch) => {
+      setPatches(prev => [...prev, newPatch]);
+    };
+    
+    const handlePatchDeleted = (patchId: string) => {
+      setPatches(prev => prev.filter(patch => patch.id !== patchId));
+    };
+    
+    const handlePatchEdited = (editedPatch: Patch) => {
+      setPatches(prev => prev.map(patch => 
+        patch.id === editedPatch.id ? editedPatch : patch
+      ));
+    };
+    
+    // Subscribe to events
+    eventBus.on(PATCH_EVENTS.PATCHES_UPDATED, handlePatchesUpdated);
+    eventBus.on(PATCH_EVENTS.PATCH_ADDED, handlePatchAdded);
+    eventBus.on(PATCH_EVENTS.PATCH_DELETED, handlePatchDeleted);
+    eventBus.on(PATCH_EVENTS.PATCH_EDITED, handlePatchEdited);
+    
+    // Cleanup event listeners
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      eventBus.off(PATCH_EVENTS.PATCHES_UPDATED, handlePatchesUpdated);
+      eventBus.off(PATCH_EVENTS.PATCH_ADDED, handlePatchAdded);
+      eventBus.off(PATCH_EVENTS.PATCH_DELETED, handlePatchDeleted);
+      eventBus.off(PATCH_EVENTS.PATCH_EDITED, handlePatchEdited);
     };
   }, []);
   

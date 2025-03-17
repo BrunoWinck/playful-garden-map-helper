@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { GardenMap } from "./GardenMap";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { PatchManager } from "./PatchManager";
@@ -15,13 +15,6 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Map, Leaf, ListTodo, Calendar } from "lucide-react";
 
 export const GardenDashboard = () => {
-  const [patchesUpdated, setPatchesUpdated] = useState(false);
-
-  // Function to trigger refreshes between components
-  const refreshPatches = () => {
-    setPatchesUpdated(prev => !prev);
-  };
-
   return (
     <main className="flex-1 overflow-y-auto bg-green-50">
       <div className="max-w-7xl mx-auto p-4">
@@ -78,7 +71,7 @@ export const GardenDashboard = () => {
             <div className="p-4 flex-1 overflow-hidden">
               <p className="text-green-700 mb-4">Drag plants onto your garden patches!</p>
               <div className="h-[calc(100%-2rem)] overflow-auto">
-                <GardenMap key={`garden-map-${patchesUpdated}`} />
+                <GardenMap />
               </div>
             </div>
           </div>
@@ -86,7 +79,7 @@ export const GardenDashboard = () => {
             <div className="bg-white rounded-lg shadow-md h-[500px] flex flex-col">
               <WidgetHeader title="Patch Manager" icon={Leaf} />
               <div className="p-4 flex-1 overflow-auto">
-                <PatchManager onPatchesChanged={refreshPatches} />
+                <PatchManager />
               </div>
             </div>
           </div>

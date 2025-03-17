@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Patch, PatchFormValues, PatchType, PlacementType } from "@/lib/types";
+import { Patch, PatchFormValues } from "@/lib/types";
 import { 
   fetchPatches, 
   fetchPatchTasks,
@@ -11,26 +12,31 @@ import {
   deletePatchTask 
 } from "@/services/patchService";
 import { PatchForm } from "./garden/PatchForm";
-import { PatchCard } from "./garden/PatchCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { X, Edit, Plus } from "lucide-react";
+import { eventBus, PATCH_EVENTS } from "@/lib/eventBus";
 
-interface PatchManagerProps {
-  onPatchesChanged?: () => void;
-}
-
-export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
+export const PatchManager = () => {
   const [patches, setPatches] = useState<Patch[]>([]);
   const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({});
   const [editingPatchId, setEditingPatchId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [taskInput, setTaskInput] = useState("");
+  const [selectedPatchId, setSelectedPatchId] = useState<string | null>(null);
   
   const loadPatchData = async () => {
     try {
+      setIsLoading(true);
       const patchesData = await fetchPatches();
       setPatches(patchesData);
       
       if (patchesData.length > 0) {
         const tasksByPatch = await fetchPatchTasks(patchesData.map(p => p.id));
         setPatchTasks(tasksByPatch);
+        if (!selectedPatchId && patchesData.length > 0) {
+          setSelectedPatchId(patchesData[0].id);
+        }
       }
     } catch (error) {
       console.error("Error fetching patches:", error);
@@ -44,20 +50,12 @@ export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
     loadPatchData();
   }, []);
   
+  // Emit event when patches change
   useEffect(() => {
     if (patches.length > 0 && !isLoading) {
-      localStorage.setItem('garden-patches', JSON.stringify(patches));
-      if (onPatchesChanged) {
-        onPatchesChanged();
-      }
+      eventBus.emit(PATCH_EVENTS.PATCHES_UPDATED, patches);
     }
-  }, [patches, isLoading, onPatchesChanged]);
-  
-  useEffect(() => {
-    if (Object.keys(patchTasks).length > 0 && !isLoading) {
-      localStorage.setItem('garden-patch-tasks', JSON.stringify(patchTasks));
-    }
-  }, [patchTasks, isLoading]);
+  }, [patches, isLoading]);
   
   const handleAddPatch = async (data: PatchFormValues) => {
     try {
@@ -65,11 +63,9 @@ export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
       setPatches([...patches, newPatch]);
       toast.success(`Added new patch: ${newPatch.name}`);
       
-      localStorage.setItem('garden-patches', JSON.stringify([...patches, newPatch]));
-      
-      if (onPatchesChanged) {
-        onPatchesChanged();
-      }
+      // Emit event for new patch
+      eventBus.emit(PATCH_EVENTS.PATCH_ADDED, newPatch);
+      setSelectedPatchId(newPatch.id);
     } catch (error) {
       console.error("Error adding patch:", error);
       toast.error("Failed to add patch");
@@ -88,9 +84,11 @@ export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
       
       toast.success("Patch removed");
       
-      localStorage.setItem('garden-patches', JSON.stringify(updatedPatches));
-      if (onPatchesChanged) {
-        onPatchesChanged();
+      // Emit event for deleted patch
+      eventBus.emit(PATCH_EVENTS.PATCH_DELETED, patchId);
+      
+      if (selectedPatchId === patchId) {
+        setSelectedPatchId(updatedPatches.length > 0 ? updatedPatches[0].id : null);
       }
     } catch (error) {
       console.error("Error deleting patch:", error);
@@ -98,20 +96,21 @@ export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
     }
   };
   
-  const handleAddTask = async (patchId: string, task: string) => {
-    if (!task.trim()) return;
+  const handleAddTask = async () => {
+    if (!selectedPatchId || !taskInput.trim()) return;
     
     try {
-      await addPatchTask(patchId, task);
+      await addPatchTask(selectedPatchId, taskInput);
       
       setPatchTasks(prev => {
-        const currentTasks = prev[patchId] || [];
+        const currentTasks = prev[selectedPatchId] || [];
         return {
           ...prev,
-          [patchId]: [...currentTasks, task]
+          [selectedPatchId]: [...currentTasks, taskInput]
         };
       });
       
+      setTaskInput("");
       toast.success("Task added");
     } catch (error) {
       console.error("Error adding task:", error);
@@ -119,17 +118,19 @@ export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
     }
   };
   
-  const handleDeleteTask = async (patchId: string, taskIndex: number) => {
+  const handleDeleteTask = async (taskIndex: number) => {
+    if (!selectedPatchId) return;
+    
     try {
-      const tasks = patchTasks[patchId] || [];
-      await deletePatchTask(patchId, taskIndex, tasks);
+      const tasks = patchTasks[selectedPatchId] || [];
+      await deletePatchTask(selectedPatchId, taskIndex, tasks);
       
       setPatchTasks(prev => {
-        const tasks = [...(prev[patchId] || [])];
+        const tasks = [...(prev[selectedPatchId] || [])];
         tasks.splice(taskIndex, 1);
         return {
           ...prev,
-          [patchId]: tasks
+          [selectedPatchId]: tasks
         };
       });
       
@@ -171,13 +172,14 @@ export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
       
       setPatches(updatedPatches);
       
+      // Emit event for edited patch
+      const editedPatch = updatedPatches.find(p => p.id === editingPatchId);
+      if (editedPatch) {
+        eventBus.emit(PATCH_EVENTS.PATCH_EDITED, editedPatch);
+      }
+      
       setEditingPatchId(null);
       toast.success("Patch updated");
-      
-      localStorage.setItem('garden-patches', JSON.stringify(updatedPatches));
-      if (onPatchesChanged) {
-        onPatchesChanged();
-      }
     } catch (error) {
       console.error("Error updating patch:", error);
       toast.error("Failed to update patch");
@@ -213,27 +215,91 @@ export const PatchManager = ({ onPatchesChanged }: PatchManagerProps) => {
         isEditing={!!editingPatchId}
       />
       
-      <div className="space-y-2 mt-4">
-        <h3 className="font-medium text-green-800">Your Garden Patches</h3>
-        
-        {patches.length === 0 ? (
-          <p className="text-gray-500 text-sm">No patches yet. Add your first patch!</p>
-        ) : (
-          <div className="space-y-3">
+      {patches.length > 0 && (
+        <div className="space-y-3 mt-4">
+          <h3 className="font-medium text-green-800">Select a Patch:</h3>
+          <div className="flex flex-wrap gap-2">
             {patches.map(patch => (
-              <PatchCard
-                key={patch.id}
-                patch={patch}
-                tasks={patchTasks[patch.id] || []}
-                onEdit={() => handleEditPatch(patch)}
-                onDelete={handleDeletePatch}
-                onAddTask={handleAddTask}
-                onDeleteTask={handleDeleteTask}
-              />
+              <div key={patch.id} className="relative">
+                <Button
+                  variant={selectedPatchId === patch.id ? "default" : "outline"}
+                  className="mr-6"
+                  onClick={() => setSelectedPatchId(patch.id)}
+                >
+                  {patch.name}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-0 top-0 h-6 w-6 -mr-2 -mt-2 bg-white rounded-full text-red-500 border border-red-300 shadow-sm"
+                  onClick={() => handleDeletePatch(patch.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
             ))}
           </div>
-        )}
-      </div>
+          
+          {selectedPatchId && (
+            <>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditPatch(patches.find(p => p.id === selectedPatchId)!)}
+                >
+                  <Edit className="h-4 w-4 mr-1" /> Edit Patch Details
+                </Button>
+              </div>
+              
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-green-800 mb-2">Tasks for this patch:</h4>
+                <div className="flex items-center mb-2">
+                  <Input 
+                    placeholder="Add a task for this patch" 
+                    className="text-sm h-8"
+                    value={taskInput}
+                    onChange={(e) => setTaskInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddTask();
+                      }
+                    }}
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="ml-1 h-8 w-8 text-green-700"
+                    onClick={handleAddTask}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <ul className="space-y-1 text-sm">
+                  {(patchTasks[selectedPatchId] || []).map((task, index) => (
+                    <li key={index} className="flex items-center justify-between py-1 px-2 rounded bg-white">
+                      <span>{task}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-red-500"
+                        onClick={() => handleDeleteTask(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      
+      {patches.length === 0 && (
+        <p className="text-gray-500 text-sm mt-4">No patches yet. Add your first patch!</p>
+      )}
     </div>
   );
 };
