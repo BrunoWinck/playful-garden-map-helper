@@ -47,6 +47,18 @@ export const PlantFilter = ({
         >
           Flowers
         </button>
+        <button 
+          onClick={() => setCategoryFilter('tree')} 
+          className={`px-3 py-1 rounded-full text-sm ${categoryFilter === 'tree' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+        >
+          Trees
+        </button>
+        <button 
+          onClick={() => setCategoryFilter('shrub')} 
+          className={`px-3 py-1 rounded-full text-sm ${categoryFilter === 'shrub' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'}`}
+        >
+          Shrubs
+        </button>
       </div>
       
       <input
