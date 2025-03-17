@@ -3,6 +3,7 @@ import React, { ReactNode } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LucideIcon } from "lucide-react";
+import { WidgetHeader } from "@/components/WidgetHeader";
 
 interface WidgetProps {
   title: string;
