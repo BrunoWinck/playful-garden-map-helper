@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useDrop } from "react-dnd";
+import { useDrop, useDrag } from "react-dnd";
 import { PlantItem, PlantGrowthStage, PatchType } from "@/lib/types";
 import { 
   ContextMenu,
@@ -9,11 +9,12 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { ArrowUp, ArrowDown, Trash, Copy, List } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash, Copy, List, Move } from "lucide-react";
 
 // Define our item types for DnD
 export const ItemTypes = {
   PLANT: 'plant',
+  PLANTED_ITEM: 'planted_item',
 };
 
 const growthStageColors = {
@@ -31,6 +32,7 @@ interface CellProps {
   patchId: string;
   patchType?: PatchType;
   onDrop: (item: PlantItem, x: number, y: number, patchId: string) => void;
+  onMovePlant?: (plantItem: PlantItem, sourceX: number, sourceY: number, sourcePatchId: string, targetX: number, targetY: number, targetPatchId: string) => void;
   plantItem?: PlantItem;
   color?: string;
   isSlot?: boolean;
@@ -44,6 +46,7 @@ export const GardenCell = ({
   x, 
   y, 
   onDrop, 
+  onMovePlant,
   plantItem, 
   patchId, 
   patchType = "outdoor-soil",
@@ -54,12 +57,41 @@ export const GardenCell = ({
   onDeletePlant,
   onCopyPlant
 }: CellProps) => {
+  // Set up drop for both new plants and existing plants
   const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.PLANT,
-    drop: (item: PlantItem) => onDrop(item, x, y, patchId),
+    accept: [ItemTypes.PLANT, ItemTypes.PLANTED_ITEM],
+    drop: (item: any, monitor) => {
+      if (item.position) {
+        // This is a planted item being moved
+        if (onMovePlant) {
+          onMovePlant(
+            item, 
+            item.position.x, 
+            item.position.y, 
+            item.position.patchId, 
+            x, 
+            y, 
+            patchId
+          );
+        }
+      } else {
+        // This is a new plant from the catalog
+        onDrop(item, x, y, patchId);
+      }
+    },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
+  }));
+
+  // Set up drag for plants already in the garden
+  const [{ isDragging }, drag, preview] = useDrag(() => ({
+    type: ItemTypes.PLANTED_ITEM,
+    item: plantItem,
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+    canDrag: !!plantItem, // Only allow dragging if there's a plant
   }));
 
   const getLifecycleBadgeColor = (lifecycle: string | undefined) => {
@@ -106,17 +138,24 @@ export const GardenCell = ({
     );
   }
 
-  // If there's a plant, render it with a context menu
+  // If there's a plant, render it with a context menu and make it draggable
   return (
     <ContextMenu>
       <ContextMenuTrigger>
         <div
-          ref={drop}
+          ref={preview}
           className={`${cellSizeClass} border ${isSlot ? 'border-gray-400' : 'border-brown-400'} ${
             isOver ? "bg-green-200" : color
-          } ${isSlot ? 'rounded' : 'rounded-md'} flex items-center justify-center transition-colors cursor-pointer`}
+          } ${isDragging ? "opacity-40" : ""} ${isSlot ? 'rounded' : 'rounded-md'} flex items-center justify-center transition-colors cursor-move`}
         >
-          <div className="flex flex-col items-center">
+          <div 
+            ref={(node) => {
+              // Connect both drag and drop refs
+              drop(node);
+              drag(node);
+            }}
+            className="flex flex-col items-center w-full h-full justify-center"
+          >
             <span className={`${isSlot || isFreePlacement ? 'text-xl' : 'text-3xl'}`}>{plantItem.icon}</span>
             {!(isSlot || isFreePlacement) && (
               <>
@@ -137,6 +176,13 @@ export const GardenCell = ({
       </ContextMenuTrigger>
       
       <ContextMenuContent>
+        <ContextMenuItem className="cursor-move">
+          <Move className="mr-2 h-4 w-4" />
+          Drag to move plant
+        </ContextMenuItem>
+        
+        <ContextMenuSeparator />
+        
         <ContextMenuItem 
           onClick={() => onGrowPlant && onGrowPlant(plantItem, "up")}
           disabled={plantItem.stage === "mature"}

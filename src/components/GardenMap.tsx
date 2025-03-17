@@ -345,6 +345,106 @@ export const GardenMap = () => {
     }
   };
 
+  // Handle moving a plant from one position to another
+  const handleMovePlant = async (
+    plantItem: PlantItem, 
+    sourceX: number, 
+    sourceY: number, 
+    sourcePatchId: string,
+    targetX: number, 
+    targetY: number, 
+    targetPatchId: string
+  ) => {
+    // Don't do anything if trying to move to the same position
+    if (sourceX === targetX && sourceY === targetY && sourcePatchId === targetPatchId) {
+      console.log("Plant dropped in the same position, no changes needed");
+      return;
+    }
+
+    const matchingPatch = patches.find(p => p.id === targetPatchId);
+    if (!matchingPatch) {
+      console.error("Could not find matching patch for id:", targetPatchId);
+      return;
+    }
+
+    // Check if there's already a plant at the target position
+    const targetPatchPlants = plantedItems[targetPatchId] || [];
+    const existingPlantAtTarget = targetPatchPlants.find(
+      plant => plant.position?.x === targetX && plant.position?.y === targetY
+    );
+
+    if (existingPlantAtTarget) {
+      toast.error("Cannot move plant here - position is already occupied");
+      return;
+    }
+
+    // Update the plant position in local state
+    setPlantedItems(prev => {
+      // Create copies of the arrays
+      const updatedPlantedItems = { ...prev };
+      
+      // Remove the plant from its source position
+      if (updatedPlantedItems[sourcePatchId]) {
+        updatedPlantedItems[sourcePatchId] = updatedPlantedItems[sourcePatchId].filter(
+          plant => !(
+            plant.position?.x === sourceX && 
+            plant.position?.y === sourceY &&
+            plant.position?.patchId === sourcePatchId
+          )
+        );
+      }
+      
+      // Create the moved plant with updated position
+      const movedPlant = {
+        ...plantItem,
+        position: {
+          x: targetX,
+          y: targetY,
+          patchId: targetPatchId
+        }
+      };
+      
+      // Add the plant to its target position
+      if (!updatedPlantedItems[targetPatchId]) {
+        updatedPlantedItems[targetPatchId] = [];
+      }
+      updatedPlantedItems[targetPatchId] = [...updatedPlantedItems[targetPatchId], movedPlant];
+      
+      return updatedPlantedItems;
+    });
+    
+    // Update the database
+    try {
+      // First, delete the plant from its original position
+      const { error: deleteError } = await supabase
+        .from('planted_items')
+        .delete()
+        .eq('patch_id', sourcePatchId)
+        .eq('position_x', sourceX)
+        .eq('position_y', sourceY);
+        
+      if (deleteError) throw deleteError;
+      
+      // Then, insert it at the new position
+      const { error: insertError } = await supabase
+        .from('planted_items')
+        .insert({
+          plant_id: plantItem.id,
+          patch_id: targetPatchId,
+          position_x: targetX,
+          position_y: targetY,
+          stage: plantItem.stage || 'young'
+        });
+        
+      if (insertError) throw insertError;
+      
+      toast.success("Plant moved successfully");
+    } catch (error) {
+      console.error("Error moving plant:", error);
+      toast.error("Failed to move plant");
+    }
+  };
+
   // Handle growing a plant to next stage
   const handleGrowPlant = async (plantItem: PlantItem, direction: "up" | "down") => {
     if (!plantItem.position || !plantItem.stage) {
@@ -641,7 +741,7 @@ export const GardenMap = () => {
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col gap-6" ref={containerRef}>
         <div className="flex justify-between items-center mb-2">
-          <p className="text-green-700">Drag plants onto your garden patches!</p>
+          <p className="text-green-700">Drag plants onto your garden patches or move plants between patches!</p>
           <Popover open={isAddPatchOpen} onOpenChange={setIsAddPatchOpen}>
             <PopoverTrigger asChild>
               <Button size="sm" className="bg-green-600 hover:bg-green-700">
@@ -663,7 +763,8 @@ export const GardenMap = () => {
         <GardenPatches 
           patches={patches} 
           plantedItems={plantedItems} 
-          handleDrop={handleDrop} 
+          handleDrop={handleDrop}
+          handleMovePlant={handleMovePlant}
           patchColors={patchColors} 
           onGrowPlant={handleGrowPlant}
           onDeletePlant={handleDeletePlant}
