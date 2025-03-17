@@ -25,7 +25,7 @@ export const ChatInput = ({
 }: ChatInputProps) => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col w-full gap-2">
-      <div className="flex items-end gap-2 relative">
+      <div className="flex items-center gap-2 relative">
         <div className="flex-1 relative">
           <Textarea
             value={input}
@@ -46,16 +46,16 @@ export const ChatInput = ({
           )}
         </div>
         
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 self-center">
           <Button 
             type="submit" 
-            className="bg-green-700 hover:bg-green-800"
+            className="bg-green-700 hover:bg-green-800 h-9 w-9 p-0"
             disabled={isLoading || !input.trim()}
           >
             {isLoading ? (
-              <Clock className="h-5 w-5 animate-spin" />
+              <Clock className="h-4 w-4 animate-spin" />
             ) : (
-              <SendHorizonal className="h-5 w-5" />
+              <SendHorizonal className="h-4 w-4" />
             )}
           </Button>
           
@@ -63,9 +63,9 @@ export const ChatInput = ({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="bg-green-200 hover:bg-green-300 border-green-300"
+                className="bg-green-200 hover:bg-green-300 border-green-300 h-9 w-9 p-0"
               >
-                <Sparkles className="h-5 w-5 text-green-700" />
+                <Sparkles className="h-4 w-4 text-green-700" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">
