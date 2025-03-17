@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,21 +7,26 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { supabase, ANONYMOUS_USER_ID } from "@/integrations/supabase/client";
 
 type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
+type PlacementType = "free" | "slots";
 
 type Patch = {
   id: string;
   name: string;
+  length: number;
   width: number;
-  height: number;
   type: PatchType;
   heated: boolean;
   artificialLight: boolean;
   naturalLightPercentage: number;
+  placementType: PlacementType;
+  slotsLength: number;
+  slotsWidth: number;
 };
 
 export const PatchManager = () => {
@@ -32,15 +38,29 @@ export const PatchManager = () => {
   const form = useForm({
     defaultValues: {
       name: "",
+      length: 2,
       width: 2,
-      height: 2,
       type: "outdoor-soil" as PatchType,
       heated: false,
       artificialLight: false,
       naturalLightPercentage: 100,
+      placementType: "free" as PlacementType,
+      slotsLength: 4,
+      slotsWidth: 6,
       task: ""
     }
   });
+  
+  const watchType = form.watch("type");
+  const watchPlacementType = form.watch("placementType");
+  
+  useEffect(() => {
+    // Reset heated and artificial light when outdoor-soil is selected
+    if (watchType === "outdoor-soil") {
+      form.setValue("heated", false);
+      form.setValue("artificialLight", false);
+    }
+  }, [watchType, form]);
   
   const fetchPatches = async () => {
     try {
@@ -53,12 +73,15 @@ export const PatchManager = () => {
       const formattedPatches = patchesData.map(patch => ({
         id: patch.id,
         name: patch.name,
-        width: Number(patch.width),
-        height: Number(patch.height),
+        length: Number(patch.width), // Map from width to length (for backward compatibility)
+        width: Number(patch.height), // Map from height to width (for backward compatibility)
         type: patch.type as PatchType,
         heated: patch.heated,
         artificialLight: patch.artificial_light,
-        naturalLightPercentage: patch.natural_light_percentage
+        naturalLightPercentage: patch.natural_light_percentage,
+        placementType: patch.placement_type as PlacementType || "free",
+        slotsLength: patch.slots_length || 4,
+        slotsWidth: patch.slots_width || 6
       }));
       
       setPatches(formattedPatches);
@@ -109,12 +132,15 @@ export const PatchManager = () => {
         .from('patches')
         .insert({
           name: data.name,
-          width: parseFloat(data.width) || 2,
-          height: parseFloat(data.height) || 2,
+          width: parseFloat(data.length) || 2, // Store length as width (for backward compatibility)
+          height: parseFloat(data.width) || 2, // Store width as height (for backward compatibility)
           type: data.type || "outdoor-soil",
           heated: data.heated || false,
           artificial_light: data.artificialLight || false,
           natural_light_percentage: data.naturalLightPercentage || 100,
+          placement_type: data.placementType || "free",
+          slots_length: data.slotsLength || 4,
+          slots_width: data.slotsWidth || 6,
           user_id: ANONYMOUS_USER_ID
         })
         .select()
@@ -125,24 +151,30 @@ export const PatchManager = () => {
       const formattedPatch: Patch = {
         id: newPatch.id,
         name: newPatch.name,
-        width: Number(newPatch.width),
-        height: Number(newPatch.height),
+        length: Number(newPatch.width), // Map from width to length (for backward compatibility)
+        width: Number(newPatch.height), // Map from height to width (for backward compatibility)
         type: newPatch.type as PatchType,
         heated: newPatch.heated,
         artificialLight: newPatch.artificial_light,
-        naturalLightPercentage: newPatch.natural_light_percentage
+        naturalLightPercentage: newPatch.natural_light_percentage,
+        placementType: newPatch.placement_type as PlacementType || "free",
+        slotsLength: newPatch.slots_length || 4,
+        slotsWidth: newPatch.slots_width || 6
       };
       
       setPatches([...patches, formattedPatch]);
       
       form.reset({ 
         name: "", 
+        length: 2, 
         width: 2, 
-        height: 2, 
         type: "outdoor-soil",
         heated: false,
         artificialLight: false,
         naturalLightPercentage: 100,
+        placementType: "free",
+        slotsLength: 4,
+        slotsWidth: 6,
         task: "" 
       });
       
@@ -175,8 +207,6 @@ export const PatchManager = () => {
     }
   };
   
-
-  // #TODO send event
   const handleAddTask = async (patchId: string, task: string) => {
     if (!task.trim()) return;
     
@@ -250,12 +280,15 @@ export const PatchManager = () => {
     setEditingPatchId(patch.id);
     form.reset({
       name: patch.name,
+      length: patch.length,
       width: patch.width,
-      height: patch.height,
       type: patch.type,
       heated: patch.heated,
       artificialLight: patch.artificialLight,
       naturalLightPercentage: patch.naturalLightPercentage,
+      placementType: patch.placementType || "free",
+      slotsLength: patch.slotsLength || 4,
+      slotsWidth: patch.slotsWidth || 6,
       task: ""
     });
   };
@@ -268,12 +301,15 @@ export const PatchManager = () => {
         .from('patches')
         .update({
           name: data.name,
-          width: parseFloat(data.width) || 2,
-          height: parseFloat(data.height) || 2,
+          width: parseFloat(data.length) || 2, // Store length as width (for backward compatibility)
+          height: parseFloat(data.width) || 2, // Store width as height (for backward compatibility)
           type: data.type,
           heated: data.heated,
           artificial_light: data.artificialLight,
-          natural_light_percentage: data.naturalLightPercentage
+          natural_light_percentage: data.naturalLightPercentage,
+          placement_type: data.placementType || "free",
+          slots_length: data.slotsLength || 4,
+          slots_width: data.slotsWidth || 6
         })
         .eq('id', editingPatchId);
       
@@ -284,12 +320,15 @@ export const PatchManager = () => {
           ? { 
               ...patch, 
               name: data.name, 
-              width: parseFloat(data.width) || 2, 
-              height: parseFloat(data.height) || 2,
+              length: parseFloat(data.length) || 2,
+              width: parseFloat(data.width) || 2,
               type: data.type,
               heated: data.heated,
               artificialLight: data.artificialLight,
-              naturalLightPercentage: data.naturalLightPercentage
+              naturalLightPercentage: data.naturalLightPercentage,
+              placementType: data.placementType || "free",
+              slotsLength: data.slotsLength || 4,
+              slotsWidth: data.slotsWidth || 6
             } 
           : patch
       ));
@@ -297,12 +336,15 @@ export const PatchManager = () => {
       setEditingPatchId(null);
       form.reset({ 
         name: "", 
+        length: 2, 
         width: 2, 
-        height: 2, 
         type: "outdoor-soil",
         heated: false,
         artificialLight: false,
         naturalLightPercentage: 100,
+        placementType: "free",
+        slotsLength: 4,
+        slotsWidth: 6,
         task: "" 
       });
       
@@ -357,10 +399,10 @@ export const PatchManager = () => {
             <div className="grid grid-cols-2 gap-2">
               <FormField
                 control={form.control}
-                name="width"
+                name="length"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-green-700">Width (m)</FormLabel>
+                    <FormLabel className="text-green-700">Length (m)</FormLabel>
                     <FormControl>
                       <Input type="number" min="0.5" max="10" step="0.5" {...field} />
                     </FormControl>
@@ -370,10 +412,10 @@ export const PatchManager = () => {
               
               <FormField
                 control={form.control}
-                name="height"
+                name="width"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-green-700">Height (m)</FormLabel>
+                    <FormLabel className="text-green-700">Width (m)</FormLabel>
                     <FormControl>
                       <Input type="number" min="0.5" max="10" step="0.5" {...field} />
                     </FormControl>
@@ -409,6 +451,78 @@ export const PatchManager = () => {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="placementType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-green-700">Plant Placement</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-row space-x-1"
+                    >
+                      <div className="flex items-center space-x-2 border rounded-l-md px-3 py-2">
+                        <RadioGroupItem value="free" id="free" />
+                        <FormLabel htmlFor="free" className="cursor-pointer">Free Placement</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2 border rounded-r-md px-3 py-2">
+                        <RadioGroupItem value="slots" id="slots" />
+                        <FormLabel htmlFor="slots" className="cursor-pointer">Seed Tray Slots</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            {watchPlacementType === "slots" && (
+              <div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-green-50">
+                <FormField
+                  control={form.control}
+                  name="slotsLength"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-green-700">Slots in Length</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          max="20" 
+                          step="1" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))} 
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slotsWidth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-green-700">Slots in Width</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          max="20" 
+                          step="1" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))} 
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <div className="col-span-2 text-xs text-green-800 flex justify-center items-center pt-1">
+                  Total: {form.watch("slotsLength") * form.watch("slotsWidth")} slots
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -422,6 +536,7 @@ export const PatchManager = () => {
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        disabled={watchType === "outdoor-soil"}
                       />
                     </FormControl>
                   </FormItem>
@@ -439,6 +554,7 @@ export const PatchManager = () => {
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        disabled={watchType === "outdoor-soil"}
                       />
                     </FormControl>
                   </FormItem>
@@ -507,7 +623,7 @@ export const PatchManager = () => {
                       <div>
                         <span className="inline-block w-24">Size:</span>
                         <span className="font-normal">
-                          {patch.width}×{patch.height}m
+                          {patch.length}×{patch.width}m
                         </span>
                       </div>
                       <div>
@@ -516,6 +632,15 @@ export const PatchManager = () => {
                           {getPatchTypeLabel(patch.type)}
                         </span>
                       </div>
+                      {patch.placementType === "slots" && (
+                        <div>
+                          <span className="inline-block w-24">Slots:</span>
+                          <span className="font-normal">
+                            {patch.slotsLength || 4}×{patch.slotsWidth || 6} 
+                            ({(patch.slotsLength || 4) * (patch.slotsWidth || 6)} total)
+                          </span>
+                        </div>
+                      )}
                       <div>
                         <span className="inline-block w-24">Natural Light:</span>
                         <span className="font-normal">
@@ -531,6 +656,11 @@ export const PatchManager = () => {
                         {patch.artificialLight && (
                           <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs">
                             Artificial Light
+                          </span>
+                        )}
+                        {patch.placementType === "slots" && (
+                          <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">
+                            Seed Tray
                           </span>
                         )}
                       </div>
