@@ -10,6 +10,9 @@ interface SeedTrayProps {
   plantedItems: Record<string, PlantItem[]>;
   handleDrop: (item: PlantItem, x: number, y: number, patchId: string) => void;
   patchColors: string[];
+  onGrowPlant: (plantItem: PlantItem, direction: "up" | "down") => void;
+  onDeletePlant: (plantItem: PlantItem) => void;
+  onCopyPlant: (plantItem: PlantItem, count: number) => void;
 }
 
 export const SeedTray = ({ 
@@ -17,7 +20,10 @@ export const SeedTray = ({
   patchIndex, 
   plantedItems, 
   handleDrop, 
-  patchColors 
+  patchColors,
+  onGrowPlant,
+  onDeletePlant,
+  onCopyPlant
 }: SeedTrayProps) => {
   const slotsLength = patch.slotsLength || 4;
   const slotsWidth = patch.slotsWidth || 6;
@@ -60,10 +66,14 @@ export const SeedTray = ({
                   x={x}
                   y={y}
                   patchId={patch.id}
+                  patchType={patch.type}
                   onDrop={handleDrop}
                   plantItem={plantItem}
                   color={color}
                   isSlot={true}
+                  onGrowPlant={onGrowPlant}
+                  onDeletePlant={onDeletePlant}
+                  onCopyPlant={onCopyPlant}
                 />
               );
             })

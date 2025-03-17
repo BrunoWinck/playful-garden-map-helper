@@ -10,6 +10,9 @@ interface RegularPatchProps {
   plantedItems: Record<string, PlantItem[]>;
   handleDrop: (item: PlantItem, x: number, y: number, patchId: string) => void;
   patchColors: string[];
+  onGrowPlant: (plantItem: PlantItem, direction: "up" | "down") => void;
+  onDeletePlant: (plantItem: PlantItem) => void;
+  onCopyPlant: (plantItem: PlantItem, count: number) => void;
 }
 
 export const RegularPatch = ({ 
@@ -17,7 +20,10 @@ export const RegularPatch = ({
   patchIndex, 
   plantedItems, 
   handleDrop, 
-  patchColors 
+  patchColors,
+  onGrowPlant,
+  onDeletePlant,
+  onCopyPlant
 }: RegularPatchProps) => {
   return (
     <div className="bg-brown-200 p-3 rounded-lg">
@@ -52,9 +58,13 @@ export const RegularPatch = ({
                 x={x}
                 y={y}
                 patchId={patch.id}
+                patchType={patch.type}
                 onDrop={handleDrop}
                 plantItem={plantItem}
                 color={patchColors[patchIndex % patchColors.length]}
+                onGrowPlant={onGrowPlant}
+                onDeletePlant={onDeletePlant}
+                onCopyPlant={onCopyPlant}
               />
             );
           })

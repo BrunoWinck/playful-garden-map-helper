@@ -1,4 +1,3 @@
-
 export type CareTask = {
   id: string;
   plant: string;
@@ -8,6 +7,8 @@ export type CareTask = {
   completed: boolean;
 };
 
+export type PlantGrowthStage = "seed" | "sprout" | "young" | "ready" | "mature";
+
 export type PlantItem = {
   id: string;
   name: string;
@@ -16,6 +17,7 @@ export type PlantItem = {
   lifecycle?: string;
   parent_id?: string;
   position?: { x: number; y: number; patchId?: string };
+  stage?: PlantGrowthStage;
 };
 
 export type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
