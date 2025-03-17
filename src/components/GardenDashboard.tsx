@@ -53,14 +53,18 @@ export const GardenDashboard = () => {
           </div>
           <div className="md:col-span-1">
             <div className="flex flex-col h-full gap-4">
-              <div className="bg-white rounded-lg shadow-md p-4 flex-1">
+              <div className="bg-white rounded-lg shadow-md h-full">
                 <WidgetHeader title="Patch Manager" icon={Leaf} />
-                <PatchManager />
+                <div className="p-4">
+                  <PatchManager />
+                </div>
               </div>
               
-              <div className="bg-white rounded-lg shadow-md p-4 flex-1">
+              <div className="bg-white rounded-lg shadow-md h-full">
                 <WidgetHeader title="Care Schedule" icon={Calendar} />
-                <CareSchedule />
+                <div className="p-4">
+                  <CareSchedule />
+                </div>
               </div>
             </div>
           </div>
