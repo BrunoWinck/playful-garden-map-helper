@@ -21,7 +21,7 @@ export const fetchPlants = async (): Promise<PlantItem[]> => {
       let category = plant.category;
       
       // List of fruits that are actually trees
-      const treeFruits = ['apple', 'pear', 'orange', 'lemon', 'peach'];
+      const treeFruits = ['apple', 'pear', 'orange', 'lemon', 'peach', 'banana', 'avocado'];
       
       // Check if the plant name is in the treeFruits list
       if (category === 'fruit' && treeFruits.some(tf => plant.name.toLowerCase().includes(tf.toLowerCase()))) {
