@@ -25,19 +25,23 @@ export const RegularPatch = ({
   onDeletePlant,
   onCopyPlant
 }: RegularPatchProps) => {
+  // Calculate the relative width of the container based on the patch length
+  // Using 10 meters = 100% width as the reference
+  const containerWidth = Math.min((patch.length / 10) * 100, 100);
+  
   return (
-    <div className="bg-brown-200 p-3 rounded-lg">
+    <div className="bg-brown-200 p-3 rounded-lg" style={{ width: `${containerWidth}%` }}>
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-medium text-green-800 flex items-center">
           <Move className="h-4 w-4 mr-1 text-green-600" />
           {patch.name}
         </h4>
         <span className="text-xs text-green-700">
-          {patch.width}×{patch.height}
+          {patch.width}×{patch.height} m
         </span>
       </div>
       
-      <div className="grid gap-1" style={{ 
+      <div className="grid gap-0.5" style={{ 
         gridTemplateColumns: `repeat(${patch.width}, 1fr)`,
         gridTemplateRows: `repeat(${patch.height}, 1fr)`
       }}>
@@ -65,6 +69,7 @@ export const RegularPatch = ({
                 onGrowPlant={onGrowPlant}
                 onDeletePlant={onDeletePlant}
                 onCopyPlant={onCopyPlant}
+                isFreePlacement={patch.placementType === "free"}
               />
             );
           })

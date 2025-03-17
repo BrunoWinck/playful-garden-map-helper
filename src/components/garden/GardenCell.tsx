@@ -34,6 +34,7 @@ interface CellProps {
   plantItem?: PlantItem;
   color?: string;
   isSlot?: boolean;
+  isFreePlacement?: boolean;
   onGrowPlant?: (plantItem: PlantItem, direction: "up" | "down") => void;
   onDeletePlant?: (plantItem: PlantItem) => void;
   onCopyPlant?: (plantItem: PlantItem, count: number) => void;
@@ -48,6 +49,7 @@ export const GardenCell = ({
   patchType = "outdoor-soil",
   color = "bg-brown-100", 
   isSlot = false,
+  isFreePlacement = false,
   onGrowPlant,
   onDeletePlant,
   onCopyPlant
@@ -87,12 +89,17 @@ export const GardenCell = ({
     );
   };
 
+  // Use smaller cells for free placement patches to allow plants to be packed closer together
+  const cellSizeClass = isFreePlacement 
+    ? (isSlot ? 'w-8 h-8' : 'w-12 h-12') 
+    : (isSlot ? 'w-10 h-10' : 'w-16 h-16');
+
   // If there's no plant, just render the cell
   if (!plantItem) {
     return (
       <div
         ref={drop}
-        className={`${isSlot ? 'w-10 h-10' : 'w-16 h-16'} border ${isSlot ? 'border-gray-400' : 'border-brown-400'} ${
+        className={`${cellSizeClass} border ${isSlot ? 'border-gray-400' : 'border-brown-400'} ${
           isOver ? "bg-green-200" : color
         } ${isSlot ? 'rounded' : 'rounded-md'} flex items-center justify-center transition-colors`}
       />
@@ -105,13 +112,13 @@ export const GardenCell = ({
       <ContextMenuTrigger>
         <div
           ref={drop}
-          className={`${isSlot ? 'w-10 h-10' : 'w-16 h-16'} border ${isSlot ? 'border-gray-400' : 'border-brown-400'} ${
+          className={`${cellSizeClass} border ${isSlot ? 'border-gray-400' : 'border-brown-400'} ${
             isOver ? "bg-green-200" : color
           } ${isSlot ? 'rounded' : 'rounded-md'} flex items-center justify-center transition-colors cursor-pointer`}
         >
           <div className="flex flex-col items-center">
-            <span className={`${isSlot ? 'text-xl' : 'text-3xl'}`}>{plantItem.icon}</span>
-            {!isSlot && (
+            <span className={`${isSlot || isFreePlacement ? 'text-xl' : 'text-3xl'}`}>{plantItem.icon}</span>
+            {!(isSlot || isFreePlacement) && (
               <>
                 <span className="text-xs text-green-800">{plantItem.name}</span>
                 {plantItem.lifecycle && !isSlot && (
@@ -121,6 +128,9 @@ export const GardenCell = ({
                 )}
                 {getStageIcon(plantItem.stage)}
               </>
+            )}
+            {isFreePlacement && (
+              <span className="text-[8px] text-green-800">{plantItem.name.substring(0, 6)}</span>
             )}
           </div>
         </div>
