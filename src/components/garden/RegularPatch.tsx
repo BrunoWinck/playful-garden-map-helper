@@ -39,7 +39,7 @@ export const RegularPatch = ({
           {patch.name}
         </h4>
         <span className="text-xs text-green-700">
-          {patch.width}×{patch.height} m
+          {patch.length}×{patch.width} m
         </span>
       </div>
       
