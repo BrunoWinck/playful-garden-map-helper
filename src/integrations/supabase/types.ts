@@ -280,6 +280,86 @@ export type Database = {
         }
         Relationships: []
       }
+      planted_items: {
+        Row: {
+          created_at: string
+          id: string
+          patch_id: string
+          plant_id: string
+          position_x: number
+          position_y: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patch_id: string
+          plant_id: string
+          position_x: number
+          position_y: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patch_id?: string
+          plant_id?: string
+          position_x?: number
+          position_y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planted_items_patch_id_fkey"
+            columns: ["patch_id"]
+            isOneToOne: false
+            referencedRelation: "patches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planted_items_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plants: {
+        Row: {
+          category: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          icon: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plants_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_settings: {
         Row: {
           created_at: string

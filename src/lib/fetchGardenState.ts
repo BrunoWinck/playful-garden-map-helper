@@ -1,8 +1,10 @@
+
 import { supabase, ANONYMOUS_USER_ID, ANONYMOUS_USER_NAME } from "@/integrations/supabase/client";
 
 export interface GardenState {
   patches: any[];
   plantedItems: Record<string, any[]>;
+  plants: any[];
   weather?: any;
   location?: string;
 }
@@ -45,8 +47,9 @@ const summarizeWeather = (weather: any): string => {
   }
 };
 
-export const fetchGardenState = async ( updateAdvisor) => {
+export const fetchGardenState = async (updateAdvisor) => {
   try {
+    // Fetch patches
     const { data: patchesData, error: patchesError } = await supabase
       .from('patches')
       .select('*');
@@ -68,25 +71,62 @@ export const fetchGardenState = async ( updateAdvisor) => {
       patches = storedPatches ? JSON.parse(storedPatches) : [];
     }
     
-    const { data: tasksData, error: tasksError } = await supabase
-      .from('patch_tasks')
-      .select('*');
+    // Fetch planted items
+    const { data: plantedItemsData, error: plantedItemsError } = await supabase
+      .from('planted_items')
+      .select(`
+        id, 
+        position_x, 
+        position_y, 
+        patch_id,
+        plants (*)
+      `);
       
     let plantedItems: Record<string, any[]> = {};
-    if (!tasksError && tasksData) {
-      tasksData.forEach(task => {
-        if (!plantedItems[task.patch_id]) {
-          plantedItems[task.patch_id] = [];
+    if (!plantedItemsError && plantedItemsData) {
+      plantedItemsData.forEach(item => {
+        const patchId = item.patch_id;
+        if (!plantedItems[patchId]) {
+          plantedItems[patchId] = [];
         }
-        plantedItems[task.patch_id].push(task.task);
+        
+        const plant = item.plants;
+        plantedItems[patchId].push({
+          id: plant.id,
+          name: plant.name,
+          icon: plant.icon,
+          category: plant.category,
+          position: {
+            x: item.position_x,
+            y: item.position_y
+          }
+        });
       });
     } else {
       const storedPlantedItems = localStorage.getItem('garden-planted-items');
       plantedItems = storedPlantedItems ? JSON.parse(storedPlantedItems) : {};
     }
     
+    // Fetch plants
+    const { data: plantsData, error: plantsError } = await supabase
+      .from('plants')
+      .select('*');
+      
+    let plants = [];
+    if (!plantsError && plantsData) {
+      plants = plantsData.map(plant => ({
+        id: plant.id,
+        name: plant.name,
+        icon: plant.icon,
+        category: plant.category,
+        parent_id: plant.parent_id
+      }));
+    }
+    
+    // Get weather data
     const weather = JSON.parse(localStorage.getItem('weather-data') || '{}');
     
+    // Get location
     let location = "Unknown location";
     const savedSettings = localStorage.getItem("gardenSettings");
     if (savedSettings) {
@@ -96,12 +136,22 @@ export const fetchGardenState = async ( updateAdvisor) => {
       }
     }
     
-    
+    // Check if we should show a tip
     const lastTipTimestamp = localStorage.getItem('last-garden-tip-timestamp');
     const shouldShowTip = !lastTipTimestamp || 
       (Date.now() - parseInt(lastTipTimestamp, 10)) > 24 * 60 * 60 * 1000;
     const weatherSummary = summarizeWeather(weather);
-    updateAdvisor( patches, plantedItems, weather, location, weatherSummary, shouldShowTip);
+    
+    // Update the advisor with all the garden state
+    updateAdvisor(
+      patches,
+      plantedItems,
+      plants,
+      weather, 
+      location, 
+      weatherSummary, 
+      shouldShowTip
+    );
   } catch (error) {
     console.error("Error loading garden state:", error);
   }

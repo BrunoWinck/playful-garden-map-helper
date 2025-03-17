@@ -13,6 +13,7 @@ export type PlantItem = {
   name: string;
   icon: string;
   category: string;
+  parent_id?: string;
   position?: { x: number; y: number; patchId?: string };
 };
 

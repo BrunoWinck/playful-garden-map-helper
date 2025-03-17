@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PlantItem, Patch, PatchType, PlacementType } from "@/lib/types";
-import { initialPlants } from "@/lib/data";
 import { GardenPatches } from "./garden/GardenPatches";
 import { PlantCatalog } from "./garden/PlantCatalog";
 import { Skeleton } from "./ui/skeleton";
@@ -141,19 +141,69 @@ export const GardenMap = () => {
     fetchPatches();
   }, []);
   
-  // Track planted items in each patch
+  // Load planted items
   useEffect(() => {
-    const storedPlantedItems = localStorage.getItem('garden-planted-items');
-    if (storedPlantedItems) {
+    const fetchPlantedItems = async () => {
       try {
-        setPlantedItems(JSON.parse(storedPlantedItems));
-      } catch (e) {
-        console.error("Error loading planted items:", e);
+        const { data, error } = await supabase
+          .from('planted_items')
+          .select(`
+            id, 
+            position_x, 
+            position_y, 
+            patch_id,
+            plants (*)
+          `);
+          
+        if (error) throw error;
+        
+        const plantedItemsByPatch: Record<string, PlantItem[]> = {};
+        
+        data.forEach(item => {
+          const patchId = item.patch_id;
+          if (!plantedItemsByPatch[patchId]) {
+            plantedItemsByPatch[patchId] = [];
+          }
+          
+          const plant = item.plants;
+          plantedItemsByPatch[patchId].push({
+            id: plant.id,
+            name: plant.name,
+            icon: plant.icon,
+            category: plant.category,
+            parent_id: plant.parent_id,
+            position: {
+              x: item.position_x,
+              y: item.position_y,
+              patchId: patchId
+            }
+          });
+        });
+        
+        setPlantedItems(plantedItemsByPatch);
+        
+        // Also store in localStorage as backup
+        localStorage.setItem('garden-planted-items', JSON.stringify(plantedItemsByPatch));
+      } catch (error) {
+        console.error("Error fetching planted items:", error);
+        
+        // Fall back to localStorage
+        const storedPlantedItems = localStorage.getItem('garden-planted-items');
+        if (storedPlantedItems) {
+          try {
+            setPlantedItems(JSON.parse(storedPlantedItems));
+          } catch (e) {
+            console.error("Error loading planted items:", e);
+          }
+        }
       }
-    }
+    };
+    
+    // Try to load from database first
+    fetchPlantedItems();
   }, []);
   
-  // Save planted items to localStorage when they change
+  // Save planted items when they change
   useEffect(() => {
     if (Object.keys(plantedItems).length > 0) {
       localStorage.setItem('garden-planted-items', JSON.stringify(plantedItems));
@@ -161,7 +211,7 @@ export const GardenMap = () => {
   }, [plantedItems]);
 
   // Handle plant drop on a grid cell
-  const handleDrop = (item: PlantItem, x: number, y: number, patchId: string) => {
+  const handleDrop = async (item: PlantItem, x: number, y: number, patchId: string) => {
     // Create a new plant item with position
     const plantedItem: PlantItem = {
       ...item,
@@ -177,22 +227,59 @@ export const GardenMap = () => {
         plant => plant.position?.x === x && plant.position?.y === y
       );
       
+      let updatedPlants;
       if (existingPlantIndex >= 0) {
         // Replace the existing plant
-        const updatedPlants = [...patchPlants];
+        updatedPlants = [...patchPlants];
         updatedPlants[existingPlantIndex] = plantedItem;
-        return {
-          ...prev,
-          [patchId]: updatedPlants
-        };
       } else {
         // Add a new plant
-        return {
-          ...prev,
-          [patchId]: [...patchPlants, plantedItem]
-        };
+        updatedPlants = [...patchPlants, plantedItem];
       }
+      
+      return {
+        ...prev,
+        [patchId]: updatedPlants
+      };
     });
+    
+    // Save to database
+    try {
+      // Check if there's already a plant at this position in the database
+      const { data: existingItems, error: checkError } = await supabase
+        .from('planted_items')
+        .select('id')
+        .eq('patch_id', patchId)
+        .eq('position_x', x)
+        .eq('position_y', y);
+        
+      if (checkError) throw checkError;
+      
+      if (existingItems && existingItems.length > 0) {
+        // Update existing item
+        const { error: updateError } = await supabase
+          .from('planted_items')
+          .update({ plant_id: item.id })
+          .eq('id', existingItems[0].id);
+          
+        if (updateError) throw updateError;
+      } else {
+        // Insert new item
+        const { error: insertError } = await supabase
+          .from('planted_items')
+          .insert({
+            plant_id: item.id,
+            patch_id: patchId,
+            position_x: x,
+            position_y: y
+          });
+          
+        if (insertError) throw insertError;
+      }
+    } catch (error) {
+      console.error("Error saving planted item to database:", error);
+      toast.error("Failed to save plant placement");
+    }
   };
 
   // Show loading state
@@ -215,7 +302,6 @@ export const GardenMap = () => {
         />
         
         <PlantCatalog 
-          plants={initialPlants} 
           categoryFilter={categoryFilter} 
           setCategoryFilter={setCategoryFilter} 
           searchTerm={searchTerm} 
