@@ -648,6 +648,10 @@ export const GardenMap = () => {
 
   const handleAddPatch = async (data: PatchFormValues) => {
     try {
+      if (data.containingPatchId === "none") {
+        data.containingPatchId = undefined;
+      }
+      
       console.log("Creating new patch with data:", data);
       const newPatch = await createPatch(data);
       console.log("New patch created:", newPatch);

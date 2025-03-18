@@ -89,6 +89,11 @@ export const PatchManager = () => {
     try {
       setIsProcessing(true);
       
+      // Convert "none" string to undefined for top-level patches
+      if (data.containingPatchId === "none") {
+        data.containingPatchId = undefined;
+      }
+      
       // Create a new patch using the patchService which now uses crypto.randomUUID()
       const newPatch = await createPatch(data);
       
@@ -208,6 +213,12 @@ export const PatchManager = () => {
     
     try {
       setIsProcessing(true);
+      
+      // Convert "none" string to undefined for top-level patches
+      if (data.containingPatchId === "none") {
+        data.containingPatchId = undefined;
+      }
+      
       await updatePatch(editingPatchId, data);
       
       const updatedPatches = patches.map(patch => 
@@ -224,7 +235,8 @@ export const PatchManager = () => {
               naturalLightPercentage: data.naturalLightPercentage,
               placementType: data.placementType || "free",
               slotsLength: data.slotsLength || 4,
-              slotsWidth: data.slotsWidth || 6
+              slotsWidth: data.slotsWidth || 6,
+              containingPatchId: data.containingPatchId
             } 
           : patch
       );

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,7 @@ interface PatchFormProps {
   onSubmit: (data: PatchFormValues) => Promise<void>;
   initialValues?: PatchFormValues;
   isEditing: boolean;
-  availableParentPatches?: Patch[]; // New prop for available parent patches
+  availableParentPatches?: Patch[]; // Prop for available parent patches
 }
 
 export const PatchForm = ({ 
@@ -81,7 +80,6 @@ export const PatchForm = ({
             )}
           />
           
-          {/* Add parent patch selector */}
           <FormField
             control={form.control}
             name="containingPatchId"
@@ -90,7 +88,7 @@ export const PatchForm = ({
                 <FormLabel className="text-green-700">Containing Patch (Optional)</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value || ""}
+                  value={field.value || "none"}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -98,7 +96,7 @@ export const PatchForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">None (Top Level)</SelectItem>
+                    <SelectItem value="none">None (Top Level)</SelectItem>
                     {availableParentPatches.map((patch) => (
                       <SelectItem key={patch.id} value={patch.id}>
                         {patch.name}
