@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { PatchType, PlacementType, PatchFormValues, Patch } from "@/lib/types";
 
@@ -66,7 +66,7 @@ export const PatchForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-2">
         <div className="grid grid-cols-1 gap-2">
           <FormField
             control={form.control}
@@ -183,86 +183,85 @@ export const PatchForm = ({
             control={form.control}
             name="placementType"
             render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-green-700">Plant Placement</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-row space-x-1"
-                    value={field.value}
-                  >
-                    <div className="flex items-center space-x-2 border rounded-l-md px-3 py-2">
-                      <RadioGroupItem value="free" id="free" />
-                      <FormLabel htmlFor="free" className="cursor-pointer">Free Placement</FormLabel>
-                    </div>
-                    <div className="flex items-center space-x-2 border rounded-r-md px-3 py-2">
-                      <RadioGroupItem value="slots" id="slots" />
-                      <FormLabel htmlFor="slots" className="cursor-pointer">Seed Tray Slots</FormLabel>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
+              <FormItem className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-green-700 pt-1">Plant Placement</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-row space-x-1"
+                      value={field.value}
+                    >
+                      <div className="flex items-center space-x-1 border rounded-l-md px-2 py-1">
+                        <RadioGroupItem value="free" id="free" />
+                        <FormLabel htmlFor="free" className="cursor-pointer text-xs">Free</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-1 border rounded-r-md px-2 py-1">
+                        <RadioGroupItem value="slots" id="slots" />
+                        <FormLabel htmlFor="slots" className="cursor-pointer text-xs">Slots</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                </div>
               </FormItem>
             )}
           />
           
           {watchPlacementType === "slots" && (
-            <div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-green-50">
-              <FormField
-                control={form.control}
-                name="slotsLength"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-green-700">Slots in Length</FormLabel>
+            <FormItem className="p-2 border rounded-md bg-green-50">
+              <div className="flex items-center space-x-1">
+                <FormLabel className="text-green-700 text-xs whitespace-nowrap">Slots:</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="slotsWidth"
+                  render={({ field }) => (
                     <FormControl>
                       <Input 
                         type="number" 
                         min="1" 
-                        max="20" 
-                        step="1" 
+                        max="99" 
+                        step="1"
+                        className="w-12 h-7 px-1 py-0 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value))} 
                         value={field.value}
                       />
                     </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="slotsWidth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-green-700">Slots in Width</FormLabel>
+                  )}
+                />
+                <span className="text-xs">×</span>
+                <FormField
+                  control={form.control}
+                  name="slotsLength"
+                  render={({ field }) => (
                     <FormControl>
                       <Input 
                         type="number" 
                         min="1" 
-                        max="20" 
-                        step="1" 
+                        max="99" 
+                        step="1"
+                        className="w-12 h-7 px-1 py-0 text-sm"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value))} 
                         value={field.value}
                       />
                     </FormControl>
-                  </FormItem>
-                )}
-              />
-              <div className="col-span-2 text-xs text-green-800 flex justify-center items-center pt-1">
-                Total: {form.watch("slotsLength") * form.watch("slotsWidth")} slots
+                  )}
+                />
+                <span className="text-xs whitespace-nowrap">=</span>
+                <span className="text-xs text-green-800">{form.watch("slotsLength") * form.watch("slotsWidth")} slots</span>
               </div>
-            </div>
+            </FormItem>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2">
             <FormField
               control={form.control}
               name="heated"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Heated</FormLabel>
-                  </div>
+                <FormItem className="flex items-center justify-between rounded-lg border p-2">
+                  <FormLabel className="text-sm">Heated</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -277,10 +276,8 @@ export const PatchForm = ({
               control={form.control}
               name="artificialLight"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Artificial Light</FormLabel>
-                  </div>
+                <FormItem className="flex items-center justify-between rounded-lg border p-2">
+                  <FormLabel className="text-sm">Artificial Light</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -297,8 +294,8 @@ export const PatchForm = ({
             control={form.control}
             name="naturalLightPercentage"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-green-700">
+              <FormItem className="space-y-1">
+                <FormLabel className="text-green-700 text-xs">
                   Natural Light: {field.value}%
                 </FormLabel>
                 <FormControl>
@@ -308,7 +305,7 @@ export const PatchForm = ({
                     step={5}
                     value={[field.value]}
                     onValueChange={(values) => field.onChange(values[0])}
-                    className="py-4"
+                    className="py-2"
                   />
                 </FormControl>
               </FormItem>
