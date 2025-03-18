@@ -21,7 +21,7 @@ export type PlantItem = {
   stage?: PlantGrowthStage;
 };
 
-export type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected";
+export type PatchType = "outdoor-soil" | "perennials" | "indoor" | "protected" | "template";
 export type PlacementType = "free" | "slots";
 
 export type Patch = {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -67,7 +68,10 @@ export const GardenMap = () => {
         console.log("GardenMap: Fetching patches from service");
         const patchesData = await fetchPatches();
         console.log("GardenMap: Fetched patches:", patchesData.length);
-        setPatches(patchesData);
+        
+        // Filter out template patches for the garden map
+        const nonTemplatePatches = patchesData.filter(patch => patch.type !== "template");
+        setPatches(nonTemplatePatches);
       } catch (error) {
         console.error("Error fetching patches:", error);
         toast.error("Failed to load garden patches");
@@ -656,11 +660,16 @@ export const GardenMap = () => {
       const newPatch = await createPatch(data);
       console.log("New patch created:", newPatch);
       
-      setPatches(prev => [...prev, newPatch]);
-      toast.success(`Added new patch: ${newPatch.name}`);
-      
-      console.log("GardenMap: Emitting PATCH_ADDED event");
-      eventBus.emit(PATCH_EVENTS.PATCH_ADDED, newPatch);
+      // Only add non-template patches to the garden map
+      if (newPatch.type !== "template") {
+        setPatches(prev => [...prev, newPatch]);
+        toast.success(`Added new patch: ${newPatch.name}`);
+        
+        console.log("GardenMap: Emitting PATCH_ADDED event");
+        eventBus.emit(PATCH_EVENTS.PATCH_ADDED, newPatch);
+      } else {
+        toast.success(`Created template tray: ${newPatch.name}`);
+      }
       
       setIsAddPatchOpen(false);
     } catch (error) {

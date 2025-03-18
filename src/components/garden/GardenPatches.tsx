@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Patch, PlantItem } from "@/lib/types";
 import { RegularPatch } from "./RegularPatch";
@@ -34,6 +33,7 @@ interface GardenPatchesProps {
   onGrowPlant: (plantItem: PlantItem, direction: "up" | "down") => void;
   onDeletePlant: (plantItem: PlantItem) => void;
   onCopyPlant: (plantItem: PlantItem, count: number) => void;
+  handleTemplateTrayDrop?: (tray: Patch, patchId: string) => void;
 }
 
 export const GardenPatches = ({ 
@@ -44,7 +44,8 @@ export const GardenPatches = ({
   patchColors,
   onGrowPlant,
   onDeletePlant,
-  onCopyPlant
+  onCopyPlant,
+  handleTemplateTrayDrop
 }: GardenPatchesProps) => {
   const [editingPatch, setEditingPatch] = useState<Patch | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -52,15 +53,12 @@ export const GardenPatches = ({
   const [activeTaskPatchId, setActiveTaskPatchId] = useState<string | null>(null);
   const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({});
 
-  // Organize patches by hierarchy
   const topLevelPatches = patches.filter(patch => !patch.containingPatchId);
   
-  // Function to get child patches for a given patch ID
   const getChildPatches = (patchId: string) => {
     return patches.filter(patch => patch.containingPatchId === patchId);
   };
 
-  // Fetch patch tasks when component mounts or patches change
   useEffect(() => {
     if (patches.length > 0) {
       const fetchTasks = async () => {
@@ -75,7 +73,6 @@ export const GardenPatches = ({
     }
   }, [patches]);
 
-  // Listen for task events from the garden advisor
   useEffect(() => {
     const handleAddTaskEvent = (event: CustomEvent) => {
       if (activeTaskPatchId && event.detail && event.detail.task) {
@@ -149,7 +146,6 @@ export const GardenPatches = ({
     try {
       await addPatchTask(activeTaskPatchId, taskToAdd);
       
-      // Update local state
       setPatchTasks(prev => {
         const currentTasks = [...(prev[activeTaskPatchId] || [])];
         return {
@@ -166,7 +162,6 @@ export const GardenPatches = ({
     }
   };
 
-  // Make sure each patch has a unique ID and we don't have duplicates
   const uniquePatches = patches.reduce((acc: Patch[], current) => {
     const exists = acc.find(p => p.id === current.id);
     if (!exists) {
@@ -176,14 +171,12 @@ export const GardenPatches = ({
     }
     return acc;
   }, []);
-  
-  // Log if we found any duplicates
+
   if (uniquePatches.length !== patches.length) {
     console.error(`Found ${patches.length - uniquePatches.length} duplicate patch IDs: `, 
       patches.map(p => p.id).filter((id, index, self) => self.indexOf(id) !== index));
   }
 
-  // Recursively render a patch and its children
   const renderPatchWithChildren = (patch: Patch, index: number) => {
     const childPatches = getChildPatches(patch.id);
     
@@ -244,7 +237,6 @@ export const GardenPatches = ({
                         </Button>
                       </div>
                       
-                      {/* Show existing tasks */}
                       <div className="mt-4">
                         <h3 className="text-sm font-medium mb-2">Current Tasks:</h3>
                         <ul className="space-y-1">
@@ -332,7 +324,6 @@ export const GardenPatches = ({
           )}
         </PatchCard>
         
-        {/* Render child patches if any, with indentation */}
         {childPatches.length > 0 && (
           <div className="ml-4 mt-2 border-l-2 border-blue-300 pl-4">
             {childPatches.map((childPatch, childIndex) => 

@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -171,6 +172,7 @@ export const PatchForm = ({
                     <SelectItem value="perennials">Perennials</SelectItem>
                     <SelectItem value="indoor">Indoor</SelectItem>
                     <SelectItem value="protected">Protected</SelectItem>
+                    <SelectItem value="template">Template Tray</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>
