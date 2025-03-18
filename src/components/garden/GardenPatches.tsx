@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Pencil, ListPlus, X } from "lucide-react";
+import { Trash2, Pencil, ListPlus, X, Layers } from "lucide-react";
 import { PatchForm } from "./PatchForm";
 import { deletePatch, updatePatch, addPatchTask, fetchPatchTasks } from "@/services/patchService";
 import { toast } from "sonner";
@@ -51,6 +51,14 @@ export const GardenPatches = ({
   const [newTask, setNewTask] = useState("");
   const [activeTaskPatchId, setActiveTaskPatchId] = useState<string | null>(null);
   const [patchTasks, setPatchTasks] = useState<Record<string, string[]>>({});
+
+  // Organize patches by hierarchy
+  const topLevelPatches = patches.filter(patch => !patch.containingPatchId);
+  
+  // Function to get child patches for a given patch ID
+  const getChildPatches = (patchId: string) => {
+    return patches.filter(patch => patch.containingPatchId === patchId);
+  };
 
   // Fetch patch tasks when component mounts or patches change
   useEffect(() => {
@@ -175,14 +183,30 @@ export const GardenPatches = ({
       patches.map(p => p.id).filter((id, index, self) => self.indexOf(id) !== index));
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {uniquePatches.map((patch, index) => (
+  // Recursively render a patch and its children
+  const renderPatchWithChildren = (patch: Patch, index: number) => {
+    const childPatches = getChildPatches(patch.id);
+    
+    return (
+      <React.Fragment key={`patch-hierarchy-${patch.id}`}>
         <PatchCard 
           key={`patch-${patch.id}`} 
           title={
             <div className="flex justify-between items-center w-full">
-              <span>{patch.name}</span>
+              <span className="flex items-center">
+                {patch.containingPatchId && (
+                  <span className="text-xs mr-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                    Sub-patch
+                  </span>
+                )}
+                {patch.name}
+                {childPatches.length > 0 && (
+                  <span className="ml-2 flex items-center text-blue-600" title="Contains other patches">
+                    <Layers className="h-4 w-4 mr-1" />
+                    <span className="text-xs">{childPatches.length}</span>
+                  </span>
+                )}
+              </span>
               <div className="flex items-center space-x-1">
                 <Sheet>
                   <SheetTrigger asChild>
@@ -303,10 +327,28 @@ export const GardenPatches = ({
               onGrowPlant={onGrowPlant}
               onDeletePlant={onDeletePlant}
               onCopyPlant={onCopyPlant}
+              childPatches={childPatches}
             />
           )}
         </PatchCard>
-      ))}
+        
+        {/* Render child patches if any, with indentation */}
+        {childPatches.length > 0 && (
+          <div className="ml-4 mt-2 border-l-2 border-blue-300 pl-4">
+            {childPatches.map((childPatch, childIndex) => 
+              renderPatchWithChildren(childPatch, index + childIndex + 1)
+            )}
+          </div>
+        )}
+      </React.Fragment>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {topLevelPatches.map((patch, index) => 
+        renderPatchWithChildren(patch, index)
+      )}
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -326,9 +368,11 @@ export const GardenPatches = ({
                 naturalLightPercentage: editingPatch.naturalLightPercentage,
                 placementType: editingPatch.placementType,
                 slotsLength: editingPatch.slotsLength,
-                slotsWidth: editingPatch.slotsWidth
+                slotsWidth: editingPatch.slotsWidth,
+                containingPatchId: editingPatch.containingPatchId
               }}
               isEditing={true}
+              availableParentPatches={uniquePatches.filter(p => p.id !== editingPatch.id)}
             />
           )}
         </DialogContent>

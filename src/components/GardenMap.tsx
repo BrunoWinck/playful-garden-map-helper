@@ -20,7 +20,6 @@ import {
 import { PatchForm } from "./garden/PatchForm";
 import { createPatch } from "@/services/patchService";
 
-// Colors for different patches
 const patchColors = [
   "bg-amber-50",
   "bg-emerald-50",
@@ -29,10 +28,8 @@ const patchColors = [
   "bg-rose-50",
 ];
 
-// Growth stage progression
 const growthStages: PlantGrowthStage[] = ["seed", "sprout", "young", "ready", "mature"];
 
-// Get initial stage based on patch type
 const getInitialStage = (patchType: string): PlantGrowthStage => {
   if (patchType === "indoor") {
     return "seed";
@@ -40,7 +37,6 @@ const getInitialStage = (patchType: string): PlantGrowthStage => {
   return "young";
 };
 
-// Get next or previous growth stage
 const getNextStage = (currentStage: PlantGrowthStage, direction: "up" | "down"): PlantGrowthStage => {
   const currentIndex = growthStages.indexOf(currentStage);
   if (direction === "up" && currentIndex < growthStages.length - 1) {
@@ -58,15 +54,12 @@ export const GardenMap = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isAddPatchOpen, setIsAddPatchOpen] = useState(false);
   
-  // Ref for the container to auto-scroll
   const containerRef = useRef<HTMLDivElement>(null);
   const autoScrollIntervalRef = useRef<number | null>(null);
 
-  // Filter state for plants
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load patches once at component init
   useEffect(() => {
     const loadPatches = async () => {
       setIsLoading(true);
@@ -85,7 +78,6 @@ export const GardenMap = () => {
     
     loadPatches();
     
-    // Set up event listeners for patch changes
     const handlePatchesUpdated = (updatedPatches: Patch[]) => {
       console.log("GardenMap: Received PATCHES_UPDATED event", updatedPatches.length);
       setPatches(updatedPatches);
@@ -108,13 +100,11 @@ export const GardenMap = () => {
       ));
     };
     
-    // Subscribe to events
     eventBus.on(PATCH_EVENTS.PATCHES_UPDATED, handlePatchesUpdated);
     eventBus.on(PATCH_EVENTS.PATCH_ADDED, handlePatchAdded);
     eventBus.on(PATCH_EVENTS.PATCH_DELETED, handlePatchDeleted);
     eventBus.on(PATCH_EVENTS.PATCH_EDITED, handlePatchEdited);
     
-    // Cleanup event listeners
     return () => {
       eventBus.off(PATCH_EVENTS.PATCHES_UPDATED, handlePatchesUpdated);
       eventBus.off(PATCH_EVENTS.PATCH_ADDED, handlePatchAdded);
@@ -123,7 +113,6 @@ export const GardenMap = () => {
     };
   }, []);
 
-  // Set up auto-scroll functionality during drag operations
   useEffect(() => {
     const handleDragStart = () => {
       setIsDragging(true);
@@ -137,46 +126,37 @@ export const GardenMap = () => {
       }
     };
 
-    // Handle mouse move during drag to determine auto-scroll direction and speed
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging || !containerRef.current) return;
       
       const container = containerRef.current;
       const containerRect = container.getBoundingClientRect();
       
-      // Define scroll zones at the top and bottom of the container
-      const topScrollZone = 50; // pixels from top
-      const bottomScrollZone = 50; // pixels from bottom
+      const topScrollZone = 50;
+      const bottomScrollZone = 50;
       
-      // Calculate mouse position relative to container
       const mouseY = e.clientY;
       
-      // Clear any existing interval first
       if (autoScrollIntervalRef.current !== null) {
         window.clearInterval(autoScrollIntervalRef.current);
         autoScrollIntervalRef.current = null;
       }
       
-      // Determine if we need to scroll and in which direction
       if (mouseY < containerRect.top + topScrollZone) {
-        // Scroll up when mouse is near the top
         autoScrollIntervalRef.current = window.setInterval(() => {
           container.scrollBy({ top: -10, behavior: 'auto' });
-        }, 16); // ~60fps
+        }, 16);
       } else if (mouseY > containerRect.bottom - bottomScrollZone) {
-        // Scroll down when mouse is near the bottom
         autoScrollIntervalRef.current = window.setInterval(() => {
           container.scrollBy({ top: 10, behavior: 'auto' });
-        }, 16); // ~60fps
+        }, 16);
       }
     };
 
-    // Add event listeners
     document.addEventListener('plantDragStart', handleDragStart);
     document.addEventListener('plantDragEnd', handleDragEnd);
     document.addEventListener('mousemove', handleMouseMove);
 
-    // Cleanup
     return () => {
       document.removeEventListener('plantDragStart', handleDragStart);
       document.removeEventListener('plantDragEnd', handleDragEnd);
@@ -188,7 +168,6 @@ export const GardenMap = () => {
     };
   }, [isDragging]);
   
-  // Load planted items
   useEffect(() => {
     const fetchPlantedItems = async () => {
       try {
@@ -233,12 +212,10 @@ export const GardenMap = () => {
         
         setPlantedItems(plantedItemsByPatch);
         
-        // Also store in localStorage as backup
         localStorage.setItem('garden-planted-items', JSON.stringify(plantedItemsByPatch));
       } catch (error) {
         console.error("Error fetching planted items:", error);
         
-        // Fall back to localStorage
         const storedPlantedItems = localStorage.getItem('garden-planted-items');
         if (storedPlantedItems) {
           try {
@@ -250,18 +227,21 @@ export const GardenMap = () => {
       }
     };
     
-    // Try to load from database first
     fetchPlantedItems();
   }, [patches]);
   
-  // Save planted items when they change
   useEffect(() => {
     if (Object.keys(plantedItems).length > 0) {
       localStorage.setItem('garden-planted-items', JSON.stringify(plantedItems));
     }
   }, [plantedItems]);
 
-  // Handle plant drop on a grid cell
+  const topLevelPatches = patches.filter(patch => !patch.containingPatchId);
+
+  const getChildPatches = (patchId: string) => {
+    return patches.filter(patch => patch.containingPatchId === patchId);
+  };
+
   const handleDrop = async (item: PlantItem, x: number, y: number, patchId: string) => {
     const matchingPatch = patches.find(p => p.id === patchId);
     if (!matchingPatch) {
@@ -269,7 +249,6 @@ export const GardenMap = () => {
       return;
     }
 
-    // Create a new plant item with position and initial growth stage
     const initialStage = getInitialStage(matchingPatch.type);
     const plantedItem: PlantItem = {
       ...item,
@@ -277,22 +256,18 @@ export const GardenMap = () => {
       stage: initialStage
     };
     
-    // Add to the planted items for this patch
     setPlantedItems(prev => {
       const patchPlants = prev[patchId] || [];
       
-      // Check if there's already a plant at this position
       const existingPlantIndex = patchPlants.findIndex(
         plant => plant.position?.x === x && plant.position?.y === y
       );
       
       let updatedPlants;
       if (existingPlantIndex >= 0) {
-        // Replace the existing plant
         updatedPlants = [...patchPlants];
         updatedPlants[existingPlantIndex] = plantedItem;
       } else {
-        // Add a new plant
         updatedPlants = [...patchPlants, plantedItem];
       }
       
@@ -302,9 +277,7 @@ export const GardenMap = () => {
       };
     });
     
-    // Save to database
     try {
-      // Check if there's already a plant at this position in the database
       const { data: existingItems, error: checkError } = await supabase
         .from('planted_items')
         .select('id')
@@ -315,7 +288,6 @@ export const GardenMap = () => {
       if (checkError) throw checkError;
       
       if (existingItems && existingItems.length > 0) {
-        // Update existing item
         const { error: updateError } = await supabase
           .from('planted_items')
           .update({ 
@@ -326,7 +298,6 @@ export const GardenMap = () => {
           
         if (updateError) throw updateError;
       } else {
-        // Insert new item
         const { error: insertError } = await supabase
           .from('planted_items')
           .insert({
@@ -345,7 +316,6 @@ export const GardenMap = () => {
     }
   };
 
-  // Handle moving a plant from one position to another
   const handleMovePlant = async (
     plantItem: PlantItem, 
     sourceX: number, 
@@ -355,7 +325,6 @@ export const GardenMap = () => {
     targetY: number, 
     targetPatchId: string
   ) => {
-    // Don't do anything if trying to move to the same position
     if (sourceX === targetX && sourceY === targetY && sourcePatchId === targetPatchId) {
       console.log("Plant dropped in the same position, no changes needed");
       return;
@@ -367,7 +336,6 @@ export const GardenMap = () => {
       return;
     }
 
-    // Check if there's already a plant at the target position
     const targetPatchPlants = plantedItems[targetPatchId] || [];
     const existingPlantAtTarget = targetPatchPlants.find(
       plant => plant.position?.x === targetX && plant.position?.y === targetY
@@ -378,12 +346,9 @@ export const GardenMap = () => {
       return;
     }
 
-    // Update the plant position in local state
     setPlantedItems(prev => {
-      // Create copies of the arrays
       const updatedPlantedItems = { ...prev };
       
-      // Remove the plant from its source position
       if (updatedPlantedItems[sourcePatchId]) {
         updatedPlantedItems[sourcePatchId] = updatedPlantedItems[sourcePatchId].filter(
           plant => !(
@@ -394,7 +359,6 @@ export const GardenMap = () => {
         );
       }
       
-      // Create the moved plant with updated position
       const movedPlant = {
         ...plantItem,
         position: {
@@ -404,7 +368,6 @@ export const GardenMap = () => {
         }
       };
       
-      // Add the plant to its target position
       if (!updatedPlantedItems[targetPatchId]) {
         updatedPlantedItems[targetPatchId] = [];
       }
@@ -413,9 +376,7 @@ export const GardenMap = () => {
       return updatedPlantedItems;
     });
     
-    // Update the database
     try {
-      // First, delete the plant from its original position
       const { error: deleteError } = await supabase
         .from('planted_items')
         .delete()
@@ -425,7 +386,6 @@ export const GardenMap = () => {
         
       if (deleteError) throw deleteError;
       
-      // Then, insert it at the new position
       const { error: insertError } = await supabase
         .from('planted_items')
         .insert({
@@ -445,7 +405,6 @@ export const GardenMap = () => {
     }
   };
 
-  // Handle growing a plant to next stage
   const handleGrowPlant = async (plantItem: PlantItem, direction: "up" | "down") => {
     if (!plantItem.position || !plantItem.stage) {
       console.error("Plant item is missing position or stage", plantItem);
@@ -460,11 +419,9 @@ export const GardenMap = () => {
 
     const newStage = getNextStage(plantItem.stage, direction);
     
-    // Update local state
     setPlantedItems(prev => {
       const patchPlants = prev[patchId] || [];
       
-      // Find the plant at this position
       const plantIndex = patchPlants.findIndex(
         plant => 
           plant.position?.x === x && 
@@ -477,13 +434,11 @@ export const GardenMap = () => {
         return prev;
       }
       
-      // Create updated plant
       const updatedPlant = {
         ...patchPlants[plantIndex],
         stage: newStage
       };
       
-      // Update plants array
       const updatedPlants = [...patchPlants];
       updatedPlants[plantIndex] = updatedPlant;
       
@@ -493,7 +448,6 @@ export const GardenMap = () => {
       };
     });
     
-    // Update the stage in the database
     try {
       const { error } = await supabase
         .from('planted_items')
@@ -513,7 +467,6 @@ export const GardenMap = () => {
     }
   };
 
-  // Handle deleting a plant
   const handleDeletePlant = async (plantItem: PlantItem) => {
     if (!plantItem.position || !plantItem.position.patchId) {
       console.error("Plant item is missing position or patchId", plantItem);
@@ -522,11 +475,9 @@ export const GardenMap = () => {
 
     const { x, y, patchId } = plantItem.position;
     
-    // Update local state
     setPlantedItems(prev => {
       const patchPlants = prev[patchId] || [];
       
-      // Filter out the plant at this position
       const updatedPlants = patchPlants.filter(
         plant => 
           !(plant.position?.x === x && 
@@ -540,7 +491,6 @@ export const GardenMap = () => {
       };
     });
     
-    // Delete from database
     try {
       const { error } = await supabase
         .from('planted_items')
@@ -558,7 +508,6 @@ export const GardenMap = () => {
     }
   };
 
-  // Handle copying a plant multiple times
   const handleCopyPlant = async (plantItem: PlantItem, count: number) => {
     if (!plantItem.position || !plantItem.position.patchId) {
       console.error("Plant item is missing position or patchId", plantItem);
@@ -572,12 +521,10 @@ export const GardenMap = () => {
       return;
     }
 
-    // For regular patches
     if (matchingPatch.placementType === "free") {
       const patchWidth = matchingPatch.width;
       const patchHeight = matchingPatch.height;
       
-      // Find empty positions in the patch
       const patchPlants = plantedItems[patchId] || [];
       const occupiedPositions = new Set(
         patchPlants.map(plant => `${plant.position?.x}-${plant.position?.y}`)
@@ -593,10 +540,8 @@ export const GardenMap = () => {
         }
       }
       
-      // Shuffle empty positions to randomize placement
       const shuffledPositions = emptyPositions.sort(() => Math.random() - 0.5);
       
-      // Create copies with empty positions
       const copies = shuffledPositions
         .slice(0, count)
         .map(pos => ({
@@ -604,12 +549,10 @@ export const GardenMap = () => {
           position: { x: pos.x, y: pos.y, patchId }
         }));
       
-      // If we don't have enough empty spots
       if (copies.length < count) {
         toast.warning(`Only ${copies.length} empty spots available for copying`);
       }
       
-      // Update local state
       if (copies.length > 0) {
         setPlantedItems(prev => {
           return {
@@ -618,7 +561,6 @@ export const GardenMap = () => {
           };
         });
         
-        // Save copies to database
         try {
           const copyData = copies.map(copy => ({
             plant_id: copy.id,
@@ -641,11 +583,9 @@ export const GardenMap = () => {
         }
       }
     } else {
-      // For seed trays (slots)
       const slotsLength = matchingPatch.slotsLength || 4;
       const slotsWidth = matchingPatch.slotsWidth || 6;
       
-      // Similar logic as above but adapted for seed trays
       const patchPlants = plantedItems[patchId] || [];
       const occupiedPositions = new Set(
         patchPlants.map(plant => `${plant.position?.x}-${plant.position?.y}`)
@@ -706,7 +646,6 @@ export const GardenMap = () => {
     }
   };
 
-  // Handle adding a new patch
   const handleAddPatch = async (data: PatchFormValues) => {
     try {
       console.log("Creating new patch with data:", data);
@@ -716,11 +655,9 @@ export const GardenMap = () => {
       setPatches(prev => [...prev, newPatch]);
       toast.success(`Added new patch: ${newPatch.name}`);
       
-      // Emit event for new patch
       console.log("GardenMap: Emitting PATCH_ADDED event");
       eventBus.emit(PATCH_EVENTS.PATCH_ADDED, newPatch);
       
-      // Close the popover
       setIsAddPatchOpen(false);
     } catch (error) {
       console.error("Error adding patch:", error);
@@ -728,7 +665,6 @@ export const GardenMap = () => {
     }
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -754,6 +690,7 @@ export const GardenMap = () => {
                 <PatchForm 
                   onSubmit={handleAddPatch}
                   isEditing={false}
+                  availableParentPatches={patches}
                 />
               </div>
             </PopoverContent>

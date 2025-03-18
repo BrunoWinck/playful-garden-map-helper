@@ -9,15 +9,21 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Plus, Check } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { PatchType, PlacementType, PatchFormValues } from "@/lib/types";
+import { PatchType, PlacementType, PatchFormValues, Patch } from "@/lib/types";
 
 interface PatchFormProps {
   onSubmit: (data: PatchFormValues) => Promise<void>;
   initialValues?: PatchFormValues;
   isEditing: boolean;
+  availableParentPatches?: Patch[]; // New prop for available parent patches
 }
 
-export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps) => {
+export const PatchForm = ({ 
+  onSubmit, 
+  initialValues, 
+  isEditing,
+  availableParentPatches = [] 
+}: PatchFormProps) => {
   const form = useForm<PatchFormValues>({
     defaultValues: initialValues || {
       name: "",
@@ -30,6 +36,7 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
       placementType: "free" as PlacementType,
       slotsLength: 4,
       slotsWidth: 6,
+      containingPatchId: undefined,
       task: ""
     }
   });
@@ -70,6 +77,35 @@ export const PatchForm = ({ onSubmit, initialValues, isEditing }: PatchFormProps
                 <FormControl>
                   <Input placeholder="Vegetable Patch" {...field} />
                 </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          {/* Add parent patch selector */}
+          <FormField
+            control={form.control}
+            name="containingPatchId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-green-700">Containing Patch (Optional)</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value || ""}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select containing patch (if any)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">None (Top Level)</SelectItem>
+                    {availableParentPatches.map((patch) => (
+                      <SelectItem key={patch.id} value={patch.id}>
+                        {patch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormItem>
             )}
           />

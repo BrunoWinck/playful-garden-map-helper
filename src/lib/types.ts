@@ -37,6 +37,7 @@ export type Patch = {
   heated: boolean;
   artificialLight: boolean;
   naturalLightPercentage: number;
+  containingPatchId?: string; // New field to indicate parent patch
 };
 
 export type PatchFormValues = {
@@ -50,5 +51,6 @@ export type PatchFormValues = {
   placementType: PlacementType;
   slotsLength: number;
   slotsWidth: number;
+  containingPatchId?: string; // New field for parent patch
   task?: string;
 };

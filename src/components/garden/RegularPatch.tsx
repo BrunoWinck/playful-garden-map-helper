@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Move } from "lucide-react";
+import { Move, Layers } from "lucide-react";
 import { PlantItem, Patch } from "@/lib/types";
 import { GardenCell } from "./GardenCell";
 
@@ -14,6 +14,7 @@ interface RegularPatchProps {
   onGrowPlant: (plantItem: PlantItem, direction: "up" | "down") => void;
   onDeletePlant: (plantItem: PlantItem) => void;
   onCopyPlant: (plantItem: PlantItem, count: number) => void;
+  childPatches?: Patch[]; // New prop for child patches
 }
 
 export const RegularPatch = ({ 
@@ -25,7 +26,8 @@ export const RegularPatch = ({
   patchColors,
   onGrowPlant,
   onDeletePlant,
-  onCopyPlant
+  onCopyPlant,
+  childPatches = []
 }: RegularPatchProps) => {
   // Calculate the relative width of the container based on the patch length
   // Using 10 meters = 100% width as the reference
@@ -37,6 +39,12 @@ export const RegularPatch = ({
         <h4 className="font-medium text-green-800 flex items-center">
           <Move className="h-4 w-4 mr-1 text-green-600" />
           {patch.name}
+          {childPatches.length > 0 && (
+            <span className="ml-2 flex items-center text-blue-600" title="Contains other patches">
+              <Layers className="h-4 w-4 mr-1" />
+              <span className="text-xs">{childPatches.length}</span>
+            </span>
+          )}
         </h4>
         <span className="text-xs text-green-700">
           {patch.length}×{patch.width} m

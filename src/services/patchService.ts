@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Patch, PatchFormValues, PatchType, PlacementType } from "@/lib/types";
 import { toast } from "sonner";
@@ -32,7 +31,8 @@ export const fetchPatches = async (): Promise<Patch[]> => {
       naturalLightPercentage: patch.natural_light_percentage || 100,
       placementType: (patch.placement_type as PlacementType) || "free",
       slotsLength: patch.slots_length || 4,
-      slotsWidth: patch.slots_width || 6
+      slotsWidth: patch.slots_width || 6,
+      containingPatchId: patch.containing_patch_id || undefined
     }));
     
     return formattedPatches;
@@ -115,6 +115,7 @@ export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
         placement_type: data.placementType || "free",
         slots_length: data.slotsLength || 4,
         slots_width: data.slotsWidth || 6,
+        containing_patch_id: data.containingPatchId || null, // Add the containing patch ID
         user_id: currentUser.id
       })
       .select()
@@ -144,7 +145,8 @@ export const createPatch = async (data: PatchFormValues): Promise<Patch> => {
       naturalLightPercentage: newPatch.natural_light_percentage || 100,
       placementType: (newPatch.placement_type as PlacementType) || "free",
       slotsLength: newPatch.slots_length || 4,
-      slotsWidth: newPatch.slots_width || 6
+      slotsWidth: newPatch.slots_width || 6,
+      containingPatchId: newPatch.containing_patch_id || undefined
     };
     
     return formattedPatch;
@@ -169,7 +171,8 @@ export const updatePatch = async (patchId: string, data: PatchFormValues) => {
         natural_light_percentage: data.naturalLightPercentage,
         placement_type: data.placementType || "free",
         slots_length: data.slotsLength || 4,
-        slots_width: data.slotsWidth || 6
+        slots_width: data.slotsWidth || 6,
+        containing_patch_id: data.containingPatchId || null // Add the containing patch ID
       })
       .eq('id', patchId);
     
@@ -276,6 +279,28 @@ export const deletePatchTask = async (patchId: string, taskIndex: number, tasks:
     }
   } catch (error) {
     console.error("Error deleting task:", error);
+    throw error;
+  }
+};
+
+// Fetch top-level patches (patches that are not contained in any other patch)
+export const fetchTopLevelPatches = async (): Promise<Patch[]> => {
+  try {
+    const allPatches = await fetchPatches();
+    return allPatches.filter(patch => !patch.containingPatchId);
+  } catch (error) {
+    console.error("Error fetching top-level patches:", error);
+    throw error;
+  }
+};
+
+// Fetch child patches of a specific parent patch
+export const fetchChildPatches = async (parentPatchId: string): Promise<Patch[]> => {
+  try {
+    const allPatches = await fetchPatches();
+    return allPatches.filter(patch => patch.containingPatchId === parentPatchId);
+  } catch (error) {
+    console.error("Error fetching child patches:", error);
     throw error;
   }
 };

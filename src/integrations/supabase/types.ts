@@ -232,6 +232,7 @@ export type Database = {
       patches: {
         Row: {
           artificial_light: boolean
+          containing_patch_id: string | null
           created_at: string
           heated: boolean
           height: number
@@ -248,6 +249,7 @@ export type Database = {
         }
         Insert: {
           artificial_light?: boolean
+          containing_patch_id?: string | null
           created_at?: string
           heated?: boolean
           height: number
@@ -264,6 +266,7 @@ export type Database = {
         }
         Update: {
           artificial_light?: boolean
+          containing_patch_id?: string | null
           created_at?: string
           heated?: boolean
           height?: number
@@ -279,6 +282,13 @@ export type Database = {
           width?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "patches_containing_patch_id_fkey"
+            columns: ["containing_patch_id"]
+            isOneToOne: false
+            referencedRelation: "patches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "patches_user_id_fkey"
             columns: ["user_id"]
