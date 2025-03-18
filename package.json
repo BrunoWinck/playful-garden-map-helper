@@ -11,8 +11,8 @@
   },
   "homepage": "https://github.com/BrunoWinck/playful-garden-map-helper#readme",
   "scripts": {
-    "dev1": "vite",
-    "dev": "cd client && npm run dev",
+    "dev": "vite",
+    "dev1": "cd client && npm run dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
