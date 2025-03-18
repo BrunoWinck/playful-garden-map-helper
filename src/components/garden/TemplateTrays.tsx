@@ -11,17 +11,34 @@ import { useDrag } from "react-dnd";
 const TemplateTrayItem = ({ tray }: { tray: Patch }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "TEMPLATE_TRAY",
-    item: { tray },
+    item: () => ({ tray }), // Changed from begin() to item() as per error message
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-    end: () => {
-      document.dispatchEvent(new CustomEvent('plantDragEnd'));
-    },
-    begin: () => {
-      document.dispatchEvent(new CustomEvent('plantDragStart'));
-    },
   }));
+
+  // Add event listeners for drag start and end
+  useEffect(() => {
+    const handleDragStart = () => {
+      document.dispatchEvent(new CustomEvent('plantDragStart'));
+    };
+    
+    const handleDragEnd = () => {
+      document.dispatchEvent(new CustomEvent('plantDragEnd'));
+    };
+
+    if (drag.current) {
+      drag.current.addEventListener('dragstart', handleDragStart);
+      drag.current.addEventListener('dragend', handleDragEnd);
+    }
+
+    return () => {
+      if (drag.current) {
+        drag.current.removeEventListener('dragstart', handleDragStart);
+        drag.current.removeEventListener('dragend', handleDragEnd);
+      }
+    };
+  }, [drag]);
 
   return (
     <div
