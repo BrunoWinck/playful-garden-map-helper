@@ -11,34 +11,25 @@ import { useDrag } from "react-dnd";
 const TemplateTrayItem = ({ tray }: { tray: Patch }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "TEMPLATE_TRAY",
-    item: () => ({ tray }), // Changed from begin() to item() as per error message
+    item: () => ({ tray }), // Use item function to return the drag data
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }));
-
-  // Add event listeners for drag start and end
-  useEffect(() => {
-    const handleDragStart = () => {
-      document.dispatchEvent(new CustomEvent('plantDragStart'));
-    };
-    
-    const handleDragEnd = () => {
+    // Handle drag start and end events within the useDrag hook
+    end: () => {
       document.dispatchEvent(new CustomEvent('plantDragEnd'));
-    };
-
-    if (drag.current) {
-      drag.current.addEventListener('dragstart', handleDragStart);
-      drag.current.addEventListener('dragend', handleDragEnd);
-    }
-
-    return () => {
-      if (drag.current) {
-        drag.current.removeEventListener('dragstart', handleDragStart);
-        drag.current.removeEventListener('dragend', handleDragEnd);
+    },
+    // Use the proper API for react-dnd v14+
+    hover: (item, monitor) => {
+      // Only fire plantDragStart once at the beginning of the drag
+      if (monitor.isDragging() && !monitor.didDrop()) {
+        const clientOffset = monitor.getClientOffset();
+        if (clientOffset && !isDragging) {
+          document.dispatchEvent(new CustomEvent('plantDragStart'));
+        }
       }
-    };
-  }, [drag]);
+    }
+  }));
 
   return (
     <div
